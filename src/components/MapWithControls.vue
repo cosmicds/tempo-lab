@@ -698,6 +698,24 @@ watch(focusRegion, region => {
   }
 });
 
+
+
+import { downloadCanvasToImage } from "@/utils/canvas_downloader";
+import { AllAvailableColorMaps } from "@/colormaps";
+function downloadMap() {
+  if (!map.value) {
+    alert('Map not ready yet!');
+    return;
+  }
+  const html = map.value.getCanvas();
+  console.log('Downloading map image...', html);
+  // see: https://stackoverflow.com/a/78283389/11594175
+  map.value.once('render', () => {
+    downloadCanvasToImage(html, 'tempo-map.png');
+  });
+  map.value.redraw();
+  
+}
 </script>
 
 <style lang="less">
