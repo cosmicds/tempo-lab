@@ -1,86 +1,74 @@
 <template>
   <div class="map-container">
-    <map-colorbar-wrap
-      :horizontal="display.width.value <= 750"
-      :current-colormap="currentColormap"
-      :color-map="colorMap"
-      :start-value="currentColorbarOptions.stretch[0] / currentColorbarOptions.cbarScale"
-      :end-value="currentColorbarOptions.stretch[1] / currentColorbarOptions.cbarScale"
-      :molecule-label="currentColorbarOptions.label"
-      :cbar-scale="currentColorbarOptions.cbarScale"
-    >
-      <v-card class="map-contents" style="width:100%; height: 100%;">
-        <v-toolbar
-          density="compact"
-          color="var(--info-background)"
-        >
-          <v-toolbar-title :text="`TEMPO Data Viewer: ${mapTitle}`"></v-toolbar-title>
-          <!-- switch for preview points -->
-          <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-select"
-                :color="selectionActive === 'rectangle' ? 'info' : 'default'"
-                :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
-                :disabled="selectionActive === 'point'"
-                @click="activateRectangleSelectionMode"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-          <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-plus"
-                :color="selectionActive === 'point' ? 'info' : 'default'"
-                :variant="selectionActive === 'point' ? 'tonal' : 'text'"
-                :disabled="selectionActive === 'rectangle'"
-                @click="activatePointSelectionMode"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-        </v-toolbar>
-        <EsriMap
-          :mapID="mapID"
-          :initial="initState"
-          :home="homeState"
-          :show-roads="showRoads"
-          :events="{
-            'moveend': updateURL,
-            'zoomend': updateURL,
-          }"
-          :timestamp="timestamp"
-          molecule="no2"
-          :opacity="opacity"
-          :show-field-of-regard="showFieldOfRegard"
-          @zoomhome="onZoomhome"
-          @ready="onMapReady"
-          @esri-layer="no2Layer = $event"
-          @esri-timesteps-loaded="onEsriTimestepsLoaded"
-          ref="maplibreMap"
-          width="100%"
-          height="450px"
-          maplibre-layer-name="tempo-no2"
-        />
+    <v-card class="map-contents" style="width:100%; height: 100%;">
+      <v-toolbar
+        density="compact"
+        color="var(--info-background)"
+      >
+        <v-toolbar-title :text="`TEMPO Data Viewer: ${mapTitle}`"></v-toolbar-title>
+        <!-- switch for preview points -->
+        <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-select"
+              :color="selectionActive === 'rectangle' ? 'info' : 'default'"
+              :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
+              :disabled="selectionActive === 'point'"
+              @click="activateRectangleSelectionMode"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-plus"
+              :color="selectionActive === 'point' ? 'info' : 'default'"
+              :variant="selectionActive === 'point' ? 'tonal' : 'text'"
+              :disabled="selectionActive === 'rectangle'"
+              @click="activatePointSelectionMode"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+      </v-toolbar>
+      <EsriMap
+        :mapID="mapID"
+        :initial="initState"
+        :home="homeState"
+        :show-roads="showRoads"
+        :events="{
+          'moveend': updateURL,
+          'zoomend': updateURL,
+        }"
+        :timestamp="timestamp"
+        :molecule="molecule"
+        :opacity="opacity"
+        :show-field-of-regard="showFieldOfRegard"
+        @zoomhome="onZoomhome"
+        @ready="onMapReady"
+        @esri-timesteps-loaded="onEsriTimestepsLoaded"
+        ref="maplibreMap"
+        width="100%"
+        height="450px"
+      />
 
-        <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
-        <!-- show hide cloud data, disable if none is available -->
+      <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
+      <!-- show hide cloud data, disable if none is available -->
 
-        <div class="location-and-sharing">
-          <location-search
-            v-model="searchOpen"
-            small
-            stay-open
-            buttonSize="xl"
-            persist-selected
-            :search-provider="geocodingInfoForSearchLimited"
-            @set-location="setLocationFromSearch"
-            @error="(error: string) => searchErrorMessage = error"
-          ></location-search>
-        </div>
-      </v-card>
-    </map-colorbar-wrap>
+      <div class="location-and-sharing">
+        <location-search
+          v-model="searchOpen"
+          small
+          stay-open
+          buttonSize="xl"
+          persist-selected
+          :search-provider="geocodingInfoForSearchLimited"
+          @set-location="setLocationFromSearch"
+          @error="(error: string) => searchErrorMessage = error"
+        ></location-search>
+      </div>
+    </v-card>
     <div class="slider-row mx-16 mt-12">
       <v-slider
         class="time-slider"
