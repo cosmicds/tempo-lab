@@ -4,7 +4,7 @@
     :class="['mlc-layer-item', `mlc-layer-item-${visible ? 'visible' : 'none'}`]"
   >
     <div
-      class="mlc-layer-item-checkbox-label-container"
+      class="mlc-layer-item-checkbox-opacity-container"
     >
       <v-checkbox
         v-model="visible"
@@ -13,13 +13,8 @@
         density="compact"
         hide-details
         color="primary"
+        :label="displayName ?? layerId"
       ></v-checkbox>
-      <label
-        class="mlc-layer-item-label"
-        :for="`mlc-${layerId}-visibility-checkbox`"
-      >
-        {{ displayName ?? layerId }}
-      </label>
       <popup-info-button
         v-if="info"
         :info-text="info"
@@ -28,15 +23,6 @@
           <div v-html="info"></div>
         </template>
       </popup-info-button>
-    </div>
-    <div
-      class="mlc-layer-item-opacity-label-container"
-    >
-      <label
-        :for="`mlc-${layerId}-opacity-slider`"
-      >
-        Opacity: 
-      </label>
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
@@ -83,6 +69,10 @@ watch(() => [props.map, props.layerId],
 </script>
 
 <style scoped>
+label {
+  font-size: 10pt;
+}
+
 .mlc-layer-item {
   width: 100%;
   display: flex;
@@ -91,16 +81,15 @@ watch(() => [props.map, props.layerId],
   justify-content: space-between;
 }
 
-.mlc-layer-item-checkbox-label-container,
-.mlc-layer-item-opacity-label-container {
-  width: min(100%, 250px);
+.mlc-layer-item-opacity-opacity-container {
+  width: 100%;
   padding: 5px;
   display: flex;
   flex-direction: row;
   align-items: center;
-}
 
-.mlc-layer-item-checkbox-label-container {
-  min-width: 200px;
+  .v-slider {
+    min-width: 200px;
+  }
 }
 </style>
