@@ -8,7 +8,7 @@ import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
 
 
-interface UseEsriLayer {
+export interface UseEsriLayer {
   esriImageSource: Ref<maplibregl.RasterTileSource | null>;
   opacity: Ref<number>;
   noEsriData: Ref<boolean>;
@@ -17,15 +17,19 @@ interface UseEsriLayer {
   updateEsriOpacity: (value?: number | null | undefined) => void;
   updateEsriTimeRange: () => void;
   addEsriSource: (map: Map) => void;
+  setVisibility: (visible: boolean) => void;
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
 export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
   timestamp: Ref<number | null>,
   opacity: MaybeRef<number>,
-  fetchOnMount=true): UseEsriLayer {
+  fetchOnMount=true,
+  layerName?: string,
+  initVisible?: boolean,
+): UseEsriLayer {
 
-  const esriLayerId = 'esri-source';
+  const esriLayerId = layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
   const map = ref<Map | null>(null);
   const molecule = toRef(initialMolecule);
@@ -43,7 +47,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
   
   const options = computed(() => {
     return  {
-      'format': 'png',
+      'format': 'jpgpng',
       'pixelType': 'U8',
       'size': '256,256',
       'transparent': true,
@@ -63,6 +67,9 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
         id: esriLayerId,
         type: 'raster',
         source: esriLayerId,
+        layout: {
+          visibility: initVisible === false ? 'none' : 'visible',
+        },
         paint: {
           'raster-resampling': 'nearest',
           'raster-opacity': opacityRef.value ?? 0.8,
@@ -96,6 +103,16 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
       updateEsriOpacity();
       updateEsriTimeRange();
       map.value?.off('sourcedata', onSourceLoad);
+    }
+  }
+  
+  function setVisibility(visible: boolean) {
+    if (map.value && map.value.getLayer(esriLayerId)) {
+      map.value.setLayoutProperty(
+        esriLayerId, 
+        'visibility', 
+        visible ? 'visible' : 'none'
+      );
     }
   }
   
@@ -227,6 +244,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     updateEsriTimeRange,
     addEsriSource,
     renderOptions,
+    setVisibility,
   } as UseEsriLayer;
 }
 

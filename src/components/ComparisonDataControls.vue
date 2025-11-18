@@ -9,7 +9,7 @@
     >
       <layer-order-control
         :mapRef="map"
-        :order="['power-plants-layer', 'aqi-layer-aqi', 'pop-dens', 'land-use',  'hms-fire', 'esri-source', 'stamen-toner-lines']"
+        :order="['power-plants-layer', 'aqi-layer-aqi', 'pop-dens', 'land-use','hms-fire', 'tempo-o3', 'tempo-hcho', 'tempo-no2', 'stamen-toner-lines']"
       >
       </layer-order-control>
       <v-checkbox

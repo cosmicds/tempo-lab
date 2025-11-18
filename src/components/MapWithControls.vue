@@ -4,10 +4,10 @@
       :horizontal="display.width.value <= 750"
       :current-colormap="currentColormap"
       :color-map="colorMap"
-      :start-value="colorbarOptions[molecule].stretch[0] / colorbarOptions[molecule].cbarScale"
-      :end-value="colorbarOptions[molecule].stretch[1] / colorbarOptions[molecule].cbarScale"
-      :molecule-label="colorbarOptions[molecule].label"
-      :cbar-scale="colorbarOptions[molecule].cbarScale"
+      :start-value="currentColorbarOptions.stretch[0] / currentColorbarOptions.cbarScale"
+      :end-value="currentColorbarOptions.stretch[1] / currentColorbarOptions.cbarScale"
+      :molecule-label="currentColorbarOptions.label"
+      :cbar-scale="currentColorbarOptions.cbarScale"
     >
       <v-card class="map-contents" style="width:100%; height: 100%;">
         <v-toolbar
@@ -51,15 +51,17 @@
             'zoomend': updateURL,
           }"
           :timestamp="timestamp"
-          :molecule="molecule"
+          molecule="no2"
           :opacity="opacity"
           :show-field-of-regard="showFieldOfRegard"
           @zoomhome="onZoomhome"
           @ready="onMapReady"
+          @esri-layer="no2Layer = $event"
           @esri-timesteps-loaded="onEsriTimestepsLoaded"
           ref="maplibreMap"
           width="100%"
           height="450px"
+          maplibre-layer-name="tempo-no2"
         />
 
         <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
@@ -93,9 +95,9 @@
         hide-details
         @end="() => {
           timeSliderUsedCount += 1;
-          if (map) {
-            setLayerVisibility(map as Map, 'esri-source', true);
-          }
+          // if (map) {
+          //   setLayerVisibility(map as Map, activeLayer, true);
+          // }
         }"
       >
         <template v-slot:thumb-label>
@@ -112,13 +114,18 @@
       ></icon-button>
     </div>
     <div class="d-flex flex-row">
+      <v-checkbox
+        v-model="compareMode"
+        title="RGB Mode"
+        />
+        
       <map-controls
         class="flex-grow-1"
         @molecule="(mol: MoleculeType) => {
           molecule = mol;
-          if (map) {
-            setLayerVisibility(map as Map, 'esri-source', true);
-          }
+          // if (map) {
+          //   setLayerVisibility(map as Map, activeLayer, true);
+          // }
         }"
       />
     </div>
@@ -190,7 +197,6 @@ const {
 } = storeToRefs(store);
 
 const molecule = ref<MoleculeType>("no2");
-const colorMap = computed(() => colorbarOptions[molecule.value].colormap.toLowerCase());
 const currentTempoDataService = computed(() => store.getTempoDataService(molecule.value));
 
 function createSelectionComputed(selection: SelectionType): WritableComputedRef<boolean> {
@@ -262,6 +268,13 @@ const hmsFire = addHMSFire(singleDateSelected, {
   showLabel: false,
 });
 
+import { type UseEsriLayer, useEsriLayer } from "@/esri/maplibre/useEsriImageLayer";
+// just use the hcho layer for now
+const hchoLayer = useEsriLayer('hcho', timestamp, 1, true, 'tempo-hcho', false);
+const ozoneLayer = useEsriLayer('o3', timestamp, 1, true, 'tempo-o3', false);
+const no2Layer = ref<UseEsriLayer | null>(null);
+const compareMode = ref(false);
+
 const onMapReady = (m: Map) => {
   console.log('Map ready event received');
   map.value = m; // ESRI source already added by EsriMap
@@ -271,6 +284,8 @@ const onMapReady = (m: Map) => {
   popLayer.addEsriSource(m);
   sentinalLandUseLayer.addEsriSource(m);
   hmsFire.addToMap(m);
+  hchoLayer.addEsriSource(m);
+  ozoneLayer.addEsriSource(m);
   // Only move if target layer exists (avoid errors if initial KML load failed)
   try {
     if (m.getLayer('kml-layer-aqi')) {
@@ -285,6 +300,51 @@ const onMapReady = (m: Map) => {
   aqiLayer.layerVisible.value = false;
   updateRegionLayers(regions.value);
 };
+
+
+watch(molecule, (newMolecule) => {
+  if (map.value) {
+    hchoLayer.setVisibility(newMolecule === 'hcho');
+    ozoneLayer.setVisibility(newMolecule === 'o3');
+    no2Layer.value?.setVisibility(newMolecule === 'no2');
+    // map.value.moveLayer(`tempo-${newMolecule}`, 'tempo-no2');
+  }
+});
+
+const activeLayer = computed(() => `tempo-${molecule.value}`);
+
+import { stretches, colorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
+const rgbstretches = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'NO2_Troposphere': [0, 7_500_000_000_000_000],
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'Ozone_Column_Amount': [250, 430], // +- 2 sigma
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'HCHO': [1_000_000_000_000_000, 15_000_000_000_000_000],
+} as Record<string, [number, number]>;
+const rgbcolorramps = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'NO2_Troposphere': 'redfromwhite',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'Ozone_Column_Amount': 'greenfromwhite', 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  'HCHO': 'bluefromwhite',
+} as Record<string, ColorRamps>;
+  
+watch(compareMode, (cMode) => {
+  
+  hchoLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['HCHO'];
+  ozoneLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['Ozone_Column_Amount'];
+  if (no2Layer.value) {
+    no2Layer.value.renderOptions.colormap = (cMode ? rgbcolorramps : colorramps)['NO2_Troposphere'];
+  }
+  hchoLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['HCHO'];
+  ozoneLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['Ozone_Column_Amount'];
+  if (no2Layer.value) {
+    no2Layer.value.renderOptions.range = (cMode ? rgbstretches : stretches)['NO2_Troposphere'];
+  }
+
+});
 
 const showLocationMarker = ref(true);
 const {
@@ -310,11 +370,45 @@ function activatePointSelectionMode() {
 
 const regionLayers: Record<string, GeoJSONSource> = {};
 
+// const colorMap = computed(() => colorbarOptions[molecule.value].colormap.toLowerCase());
+const colorMap = computed(() => {
+  const mol = molecule.value == 'no2' 
+    ? 'NO2_Troposphere' : molecule.value == 'hcho' 
+      ? 'HCHO' : 'Ozone_Column_Amount';
+  return compareMode.value ? rgbcolorramps[mol].toLowerCase() : colorramps[mol].toLowerCase();
+});
+
+type ColorbarOptionsKey = keyof typeof colorbarOptions;
+const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKey]>(() => {
+  const mol = molecule.value == 'no2' 
+    ? 'NO2_Troposphere' : molecule.value == 'hcho' 
+      ? 'HCHO' : 'Ozone_Column_Amount';
+  return {
+    ...colorbarOptions[molecule.value],
+    colormap: compareMode.value ? rgbcolorramps[mol] : colorramps[mol],
+    stretch: compareMode.value ? rgbstretches[mol] : stretches[mol],
+  };
+});
+
+watch(currentColorbarOptions, (cc) => {
+  console.log('current colorbar options changed to', cc);
+});
+
 const currentColormap = computed(() => {
   return (x: number): string => {
-    const rgb = colormap(colorMap.value, 0, 1, x);
+    let rgb: number[] = [128, 128, 128];
+    try {
+      rgb = colormap(colorMap.value as AllAvailableColorMaps, 0, 1, x);
+    }
+    catch {
+      console.log("no valid colormap. returning gray");
+    }
     return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},1)`;
   };
+});
+
+watch(colorMap, (value) => {
+  console.log('color map changed to', value);
 });
 
 const mapTitle = computed(() => {
