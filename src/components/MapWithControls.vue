@@ -118,6 +118,9 @@
         v-model="compareMode"
         title="RGB Mode"
         />
+      <v-checkbox
+        v-model="showAdvancedLayers"
+        />
         
       <map-controls
         class="flex-grow-1"
@@ -274,10 +277,10 @@ const hchoLayer = useEsriLayer('hcho', timestamp, 1, true, 'tempo-hcho', false);
 const ozoneLayer = useEsriLayer('o3', timestamp, 1, true, 'tempo-o3', false);
 const no2Layer = ref<UseEsriLayer | null>(null);
 const compareMode = ref(false);
+const showAdvancedLayers = ref(false);
 
-const onMapReady = (m: Map) => {
-  console.log('Map ready event received');
-  map.value = m; // ESRI source already added by EsriMap
+function addAdvancedLayers(m: Map | null) {
+  if (m === null) return;
   // pp.addheatmapLayer();
   // pp.togglePowerPlants(false);
   aqiLayer.addToMap(m);
@@ -296,11 +299,36 @@ const onMapReady = (m: Map) => {
   }
   
   pp.addLayer();
-  pp.togglePowerPlants(false);
-  aqiLayer.layerVisible.value = false;
+  // pp.togglePowerPlants(false);
+}
+
+function removeAdvancedLayers(m: Map | null) {
+  if (m === null) return;
+  aqiLayer.removeFromMap(m);
+  popLayer.removeEsriSource();
+  sentinalLandUseLayer.removeEsriSource();
+  hmsFire.removeFromMap(m);
+  hchoLayer.removeEsriSource();
+  ozoneLayer.removeEsriSource();
+  pp.removeLayer();
+}
+
+const onMapReady = (m: Map) => {
+  console.log('Map ready event received');
+  map.value = m; // ESRI source already added by EsriMap
+  if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
 };
 
+watch(showAdvancedLayers, (value) => {
+  if (value) {
+    addAdvancedLayers(map.value as Map | null);
+    return;
+  }
+  removeAdvancedLayers(map.value as Map | null);
+  
+  
+});
 
 watch(molecule, (newMolecule) => {
   if (map.value) {
