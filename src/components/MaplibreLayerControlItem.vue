@@ -16,11 +16,10 @@
         :label="displayName ?? layerId"
       ></v-checkbox>
       <popup-info-button
-        v-if="info"
-        :info-text="info"
+        v-if="showInfo"
       >
         <template #info>
-          <div v-html="info"></div>
+          <slot name="info"></slot>
         </template>
       </popup-info-button>
       <v-slider
@@ -33,6 +32,9 @@
         title="Adjust layer opacity"
         color="primary"
         hide-details
+        density="compact"
+        :thumb-size="12"
+        :track-size="3"
       />
     </div>
     <slot
@@ -43,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
+import { computed, useSlots, watch } from "vue";
 import type { Map } from "maplibre-gl";
 import { useMaplibreLayerOpacity } from "@/composables/useMaplibreLayerOpacity";
 import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
@@ -52,12 +54,14 @@ interface Props {
   layerId: string;
   map: Map;
   displayName?: string;
-  info?: string;
 }
 
 const props = defineProps<Props>();
 let { opacity } = useMaplibreLayerOpacity(props.map, props.layerId);
 let { visible } = useMaplibreLayerVisibility(props.map, props.layerId);
+
+const slots = useSlots();
+const showInfo = computed(() => !!slots.info);
 
 // NB: If the props update, we need to make sure that the refs that we're using are still tracking the same layer
 // In particular, if the layer ID changes, without this the component can end up manipulating the wrong layer!
@@ -68,9 +72,9 @@ watch(() => [props.map, props.layerId],
   });
 </script>
 
-<style scoped>
-label {
-  font-size: 10pt;
+<style scoped lang="less">
+:deep(.v-checkbox .v-label) {
+  font-size: 11pt;
 }
 
 .mlc-layer-item {
@@ -81,15 +85,17 @@ label {
   justify-content: space-between;
 }
 
-.mlc-layer-item-opacity-opacity-container {
+.mlc-layer-item-checkbox-opacity-container {
   width: 100%;
   padding: 5px;
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
   align-items: center;
 
   .v-slider {
-    min-width: 200px;
+    width: 75px;
+    flex-grow: 0;
   }
 }
 </style>

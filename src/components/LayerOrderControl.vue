@@ -13,9 +13,26 @@
         <layer-control-item
           :map="mapRef"
           :layer-id="element"
-          :info="layerInfo[element]"
           :display-name="displayNameTransform(element)"
         >
+          <template #info
+            v-if="layerInfo[element]"
+          >
+            <div v-html="layerInfo[element]"></div>
+          </template>
+          <template #actions="{ visible }">
+            <div v-if="powerPlantLayerIds.includes(element)">
+              <v-btn-toggle
+                v-model="powerPlantMode"
+                density="compact"
+                color="primary"
+                :disabled="!visible"
+              >
+                <v-btn>Heatmap</v-btn>
+                <v-btn>Points</v-btn>
+              </v-btn-toggle>
+            </div>
+          </template>
         </layer-control-item>
       </div>
     </template>

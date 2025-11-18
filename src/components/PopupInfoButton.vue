@@ -6,6 +6,7 @@
         v-bind="props"
         density="compact"
         flat
+        :size="size"
       >
         <v-icon>mdi-information-variant-circle-outline</v-icon>
       </v-btn>
@@ -21,9 +22,12 @@
 <script setup lang="ts">
 interface Props {
   infoText: string;
+  size?: string | number;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  size: "small",
+});
 </script>
 
 <style scoped>
