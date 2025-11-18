@@ -18,6 +18,7 @@ export interface UseEsriLayer {
   updateEsriOpacity: (value?: number | null | undefined) => void;
   updateEsriTimeRange: () => void;
   addEsriSource: (map: Map) => void;
+  removeEsriSource: () => void;
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
@@ -158,6 +159,14 @@ export function useEsriImageServiceLayer(
     }
   }
   
+    
+  function removeEsriSource() {
+    removeLayer(map.value as Map | null);
+    if (map.value && map.value.getSource(esriLayerId)) {
+      map.value.removeSource(esriLayerId);
+    }
+  }
+  
   function _hasEsriSource() {
     return map.value?.getSource(esriLayerId) !== undefined;
   }
@@ -200,6 +209,7 @@ export function useEsriImageServiceLayer(
     noEsriData,
     updateEsriOpacity,
     addEsriSource,
+    removeEsriSource,
   } as UseEsriLayer;
 }
 

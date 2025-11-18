@@ -1,6 +1,6 @@
 import { ref, watch, Ref, MaybeRef, toRef, nextTick, computed } from 'vue';
 import { renderingRule, stretches, colorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
-import { Map, type MapSourceDataEvent } from 'maplibre-gl';
+import { type Map, type MapSourceDataEvent } from 'maplibre-gl';
 import { validate as uuidValidate } from "uuid";
 
 import { ImageService } from 'mapbox-gl-esri-sources';
@@ -17,6 +17,7 @@ export interface UseEsriLayer {
   updateEsriOpacity: (value?: number | null | undefined) => void;
   updateEsriTimeRange: () => void;
   addEsriSource: (map: Map) => void;
+  removeEsriSource: () => void;
   setVisibility: (visible: boolean) => void;
   renderOptions: Ref<RenderingRuleOptions>;
 }
@@ -142,6 +143,17 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     mMap.on('sourcedata', onSourceLoad);
   }
   
+  function removeEsriSource() {
+    if (map.value) {
+      if (map.value.getLayer(esriLayerId)) {
+        map.value.removeLayer(esriLayerId);
+      }
+      if (map.value.getSource(esriLayerId)) {
+        map.value.removeSource(esriLayerId);
+      }
+    }
+  }
+  
   function hasEsriSource() {
     return map.value?.getSource(esriLayerId) !== undefined;
   }
@@ -243,6 +255,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     updateEsriOpacity,
     updateEsriTimeRange,
     addEsriSource,
+    removeEsriSource,
     renderOptions,
     setVisibility,
   } as UseEsriLayer;
