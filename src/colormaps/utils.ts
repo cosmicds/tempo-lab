@@ -91,3 +91,16 @@ export function previewColormapInConsole(colormapName: AllAvailableColorMaps = '
   console.log('%cColormap: ' + colormapName, 'font-weight: bold;');
   console.log(str, ...style);
 }
+
+export function colormapFunction(cmapName: string) {
+  return (x: number) => {
+    let rgb: number[] = [128, 128, 128];
+    try {
+      rgb = colormap(cmapName.toLowerCase() as AllAvailableColorMaps, 0, 1, x);
+    }
+    catch {
+      console.log("no valid colormap. returning gray");
+    }
+    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},1)`;
+  };
+}

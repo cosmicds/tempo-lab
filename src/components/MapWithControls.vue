@@ -42,15 +42,17 @@
           'zoomend': updateURL,
         }"
         :timestamp="timestamp"
-        :molecule="molecule"
+        molecule="no2"
         :opacity="opacity"
         :show-field-of-regard="showFieldOfRegard"
         @zoomhome="onZoomhome"
         @ready="onMapReady"
+        @esri-layer="no2Layer = $event"
         @esri-timesteps-loaded="onEsriTimestepsLoaded"
         ref="maplibreMap"
         width="100%"
         height="450px"
+        maplibre-layer-name="tempo-no2"
       />
 
       <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
@@ -264,6 +266,7 @@ const compareMode = ref(false);
 
 const onMapReady = (m: Map) => {
   console.log('Map ready event received');
+  console.log(m);
   map.value = m; // ESRI source already added by EsriMap
   // pp.addheatmapLayer();
   // pp.togglePowerPlants(false);
