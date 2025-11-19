@@ -114,14 +114,6 @@
       ></icon-button>
     </div>
     <div class="d-flex flex-row">
-      <v-checkbox
-        v-model="compareMode"
-        title="RGB Mode"
-        />
-      <v-checkbox
-        v-model="showAdvancedLayers"
-        />
-        
       <map-controls
         class="flex-grow-1"
         @molecule="(mol: MoleculeType) => {
@@ -197,6 +189,8 @@ const {
   showRoads,
   showSamplingPreviewMarkers,
   singleDateSelected,
+  showAdvancedLayers,
+  showRGBMode,
 } = storeToRefs(store);
 
 const molecule = ref<MoleculeType>("no2");
@@ -276,8 +270,6 @@ import { type UseEsriLayer, useEsriLayer } from "@/esri/maplibre/useEsriImageLay
 const hchoLayer = useEsriLayer('hcho', timestamp, 1, true, 'tempo-hcho', false);
 const ozoneLayer = useEsriLayer('o3', timestamp, 1, true, 'tempo-o3', false);
 const no2Layer = ref<UseEsriLayer | null>(null);
-const compareMode = ref(false);
-const showAdvancedLayers = ref(false);
 
 function addAdvancedLayers(m: Map | null) {
   if (m === null) return;
@@ -359,7 +351,7 @@ const rgbcolorramps = {
   'HCHO': 'bluefromwhite',
 } as Record<string, ColorRamps>;
   
-watch(compareMode, (cMode) => {
+watch(showRGBMode, (cMode) => {
   
   hchoLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['HCHO'];
   ozoneLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['Ozone_Column_Amount'];
@@ -403,7 +395,7 @@ const colorMap = computed(() => {
   const mol = molecule.value == 'no2' 
     ? 'NO2_Troposphere' : molecule.value == 'hcho' 
       ? 'HCHO' : 'Ozone_Column_Amount';
-  return compareMode.value ? rgbcolorramps[mol].toLowerCase() : colorramps[mol].toLowerCase();
+  return showRGBMode.value ? rgbcolorramps[mol].toLowerCase() : colorramps[mol].toLowerCase();
 });
 
 type ColorbarOptionsKey = keyof typeof colorbarOptions;
@@ -413,8 +405,8 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
       ? 'HCHO' : 'Ozone_Column_Amount';
   return {
     ...colorbarOptions[molecule.value],
-    colormap: compareMode.value ? rgbcolorramps[mol] : colorramps[mol],
-    stretch: compareMode.value ? rgbstretches[mol] : stretches[mol],
+    colormap: showRGBMode.value ? rgbcolorramps[mol] : colorramps[mol],
+    stretch: showRGBMode.value ? rgbstretches[mol] : stretches[mol],
   };
 });
 

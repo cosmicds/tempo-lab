@@ -13,6 +13,20 @@
       >
       </layer-order-control>
       <v-checkbox
+        v-model="showRGBMode"
+        label="Use single-color TEMPO layers"
+        density="compact"
+        hide-details
+      >
+      </v-checkbox>
+      <v-checkbox
+        v-model="showAdvancedLayers"
+        label="Show me more!"
+        density="compact"
+        hide-details
+      >
+      </v-checkbox>
+      <v-checkbox
         v-model="showFieldOfRegard"
         label="Show TEMPO field of regard"
         density="compact"
@@ -36,5 +50,7 @@ const store = useTempoStore();
 const {
   maps,
   showFieldOfRegard,
+  showAdvancedLayers,
+  showRGBMode,
 } = storeToRefs(store);
 </script>
