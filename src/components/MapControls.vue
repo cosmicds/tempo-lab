@@ -1,7 +1,7 @@
 <template>
   <div class="map-view">
     <h2>Explore Map View</h2>
-    <p class="my-2">Select a date, timezone, and molecule to display</p>
+    <p class="my-2">Select a date and timezone to display</p>
     <div class="map-view-controls">
       <div class="date-view-controls mt-2">
         <div class="d-flex flex-row align-center">
