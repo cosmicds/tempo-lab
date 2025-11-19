@@ -73,43 +73,50 @@ export const colorbarOptions = {
     stretch: stretches['NO2_Troposphere'], 
     cbarScale: 1e14, 
     colormap: colorramps['NO2_Troposphere'], 
-    label:'NO<sub>2</sub>'
+    label:'NO<sub>2</sub>',
+    unit: "mol/cm<sup>2</sup>",
   },
   'no2Monthly': {
     stretch: stretches['NO2_Troposphere'], 
     cbarScale: 1e14, 
     colormap: colorramps['NO2_Troposphere'], 
-    label: 'NO<sub>2</sub>'
+    label: 'NO<sub>2</sub>',
+    unit: "mol/cm<sup>2</sup>",
   },
   'no2DailyMax': {
     stretch: stretches['NO2_Troposphere'], 
     cbarScale: 1e14, 
     colormap: colorramps['NO2_Troposphere'], 
-    label: 'NO<sub>2</sub>'
+    label: 'NO<sub>2</sub>',
+    unit: "mol/cm<sup>2</sup>",
   },
   'o3': {
     stretch: stretches['Ozone_Column_Amount'], 
     cbarScale: 1, 
     colormap: colorramps['Ozone_Column_Amount'], 
-    label: 'Ozone'
+    label: 'Ozone',
+    unit: "data unit",
   },
   'hcho': {
     stretch: stretches['HCHO'], 
     cbarScale: 1e14, 
     colormap: colorramps['HCHO'], 
-    label: 'Formaldehyde'
+    label: 'Formaldehyde',
+    unit: "mol/cm<sup>2</sup>",
   },
   'hchoMonthly': {
     stretch: stretches['HCHO'], 
     cbarScale: 1e14, 
     colormap: colorramps['HCHO'], 
-    label: 'Formaldehyde'
+    label: 'Formaldehyde',
+    unit: "mol/cm<sup>2</sup>",
   },
   'hchoDailyMax': {
     stretch: stretches['HCHO'], 
     cbarScale: 1e14, 
     colormap: colorramps['HCHO'], 
-    label: 'Formaldehyde'
+    label: 'Formaldehyde',
+    unit: "mol/cm<sup>2</sup>",
   },
 };
 

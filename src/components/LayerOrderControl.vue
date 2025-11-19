@@ -23,14 +23,25 @@
           <template #extras
             v-if="element.startsWith(tempoPrefix)"
           >
-            <colorbar-horizontal
-              :cmap-name="colorbarOptions[element.slice(tempoPrefix.length)].colormap"
-              :cmap="colormapFunction(colorbarOptions[element.slice(tempoPrefix.length)].colormap)"
-              :label="null"
-              background-color="transparent"
-              height="15px"
-            >
-            </colorbar-horizontal>
+            <div class="here"></div>
+            <local-scope :cbar="colorbarOptions[element.slice(tempoPrefix.length)]">
+              <template #default="{ cbar }">
+                <colorbar-horizontal
+                  :cmap-name="cbar.colormap"
+                  :cmap="colormapFunction(cbar.colormap)"
+                  background-color="transparent"
+                  height="15px"
+                  :nsteps="255"
+                  :start-value="String(cbar.stretch[0] / cbar.cbarScale)"
+                  :end-value="String(cbar.stretch[1] / cbar.cbarScale)"
+                  :extend="false"
+                >
+                  <template #label>
+                    <span v-html="cbarLabel(cbar.cbarScale, cbar.unit)"></span>
+                  </template>
+                </colorbar-horizontal>
+              </template>
+            </local-scope>
           </template>
         </layer-control-item>
       </div>
@@ -98,6 +109,11 @@ const layerInfo: Record<string, string | undefined> = {
 
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
+}
+
+function cbarLabel(cbarScale: number, unit: string) {
+  const power = cbarScale > 1 ? `10<sup>${Math.round(Math.log10(cbarScale))}</sup>` : "";
+  return `${power} ${unit}`;
 }
 </script>
 
