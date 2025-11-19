@@ -12,16 +12,20 @@
         :order="['power-plants-layer', 'aqi-layer-aqi', 'pop-dens', 'land-use','hms-fire', 'tempo-o3', 'tempo-hcho', 'tempo-no2', 'stamen-toner-lines']"
       >
       </layer-order-control>
+      <!-- center with d-block mx-auto -->
+      <v-btn
+        class="my-2 d-block mx-auto"
+        @click="showAdvancedLayers = !showAdvancedLayers"
+        @keyup.enter="showAdvancedLayers = !showAdvancedLayers"
+        :text="showAdvancedLayers ? 'Show me less' : 'Show me more!'"
+        density="default"
+        hide-details
+        :color="accentColor2"
+      >
+      </v-btn>
       <v-checkbox
         v-model="showRGBMode"
         label="Use single-color TEMPO layers"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <v-checkbox
-        v-model="showAdvancedLayers"
-        label="Show me more!"
         density="compact"
         hide-details
       >
@@ -52,5 +56,6 @@ const {
   showFieldOfRegard,
   showAdvancedLayers,
   showRGBMode,
+  accentColor2
 } = storeToRefs(store);
 </script>
