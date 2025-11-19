@@ -320,16 +320,19 @@ const rgbcolorramps = {
 } as Record<string, ColorRamps>;
   
 watch(compareMode, (cMode) => {
-  
-  hchoLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['HCHO'];
-  ozoneLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['Ozone_Column_Amount'];
+
+  const colormapsToUse = cMode ? rgbcolorramps : colorramps;
+  hchoLayer.renderOptions.value.colormap = colormapsToUse['HCHO'];
+  ozoneLayer.renderOptions.value.colormap = colormapsToUse['Ozone_Column_Amount'];
   if (no2Layer.value) {
-    no2Layer.value.renderOptions.colormap = (cMode ? rgbcolorramps : colorramps)['NO2_Troposphere'];
+    no2Layer.value.renderOptions.colormap = colormapsToUse['NO2_Troposphere'];
   }
-  hchoLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['HCHO'];
-  ozoneLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['Ozone_Column_Amount'];
+
+  const stretchesToUse = cMode ? rgbstretches : stretches;
+  hchoLayer.renderOptions.value.range = stretchesToUse['HCHO'];
+  ozoneLayer.renderOptions.value.range = stretchesToUse['Ozone_Column_Amount'];
   if (no2Layer.value) {
-    no2Layer.value.renderOptions.range = (cMode ? rgbstretches : stretches)['NO2_Troposphere'];
+    no2Layer.value.renderOptions.range = stretchesToUse['NO2_Troposphere'];
   }
 
 });
