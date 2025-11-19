@@ -26,11 +26,11 @@ export const POWER_PLANT_COLORS: Record<PrimSource, string> = {
 } as const;
 
 
-export function addPowerPlants(map: Ref<Map | null> | null) {
+export function addPowerPlants(map: Ref<Map | null> | null, startVisible = true) {
   const powerPlantsLayerId = "power-plants-layer";
   const powerPlantsHeatmapLayerId = "power-plants-heatmap";
   const powerPlantsSourceId = "power-plants-source";
-  const powerPlantsVisible = ref(true);
+  const powerPlantsVisible = ref(startVisible);
   const loading = ref(false);
   let loadPromise: Promise<GeoJSON.FeatureCollection> | null = null;
   // let usingHeatmap = false;
@@ -122,6 +122,9 @@ export function addPowerPlants(map: Ref<Map | null> | null) {
       type: "circle",
       source: powerPlantsSourceId,
       minzoom: op.minzoom || 0,
+      layout: {
+        visibility: powerPlantsVisible.value ? "visible" : "none",
+      },
       paint: {
         "circle-radius": [
           "interpolate",

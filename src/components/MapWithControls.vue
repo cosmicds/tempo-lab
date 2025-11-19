@@ -228,7 +228,7 @@ const display = useDisplay();
 import { addPowerPlants } from "@/composables/addPowerPlants";
 import { addHMSFire } from "@/composables/addHMSFire";
 
-const pp = addPowerPlants(map as Ref<Map | null> | null);
+const pp = addPowerPlants(map as Ref<Map | null> | null, false);
 import { addQUI } from '@/composables/addAQI';
 
 // base it of singleDateSelected
@@ -247,7 +247,7 @@ const aqiLayer = addQUI(airQualityUrl.value, {
   propertyToShow: 'aqi', 
   labelMinZoom: 5, 
   layerName: 'aqi', 
-  visible: true,
+  visible: false,
   showLabel: true, 
   showPopup: true
 });
