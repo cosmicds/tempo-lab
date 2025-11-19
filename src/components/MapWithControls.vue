@@ -344,11 +344,11 @@ const rgbstretches = {
 } as Record<string, [number, number]>;
 const rgbcolorramps = {
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  'NO2_Troposphere': 'redfromwhite',
+  'NO2_Troposphere': 'magentafromwhite',
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  'Ozone_Column_Amount': 'greenfromwhite', 
+  'Ozone_Column_Amount': 'cyanfromwhite', 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  'HCHO': 'bluefromwhite',
+  'HCHO': 'yellowfromwhite',
 } as Record<string, ColorRamps>;
   
 watch(showRGBMode, (cMode) => {
