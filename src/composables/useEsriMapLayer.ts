@@ -117,7 +117,7 @@ export function useEsriImageServiceLayer(
   }
   
   function createImageService(map: Map, url: string, options) {
-    console.log('Creating image service with options:', options);
+    console.log(`[${esriLayerId}] Creating image service with options:`, options);
     return new ImageService(
       esriLayerId,
       map,
@@ -150,9 +150,9 @@ export function useEsriImageServiceLayer(
           const point = { x: e.lngLat.lng, y: e.lngLat.lat } as PointBounds;
           const timeRange = {start: timestamp.value - 1, end: timestamp.value + 1};
           tds.fetchSample(point, timeRange ).then((val) => {
-            console.log('Value at point', point, 'is', val.samples.map(v => v.value));
+            console.log(`[${esriLayerId}] Value at point`, point, 'is', val.samples.map(v => v.value));
           }).catch((err) => {
-            console.error('Error fetching sample:', err);
+            console.error(`[${esriLayerId}] Error fetching sample:`, err);
           });
         }
       });
@@ -172,11 +172,11 @@ export function useEsriImageServiceLayer(
   }
   
   watch(timestamp, (_value) => {
-    console.log('esri imageset timestamp set to ', _value ? new Date(_value) : null);
+    console.log(`[${esriLayerId}] esri imageset timestamp set to `, _value ? new Date(_value) : null);
     if ( _hasEsriSource() ) {
       dynamicMapService.value.setDate(new Date(_value-1), new Date(_value+1));
     } else {
-      console.error('ESRI source not yet available');
+      console.error(`[${esriLayerId}] ESRI source not yet available`);
     }
   });
   
