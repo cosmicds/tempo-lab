@@ -38,7 +38,7 @@
       />
     </div>
     <slot
-      name="actions"
+      name="extras"
       :visible="visible"
     ></slot>
   </div>

@@ -20,6 +20,13 @@
           >
             <div v-html="layerInfo[element]"></div>
           </template>
+          <template #extras
+            v-if="element.startsWith('tempo')"
+          >
+            <colorbar-horizontal
+            >
+            </colorbar-horizontal>
+          </template>
         </layer-control-item>
       </div>
     </template>
@@ -34,6 +41,7 @@ import M from 'maplibre-gl';
 
 import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrderControl";
 import { capitalizeWords } from "@/utils/names";
+import { colorbarOptions } from "@/esri/ImageLayerConfig";
 
 interface Props {
   mapRef: M.Map | null;
@@ -83,6 +91,19 @@ const layerInfo: Record<string, string | undefined> = {
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
 }
+
+const currentColormap = computed(() => {
+  return (x: number): string => {
+    let rgb: number[] = [128, 128, 128];
+    try {
+      rgb = colormap(colorMap.value as AllAvailableColorMaps, 0, 1, x);
+    }
+    catch {
+      console.log("no valid colormap. returning gray");
+    }
+    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},1)`;
+  };
+});
 </script>
 
 

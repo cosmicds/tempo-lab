@@ -133,7 +133,6 @@ import { v4 } from "uuid";
 import type { LatLngPair, PointSelectionInfo, RectangleSelectionInfo, SelectionType } from "@/types";
 import { type MoleculeType, MOLECULE_OPTIONS } from "@/esri/utils";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
-import { colormap } from "@/colormaps/utils";
 import { useTempoStore } from "@/stores/app";
 import { useLocationMarker } from "@/composables/maplibre/useMarker";
 import { useRectangleSelection } from "@/composables/maplibre/useRectangleSelection";
@@ -383,19 +382,6 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
 
 watch(currentColorbarOptions, (cc) => {
   console.log('current colorbar options changed to', cc);
-});
-
-const currentColormap = computed(() => {
-  return (x: number): string => {
-    let rgb: number[] = [128, 128, 128];
-    try {
-      rgb = colormap(colorMap.value as AllAvailableColorMaps, 0, 1, x);
-    }
-    catch {
-      console.log("no valid colormap. returning gray");
-    }
-    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},1)`;
-  };
 });
 
 watch(colorMap, (value) => {
