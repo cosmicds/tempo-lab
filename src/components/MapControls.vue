@@ -91,7 +91,7 @@
                 elevation="0"
                 size="md"
               >
-                Latest Data
+                Latest Available Data
               </v-btn>
             </template>
           </v-tooltip>

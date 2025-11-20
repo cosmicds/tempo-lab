@@ -28,20 +28,20 @@
               
               <!-- Folding Period Selection -->
               <h3>
-                Folding Period
                 <info-button>
               <div class="explainer-text">
                 <div >
-                Greyed out options are options which are either not able to applied to the current dataset (due to insufficient data), or 
+                Greyed out options are options which are either not able to be applied to the current dataset (due to insufficient data), or 
                 which are incompatible with other selected options. 
               </div>
               <hr/>
                 <strong class="text-red">FIX</strong>
-                We "fold" data, by stacking data re-aligning data based on a periodic cycle. For example, if we fold by "Week", then
+                We "stack" data by re-aligning data based on the period you set. For example, if we fold by "Week", then
                 
-                Select the period over which to fold the data. Selecting "None" will simply bin the data without folding.
+                Select the period over which to stack the data. Selecting "None" will simply bin the data without stacking.
               </div>
               </info-button>
+              Stack data by...
               </h3>
               <v-chip-group
                 v-model="selectedFoldingPeriod"
@@ -67,13 +67,13 @@
               
               <!-- Time Bin Selection -->
               <!-- use chips for select -->
-              <h3>Time Bin
+              <h3>
                 <info-button>
               <div class="explainer-text">
                 <strong class="text-red">FIX</strong>
-                Select the time bin for which we will aggregate the data. 
-                When aggregating data, we take all of the data in a bin (say the 1pm bin) and
-                computed a single (aggregated) value for it, such as a mean or a max value.
+                Select the resolution (bin size) within which we will aggregate the data. 
+                When aggregating data, we take all of the data in a bin (say a 1 hour bins around 1pm ) and
+                computed a single (average) value for it, such as a mean or a max value.
                 <hr/>
                 <div>
                   <div v-if="selectedTimeBin === 'hour'">
@@ -108,6 +108,7 @@
                 
               </div>
             </info-button>
+            Average data over...
               </h3>
               <v-chip-group
                 v-model="selectedTimeBin"
@@ -133,7 +134,7 @@
               
               
               <!-- Timezone Selection -->
-              <div class="selected-timezone-details d-flex mb-4">
+              <div v-if="false" class="selected-timezone-details d-flex mb-4" >
                   <v-checkbox
                     v-model="useTzCenter"
                     :label="`Use timezone of region center: ${tzCenter}`"
