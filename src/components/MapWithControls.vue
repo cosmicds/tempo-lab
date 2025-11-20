@@ -303,23 +303,8 @@ watch(molecule, (newMolecule) => {
 
 const activeLayer = computed(() => `tempo-${molecule.value}`);
 
-import { stretches, colorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
-const rgbstretches = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'NO2_Troposphere': [0, 7_500_000_000_000_000],
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'Ozone_Column_Amount': [250, 430], // +- 2 sigma
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'HCHO': [1_000_000_000_000_000, 15_000_000_000_000_000],
-} as Record<string, [number, number]>;
-const rgbcolorramps = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'NO2_Troposphere': 'redfromwhite',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'Ozone_Column_Amount': 'greenfromwhite', 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'HCHO': 'bluefromwhite',
-} as Record<string, ColorRamps>;
+import { stretches, colorramps, rgbstretches, rgbcolorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
+
   
 watch(rgbMode, (cMode) => {
 

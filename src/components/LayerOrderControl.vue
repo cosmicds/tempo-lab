@@ -27,13 +27,13 @@
             <local-scope :cbar="colorbarOptions[element.slice(tempoPrefix.length)]">
               <template #default="{ cbar }">
                 <colorbar-horizontal
-                  :cmap-name="cbar.colormap"
-                  :cmap="colormapFunction(cbar.colormap)"
+                  :cmap-name="rgbMode ? cbar.rgbcolormap : cbar.colormap"
+                  :cmap="colormapFunction(rgbMode ? cbar.rgbcolormap : cbar.colormap)"
                   background-color="transparent"
                   height="15px"
                   :nsteps="255"
-                  :start-value="String(cbar.stretch[0] / cbar.cbarScale)"
-                  :end-value="String(cbar.stretch[1] / cbar.cbarScale)"
+                  :start-value="String((rgbMode ? cbar.rgbstretch : cbar.stretch)[0] / cbar.cbarScale)"
+                  :end-value="String((rgbMode ? cbar.rgbstretch : cbar.stretch)[1] / cbar.cbarScale)"
                   :extend="false"
                 >
                   <template #label>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed, type MaybeRef,  toValue, toRef } from 'vue';
+import { storeToRefs } from "pinia";
 import draggable from 'vuedraggable';
 import M from 'maplibre-gl';
 
@@ -59,6 +60,10 @@ import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrde
 import { capitalizeWords } from "@/utils/names";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
 import { colormapFunction } from "@/colormaps/utils";
+import { useTempoStore } from "@/stores/app";
+
+const store = useTempoStore();
+const { rgbMode } = storeToRefs(store);
 
 interface Props {
   mapRef: M.Map | null;
