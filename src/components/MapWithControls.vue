@@ -114,11 +114,6 @@
       ></icon-button>
     </div>
     <div class="d-flex flex-row">
-      <v-checkbox
-        v-model="compareMode"
-        title="RGB Mode"
-        />
-        
       <map-controls
         class="flex-grow-1"
         @molecule="(mol: MoleculeType) => {
@@ -194,6 +189,8 @@ const {
   showRoads,
   showSamplingPreviewMarkers,
   singleDateSelected,
+  showAdvancedLayers,
+  showRGBMode,
 } = storeToRefs(store);
 
 const molecule = ref<MoleculeType>("no2");
@@ -225,7 +222,7 @@ const display = useDisplay();
 import { addPowerPlants } from "@/composables/addPowerPlants";
 import { addHMSFire } from "@/composables/addHMSFire";
 
-const pp = addPowerPlants(map as Ref<Map | null> | null);
+const pp = addPowerPlants(map as Ref<Map | null> | null, false);
 import { addQUI } from '@/composables/addAQI';
 
 // base it of singleDateSelected
@@ -244,7 +241,7 @@ const aqiLayer = addQUI(airQualityUrl.value, {
   propertyToShow: 'aqi', 
   labelMinZoom: 5, 
   layerName: 'aqi', 
-  visible: true,
+  visible: false,
   showLabel: true, 
   showPopup: true
 });
@@ -273,11 +270,9 @@ import { type UseEsriLayer, useEsriLayer } from "@/esri/maplibre/useEsriImageLay
 const hchoLayer = useEsriLayer('hcho', timestamp, 1, true, 'tempo-hcho', false);
 const ozoneLayer = useEsriLayer('o3', timestamp, 1, true, 'tempo-o3', false);
 const no2Layer = ref<UseEsriLayer | null>(null);
-const compareMode = ref(false);
 
-const onMapReady = (m: Map) => {
-  console.log('Map ready event received');
-  map.value = m; // ESRI source already added by EsriMap
+function addAdvancedLayers(m: Map | null) {
+  if (m === null) return;
   // pp.addheatmapLayer();
   // pp.togglePowerPlants(false);
   aqiLayer.addToMap(m);
@@ -296,11 +291,36 @@ const onMapReady = (m: Map) => {
   }
   
   pp.addLayer();
-  pp.togglePowerPlants(false);
-  aqiLayer.layerVisible.value = false;
+  // pp.togglePowerPlants(false);
+}
+
+function removeAdvancedLayers(m: Map | null) {
+  if (m === null) return;
+  aqiLayer.removeFromMap(m);
+  popLayer.removeEsriSource();
+  sentinalLandUseLayer.removeEsriSource();
+  hmsFire.removeFromMap(m);
+  hchoLayer.removeEsriSource();
+  ozoneLayer.removeEsriSource();
+  pp.removeLayer();
+}
+
+const onMapReady = (m: Map) => {
+  console.log('Map ready event received');
+  map.value = m; // ESRI source already added by EsriMap
+  if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
 };
 
+watch(showAdvancedLayers, (value) => {
+  if (value) {
+    addAdvancedLayers(map.value as Map | null);
+    return;
+  }
+  removeAdvancedLayers(map.value as Map | null);
+  
+  
+});
 
 watch(molecule, (newMolecule) => {
   if (map.value) {
@@ -331,7 +351,7 @@ const rgbcolorramps = {
   'HCHO': 'yellowfromwhite',
 } as Record<string, ColorRamps>;
   
-watch(compareMode, (cMode) => {
+watch(showRGBMode, (cMode) => {
   
   hchoLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['HCHO'];
   ozoneLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['Ozone_Column_Amount'];
@@ -375,7 +395,7 @@ const colorMap = computed(() => {
   const mol = molecule.value == 'no2' 
     ? 'NO2_Troposphere' : molecule.value == 'hcho' 
       ? 'HCHO' : 'Ozone_Column_Amount';
-  return compareMode.value ? rgbcolorramps[mol].toLowerCase() : colorramps[mol].toLowerCase();
+  return showRGBMode.value ? rgbcolorramps[mol].toLowerCase() : colorramps[mol].toLowerCase();
 });
 
 type ColorbarOptionsKey = keyof typeof colorbarOptions;
@@ -385,8 +405,8 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
       ? 'HCHO' : 'Ozone_Column_Amount';
   return {
     ...colorbarOptions[molecule.value],
-    colormap: compareMode.value ? rgbcolorramps[mol] : colorramps[mol],
-    stretch: compareMode.value ? rgbstretches[mol] : stretches[mol],
+    colormap: showRGBMode.value ? rgbcolorramps[mol] : colorramps[mol],
+    stretch: showRGBMode.value ? rgbstretches[mol] : stretches[mol],
   };
 });
 
