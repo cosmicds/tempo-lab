@@ -11,7 +11,7 @@
         v-bind="props"
         :ref="(el) => datasetRowRefs[dataset.id] = el"
         class="selection-item my-2 rounded-lg"
-        :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000' }"
+        :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000', 'padding-top': '4px' }"
         :ripple="touchscreen"
         lines="two"
       >
@@ -26,13 +26,15 @@
         </template>
         <template #default>
           <div>
-            <v-chip
-              size="small" 
-              variant="flat"
-              :color="dataset.customColor ?? dataset.region.color"
-              >
+            <h3 
+              class="selection-item__title" 
+              :style="{
+                '--color': dataset.customColor ?? dataset.region.color,
+                '--contrast-color': contrastingColor(dataset.customColor ?? dataset.region.color),
+                }"
+                >
               {{ dataset.name ?? dataset.region.name }}
-            </v-chip>
+            </h3>
             <div class="d-flex flex-wrap align-center ga-2 my-2">
               <v-chip 
                 label
@@ -79,6 +81,7 @@ import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 import type { UserDataset } from "../types";
 import { useTempoStore } from "../stores/app";
 import { moleculeName } from "../esri/utils";
+import { contrastingColor } from "@/utils/color";
 
 
 const store = useTempoStore();
@@ -138,5 +141,14 @@ function _removeDataset(dataset: UserDataset) {
 .dataset-patttern-chip > span {
   opacity: 1;
   color: black;
+}
+
+h3.selection-item__title {
+  background-color: var(--color);
+  // contrast is a function provided by LESS
+  color: var(--contrast-color);
+  padding-left: 8px;
+  font-size: 0.9em;
+  border-radius: 4px;
 }
 </style>

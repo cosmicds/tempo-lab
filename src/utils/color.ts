@@ -6,3 +6,19 @@ export const COLORS = [
   '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff',
   '#000000'
 ];
+
+
+export function contrastingColor(hexColor: string): string {
+  const h = hexColor.slice(1); // remove the #
+  const r = parseInt(h.substring(0, 2), 16) / 255.0;
+  const g = parseInt(h.substring(2, 4), 16) / 255.0;
+  const b = parseInt(h.substring(4, 6), 16) / 255.0;
+  // https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color
+  const c = (v: number) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  const lum = 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
+  
+  // create a console log the previews the color choice as PREVIEW with background color the hexColor and text color the chosen contrasting color
+  console.log(`%c PREVIEW `, `background: ${hexColor}; color: ${lum > 0.179 ? '#000000' : '#FFFFFF'}`);
+
+  return lum > 0.179 ? '#000000' : '#FFFFFF';
+}
