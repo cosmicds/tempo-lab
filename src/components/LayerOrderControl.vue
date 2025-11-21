@@ -27,13 +27,13 @@
             <local-scope :cbar="colorbarOptions[element.slice(tempoPrefix.length)]">
               <template #default="{ cbar }">
                 <colorbar-horizontal
-                  :cmap-name="rgbMode ? cbar.rgbcolormap : cbar.colormap"
-                  :cmap="colormapFunction(rgbMode ? cbar.rgbcolormap : cbar.colormap)"
+                  :cmap-name="showRGBMode ? cbar.rgbcolormap : cbar.colormap"
+                  :cmap="colormapFunction(showRGBMode ? cbar.rgbcolormap : cbar.colormap)"
                   background-color="transparent"
                   height="15px"
                   :nsteps="255"
-                  :start-value="String((rgbMode ? cbar.rgbstretch : cbar.stretch)[0] / cbar.cbarScale)"
-                  :end-value="String((rgbMode ? cbar.rgbstretch : cbar.stretch)[1] / cbar.cbarScale)"
+                  :start-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[0] / cbar.cbarScale)"
+                  :end-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[1] / cbar.cbarScale)"
                   :extend="false"
                 >
                   <template #label>
@@ -63,7 +63,7 @@ import { colormapFunction } from "@/colormaps/utils";
 import { useTempoStore } from "@/stores/app";
 
 const store = useTempoStore();
-const { rgbMode } = storeToRefs(store);
+const { showRGBMode } = storeToRefs(store);
 
 interface Props {
   mapRef: M.Map | null;
