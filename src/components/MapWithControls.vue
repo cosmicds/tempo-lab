@@ -304,7 +304,6 @@ watch(molecule, (newMolecule) => {
 const activeLayer = computed(() => `tempo-${molecule.value}`);
 
 import { stretches, colorramps, rgbstretches, rgbcolorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
-
   
 watch(rgbMode, (cMode) => {
 
