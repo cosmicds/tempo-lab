@@ -154,7 +154,6 @@
               :current-date="singleDateSelected"
               :allowed-dates="uniqueDays"
               @ranges-change="handleDateTimeRangeSelectionChange"
-              validate
             />
             <div class="my-selections" v-if="timeRanges.length>0" style="margin-top: 1em;">
               <h4>My Time Ranges</h4>
