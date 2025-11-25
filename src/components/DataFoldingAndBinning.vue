@@ -24,230 +24,36 @@
           <!-- Left Panel: Folding Options -->
           <v-col cols="12" md="4">
             <v-card variant="outlined" class="pa-3">
-              
-              
-              <!-- Folding Period Selection -->
-              <h3>
-                <info-button>
-              <div class="explainer-text">
-                <div >
-                Greyed out options are options which are either not able to be applied to the current dataset (due to insufficient data), or 
-                which are incompatible with other selected options. 
-              </div>
-              <hr/>
-                <strong class="text-red">FIX</strong>
-                We "stack" data by re-aligning data based on the period you set. For example, if we fold by "Week", then
-                
-                Select the period over which to stack the data. Selecting "None" will simply bin the data without stacking.
-              </div>
-              </info-button>
-              Stack data by...
-              </h3>
-              <v-chip-group
-                v-model="selectedFoldingPeriod"
-                column
-                class="mb-3"
-              >
-                <v-chip
-                  v-for="option in foldingPeriodOptions"
-                  :key="option.value"
-                  :value="option.value"
-                  color="#092088"
-                  :variant="option.value === selectedFoldingPeriod ? 'flat' : 'outlined'"
-                  outline
-                  density="compact"
-                  :disabled="!validFoldingForData(option.value as FoldingPeriodOptions)"
-                >
-                  {{ option.title }}
-                </v-chip>
-              </v-chip-group> 
-              
-              
-              
-              
-              <!-- Time Bin Selection -->
-              <!-- use chips for select -->
-              <h3>
-                <info-button>
-              <div class="explainer-text">
-                <strong class="text-red">FIX</strong>
-                Select the resolution (bin size) within which we will aggregate the data. 
-                When aggregating data, we take all of the data in a bin (say a 1 hour bins around 1pm ) and
-                computed a single (average) value for it, such as a mean or a max value.
-                <hr/>
-                <div>
-                  <div v-if="selectedTimeBin === 'hour'">
-                    <dt>Hour</dt>
-                    <dd>
-                      Rounds data to the nearest hour. For example: Date from 12:30pm to 1:29pm will go into the 1pm bin.
-                      The binned point, shown in black is placed on the hour (e.g. at 1:00pm).
-                    </dd>
-                  </div>
-                  <div v-else-if="selectedTimeBin === 'day'">
-                    <dt>Day</dt>
-                    <dd>Bins all data within a date. For example, all data points occuring on Dec 5 2025, or on Aug 28 2024, etc.
-                      The binned point, shown in black is placed at local noon (12:00pm) of that day.
-                    </dd>
-                  </div>
-                  <div v-else-if="selectedTimeBin === 'week'">
-                    <dt>Week</dt>
-                    <dd>
-                      Rounds data to the nearest week. Weeks start on Sunday. For example: Date from Sunday 12:00am to Saturday 11:59pm will go into the week bin.
-                      The binned point, shown in black is placed at local noon (12:00pm) on Wednesday of that week.
-                    </dd>
-                  </div>
-                  <div v-else-if="selectedTimeBin === 'month'">
-                    <dt>Month</dt>
-                    <dd>
-                      Rounds data to the nearest month. 
-                      For example: Date from the 1st of the month 12:00am to the last day of the month 11:59pm will go into the month bin.
-                      The binned point, shown in black is placed at local noon (12:00pm) on the 15th of that month.
-                    </dd>
-                  </div>
-                </div>
-                
-              </div>
-            </info-button>
-            Average data over...
-              </h3>
-              <v-chip-group
-                v-model="selectedTimeBin"
-                column
-                class="mb-3"
-              >
-                <v-chip
-                  v-for="option in timeBinOptions"
-                  :key="option.value"
-                  :value="option.value"
-                  color="#092088"
-                  :variant="option.value === selectedTimeBin ? 'flat' : 'outlined'"    
-                  density="compact"
-                  :disabled="!validTimeBinForData(option.value as TimeBinOptions) || !isValidCombination(option.value as TimeBinOptions, selectedFoldingPeriod)"
-                >
-                  {{ option.title }}
-                </v-chip>
-              </v-chip-group> 
-              
-              
-              
-
-              
-              
-              <!-- Timezone Selection -->
-              <div v-if="false" class="selected-timezone-details d-flex mb-4" >
-                  <v-checkbox
-                    v-model="useTzCenter"
-                    :label="`Use timezone of region center: ${tzCenter}`"
-                    density="compact"
-                    hide-details
-                    class="mb-1"
-                  />
-                </div>
-              <v-select
-                v-if="!useTzCenter"
-                v-model="selectedTimezone"
-                :items="timezoneOptions"
-                label="Timezone"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="mb-3"
-              />
-              
-              <!-- Folding Method -->
-              <v-select
-                v-model="selectedMethod"
-                :items="methodOptions"
-                label="Aggregation Method"
-                density="compact"
-                variant="outlined"
-                hide-details
-                class="mb-3"
-              />
-              
-              <!-- Show Errors Toggle -->
-              <div class="d-flex flex-row flex-wrap">
-              <v-checkbox
-                v-model="showErrors"
-                label="Show Errors"
-                density="compact"
-                :disabled="selectedMethod == 'min' || selectedMethod == 'max'"
-                hide-details
-                class="mb-3"
-              />
-              
-              <v-checkbox
-                v-model="useErrorBars"
-                label="Use Error Bars"
-                density="compact"
-                hide-details
-                class="mb-3"
-              />
-              
-              <!-- Show Errors Toggle -->
-              <v-checkbox
-                v-model="useSEM"
-                label="Use Standard Error of the Mean"
-                density="compact"
-                hide-details
-                class="mb-3"
-              />
-              
-              <v-checkbox
-                v-model="alignDataToBinCenters"
-                label="Align Data to bins"
-                density="compact"
-                :disabled="!disableIncludePhaseCheckbox"
-                hide-details
-                class="mb-3"
-              />
-              
-              <v-checkbox
-                v-if="false"
-                v-model="alignToBinCenter"
-                label="Center bins"
-                density="compact"
-                :disabled="!disableBinCenterCheckbox"
-                hide-details
-                class="mb-3"
-              />
-              </div>
-              <!-- Preview Info -->
-              <v-card v-if="debugMode" height="fit-content" variant="tonal" class="pa-2 mb-3">
-                <v-card-subtitle class="pa-0">Preview</v-card-subtitle>
-                <div class="text-caption">
-                  <div>Original points: {{ originalDataPointCount }}</div>
-                  <div>Aggregated points: {{ foldedDataPointCount }}</div>
-                  <div>Time Bin: {{ selectedTimeBin }}</div>
-                  <div>Folding Period: {{ selectedFoldingPeriod }}</div>
-                  <div>Fold Type: {{ selectedFoldType }}</div>
-                  <div>First bin: {{ foldedData && foldedData.bins ? Object.keys(foldedData.bins)[0] : 'N/A' }}</div>
-                  <!-- show first bins time in the local timezone if it's a date using toZonedTime -->
-                  <div v-if="foldedData && foldedData.bins && foldedData.bins[Object.keys(foldedData.bins)[0]] && foldedData.values[Object.keys(foldedData.bins)[0]] && foldedData.values[Object.keys(foldedData.bins)[0]].date">
-                    First bin time: 
-                    </div>
-                </div>
-              </v-card>
-              
-              <!-- Action Buttons -->
-              <div class="d-flex ga-2">
-                <v-btn
-                  color="primary"
-                  @click="saveFolding"
-                  :disabled="!canSave"
-                  size="small"
-                >
-                  Save Folding
-                </v-btn>
-                <v-btn
-                  color="secondary"
-                  variant="outlined"
-                  @click="closeDialog"
-                  size="small"
-                >
-                  Cancel
-                </v-btn>
-              </div>
+              <AggregationControls
+                :foldingPeriodOptions="foldingPeriodOptions"
+                v-model:validFoldingForData="validFoldingForData"
+                :timeBinOptions="timeBinOptions"
+                v-model:validTimeBinForData="validTimeBinForData"
+                v-model:isValidCombination="isValidCombination"
+                v-model:useTzCenter="useTzCenter"
+                v-model:tzCenter="tzCenter"
+                v-model:selectedTimezone="selectedTimezone"
+                :timezoneOptions="timezoneOptions"
+                :methodOptions="methodOptions"
+                v-model:showErrors="showErrors"
+                v-model:useErrorBars="useErrorBars"
+                v-model:useSEM="useSEM"
+                v-model:alignDataToBinCenters="alignDataToBinCenters"
+                v-model:disableIncludePhaseCheckbox="disableIncludePhaseCheckbox"
+                v-model:alignToBinCenter="alignToBinCenter"
+                v-model:disableBinCenterCheckbox="disableBinCenterCheckbox"
+                :debugMode="debugMode"
+                :originalDataPointCount="originalDataPointCount"
+                v-model:foldedDataPointCount="foldedDataPointCount"
+                v-model:selectedFoldType="selectedFoldType"
+                v-model:canSave="canSave"
+                @save="saveFolding"
+                @cancel="closeDialog"
+                v-model:selectedFoldingPeriod="selectedFoldingPeriod"
+                v-model:selectedTimeBin="selectedTimeBin"
+                v-model:selectedMethod="selectedMethod"
+                v-model:foldedData="foldedData"
+              />            
             </v-card>
           </v-col>
           
@@ -307,6 +113,7 @@ import type { AggregationMethod, TimeSeriesData, FoldedTimeSeriesData , FoldType
 import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
+import AggregationControls from './AggregationControls.vue';
 const store = useTempoStore();
 const {
   debugMode,
