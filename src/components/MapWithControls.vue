@@ -1,86 +1,76 @@
 <template>
   <div class="map-container">
-    <map-colorbar-wrap
-      :horizontal="display.width.value <= 750"
-      :current-colormap="currentColormap"
-      :color-map="colorMap"
-      :start-value="currentColorbarOptions.stretch[0] / currentColorbarOptions.cbarScale"
-      :end-value="currentColorbarOptions.stretch[1] / currentColorbarOptions.cbarScale"
-      :molecule-label="currentColorbarOptions.label"
-      :cbar-scale="currentColorbarOptions.cbarScale"
-    >
-      <v-card class="map-contents" style="width:100%; height: 100%;">
-        <v-toolbar
-          density="compact"
-          color="var(--info-background)"
-        >
-          <v-toolbar-title :text="`TEMPO Data Viewer: ${mapTitle}`"></v-toolbar-title>
-          <!-- switch for preview points -->
-          <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-select"
-                :color="selectionActive === 'rectangle' ? 'info' : 'default'"
-                :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
-                :disabled="selectionActive === 'point'"
-                @click="activateRectangleSelectionMode"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-          <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-plus"
-                :color="selectionActive === 'point' ? 'info' : 'default'"
-                :variant="selectionActive === 'point' ? 'tonal' : 'text'"
-                :disabled="selectionActive === 'rectangle'"
-                @click="activatePointSelectionMode"
-              ></v-btn>
-            </template>
-          </v-tooltip>
-        </v-toolbar>
-        <EsriMap
-          :mapID="mapID"
-          :initial="initState"
-          :home="homeState"
-          :show-roads="showRoads"
-          :events="{
-            'moveend': updateURL,
-            'zoomend': updateURL,
-          }"
-          :timestamp="timestamp"
-          molecule="no2"
-          :opacity="opacity"
-          :show-field-of-regard="showFieldOfRegard"
-          @zoomhome="onZoomhome"
-          @ready="onMapReady"
-          @esri-layer="no2Layer = $event"
-          @esri-timesteps-loaded="onEsriTimestepsLoaded"
-          ref="maplibreMap"
-          width="100%"
-          height="450px"
-          maplibre-layer-name="tempo-no2"
-        />
+    <v-card class="map-contents" style="width:100%; height: 100%;">
+      <v-toolbar
+        density="compact"
+        color="var(--info-background)"
+      >
+        <v-toolbar-title :text="`TEMPO Data Viewer: ${mapTitle}`"></v-toolbar-title>
+        <!-- switch for preview points -->
+        <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-select"
+              :color="selectionActive === 'rectangle' ? 'info' : 'default'"
+              :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
+              :disabled="selectionActive === 'point'"
+              @click="activateRectangleSelectionMode"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-plus"
+              :color="selectionActive === 'point' ? 'info' : 'default'"
+              :variant="selectionActive === 'point' ? 'tonal' : 'text'"
+              :disabled="selectionActive === 'rectangle'"
+              @click="activatePointSelectionMode"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+      </v-toolbar>
+      <EsriMap
+        :mapID="mapID"
+        :initial="initState"
+        :home="homeState"
+        :show-roads="showRoads"
+        :events="{
+          'moveend': updateURL,
+          'zoomend': updateURL,
+        }"
+        :timestamp="timestamp"
+        molecule="no2"
+        :opacity="opacity"
+        :show-field-of-regard="showFieldOfRegard"
+        @zoomhome="onZoomhome"
+        @ready="onMapReady"
+        @esri-layer="no2Layer = $event"
+        @esri-timesteps-loaded="onEsriTimestepsLoaded"
+        ref="maplibreMap"
+        width="100%"
+        height="450px"
+        maplibre-layer-name="tempo-no2"
+      />
 
-        <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
-        <!-- show hide cloud data, disable if none is available -->
+      <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
+      <!-- show hide cloud data, disable if none is available -->
 
-        <div class="location-and-sharing">
-          <location-search
-            v-model="searchOpen"
-            small
-            stay-open
-            buttonSize="xl"
-            persist-selected
-            :search-provider="geocodingInfoForSearchLimited"
-            @set-location="setLocationFromSearch"
-            @error="(error: string) => searchErrorMessage = error"
-          ></location-search>
-        </div>
-      </v-card>
-    </map-colorbar-wrap>
+      <div class="location-and-sharing">
+        <location-search
+          v-model="searchOpen"
+          small
+          stay-open
+          buttonSize="xl"
+          persist-selected
+          :search-provider="geocodingInfoForSearchLimited"
+          @set-location="setLocationFromSearch"
+          @error="(error: string) => searchErrorMessage = error"
+        ></location-search>
+      </div>
+    </v-card>
     <div class="slider-row mx-16 mt-12">
       <v-slider
         class="time-slider"
@@ -140,7 +130,6 @@ import { v4 } from "uuid";
 import type { LatLngPair, PointSelectionInfo, RectangleSelectionInfo, SelectionType } from "@/types";
 import { type MoleculeType, MOLECULE_OPTIONS } from "@/esri/utils";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
-import { colormap } from "@/colormaps/utils";
 import { useTempoStore } from "@/stores/app";
 import { useLocationMarker } from "@/composables/maplibre/useMarker";
 import { useRectangleSelection } from "@/composables/maplibre/useRectangleSelection";
@@ -333,35 +322,22 @@ watch(molecule, (newMolecule) => {
 
 const activeLayer = computed(() => `tempo-${molecule.value}`);
 
-import { stretches, colorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
-const rgbstretches = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'NO2_Troposphere': [0, 7_500_000_000_000_000],
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'Ozone_Column_Amount': [250, 430], // +- 2 sigma
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'HCHO': [1_000_000_000_000_000, 15_000_000_000_000_000],
-} as Record<string, [number, number]>;
-const rgbcolorramps = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'NO2_Troposphere': 'magentafromwhite',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'Ozone_Column_Amount': 'cyanfromwhite', 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  'HCHO': 'yellowfromwhite',
-} as Record<string, ColorRamps>;
+import { stretches, colorramps, rgbstretches, rgbcolorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
   
 watch(showRGBMode, (cMode) => {
-  
-  hchoLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['HCHO'];
-  ozoneLayer.renderOptions.value.colormap = (cMode ? rgbcolorramps : colorramps)['Ozone_Column_Amount'];
+
+  const colormapsToUse = cMode ? rgbcolorramps : colorramps;
+  hchoLayer.renderOptions.value.colormap = colormapsToUse['HCHO'];
+  ozoneLayer.renderOptions.value.colormap = colormapsToUse['Ozone_Column_Amount'];
   if (no2Layer.value) {
-    no2Layer.value.renderOptions.colormap = (cMode ? rgbcolorramps : colorramps)['NO2_Troposphere'];
+    no2Layer.value.renderOptions.colormap = colormapsToUse['NO2_Troposphere'];
   }
-  hchoLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['HCHO'];
-  ozoneLayer.renderOptions.value.range = (cMode ? rgbstretches : stretches)['Ozone_Column_Amount'];
+
+  const stretchesToUse = cMode ? rgbstretches : stretches;
+  hchoLayer.renderOptions.value.range = stretchesToUse['HCHO'];
+  ozoneLayer.renderOptions.value.range = stretchesToUse['Ozone_Column_Amount'];
   if (no2Layer.value) {
-    no2Layer.value.renderOptions.range = (cMode ? rgbstretches : stretches)['NO2_Troposphere'];
+    no2Layer.value.renderOptions.range = stretchesToUse['NO2_Troposphere'];
   }
 
 });
@@ -412,19 +388,6 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
 
 watch(currentColorbarOptions, (cc) => {
   console.log('current colorbar options changed to', cc);
-});
-
-const currentColormap = computed(() => {
-  return (x: number): string => {
-    let rgb: number[] = [128, 128, 128];
-    try {
-      rgb = colormap(colorMap.value as AllAvailableColorMaps, 0, 1, x);
-    }
-    catch {
-      console.log("no valid colormap. returning gray");
-    }
-    return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]},1)`;
-  };
 });
 
 watch(colorMap, (value) => {
