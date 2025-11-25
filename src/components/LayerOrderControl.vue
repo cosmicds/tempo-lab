@@ -13,9 +13,36 @@
         <layer-control-item
           :map="mapRef"
           :layer-id="element"
-          :info="layerInfo[element]"
           :display-name="displayNameTransform(element)"
         >
+          <template #info
+            v-if="layerInfo[element]"
+          >
+            <div v-html="layerInfo[element]"></div>
+          </template>
+          <template #extras
+            v-if="element.startsWith(tempoPrefix)"
+          >
+            <div class="here"></div>
+            <local-scope :cbar="colorbarOptions[element.slice(tempoPrefix.length)]">
+              <template #default="{ cbar }">
+                <colorbar-horizontal
+                  :cmap-name="showRGBMode ? cbar.rgbcolormap : cbar.colormap"
+                  :cmap="colormapFunction(showRGBMode ? cbar.rgbcolormap : cbar.colormap)"
+                  background-color="transparent"
+                  height="15px"
+                  :nsteps="255"
+                  :start-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[0] / cbar.cbarScale)"
+                  :end-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[1] / cbar.cbarScale)"
+                  :extend="false"
+                >
+                  <template #label>
+                    <span v-html="cbarLabel(cbar.cbarScale, cbar.unit)"></span>
+                  </template>
+                </colorbar-horizontal>
+              </template>
+            </local-scope>
+          </template>
         </layer-control-item>
       </div>
     </template>
@@ -25,11 +52,18 @@
 
 <script setup lang="ts">
 import { computed, type MaybeRef,  toValue, toRef } from 'vue';
+import { storeToRefs } from "pinia";
 import draggable from 'vuedraggable';
 import M from 'maplibre-gl';
 
 import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrderControl";
 import { capitalizeWords } from "@/utils/names";
+import { colorbarOptions } from "@/esri/ImageLayerConfig";
+import { colormapFunction } from "@/colormaps/utils";
+import { useTempoStore } from "@/stores/app";
+
+const store = useTempoStore();
+const { showRGBMode } = storeToRefs(store);
 
 interface Props {
   mapRef: M.Map | null;
@@ -49,6 +83,8 @@ const {
   currentOrder, 
   controller 
 } = useMaplibreLayerOrderControl(mapRef, toValue(props.order), true);
+
+const tempoPrefix = "tempo-";
 
 const displayOrder = computed({
   get(): string[] {
@@ -78,6 +114,11 @@ const layerInfo: Record<string, string | undefined> = {
 
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
+}
+
+function cbarLabel(cbarScale: number, unit: string) {
+  const power = cbarScale > 1 ? `10<sup>${Math.round(Math.log10(cbarScale))}</sup>` : "";
+  return `${power} ${unit}`;
 }
 </script>
 

@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Vue, { createApp } from "vue";
 
+import { LocalScope } from "@allindevelopers/vue-local-scope";
+
 import { FundingAcknowledgement, IconButton, CreditLogos } from "@cosmicds/vue-toolkit";
 import LocationSearch from "./components/LocationSearch.vue";
 import TempoLab from "./TempoLab.vue";
@@ -123,6 +125,7 @@ createApp(TempoLab, {})
   .component('layer-order-control', LayerOrderControl)
   .component('power-plants-filter-control', PowerPlantsFilterControl)
   .component('icon-checkbox', IconCheckbox)
+  .component('local-scope', LocalScope)
 
   // Mount
   .mount("#app");

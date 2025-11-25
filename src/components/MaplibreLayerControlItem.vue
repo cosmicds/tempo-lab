@@ -4,7 +4,7 @@
     :class="['mlc-layer-item', `mlc-layer-item-${visible ? 'visible' : 'none'}`]"
   >
     <div
-      class="mlc-layer-item-checkbox-label-container"
+      class="mlc-layer-item-checkbox-opacity-container"
     >
       <v-checkbox
         v-model="visible"
@@ -13,30 +13,15 @@
         density="compact"
         hide-details
         color="primary"
+        :label="displayName ?? layerId"
       ></v-checkbox>
-      <label
-        class="mlc-layer-item-label"
-        :for="`mlc-${layerId}-visibility-checkbox`"
-      >
-        {{ displayName ?? layerId }}
-      </label>
       <popup-info-button
-        v-if="info"
-        :info-text="info"
+        v-if="showInfo"
       >
         <template #info>
-          <div v-html="info"></div>
+          <slot name="info"></slot>
         </template>
       </popup-info-button>
-    </div>
-    <div
-      class="mlc-layer-item-opacity-label-container"
-    >
-      <label
-        :for="`mlc-${layerId}-opacity-slider`"
-      >
-        Opacity: 
-      </label>
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
@@ -47,17 +32,20 @@
         title="Adjust layer opacity"
         color="primary"
         hide-details
+        density="compact"
+        :thumb-size="12"
+        :track-size="3"
       />
     </div>
     <slot
-      name="actions"
+      name="extras"
       :visible="visible"
     ></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
+import { computed, useSlots, watch } from "vue";
 import type { Map } from "maplibre-gl";
 import { useMaplibreLayerOpacity } from "@/composables/useMaplibreLayerOpacity";
 import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
@@ -66,12 +54,14 @@ interface Props {
   layerId: string;
   map: Map;
   displayName?: string;
-  info?: string;
 }
 
 const props = defineProps<Props>();
 let { opacity } = useMaplibreLayerOpacity(props.map, props.layerId);
 let { visible } = useMaplibreLayerVisibility(props.map, props.layerId);
+
+const slots = useSlots();
+const showInfo = computed(() => !!slots.info);
 
 // NB: If the props update, we need to make sure that the refs that we're using are still tracking the same layer
 // In particular, if the layer ID changes, without this the component can end up manipulating the wrong layer!
@@ -82,7 +72,11 @@ watch(() => [props.map, props.layerId],
   });
 </script>
 
-<style scoped>
+<style scoped lang="less">
+:deep(.v-checkbox .v-label) {
+  font-size: 11pt;
+}
+
 .mlc-layer-item {
   width: 100%;
   display: flex;
@@ -91,16 +85,17 @@ watch(() => [props.map, props.layerId],
   justify-content: space-between;
 }
 
-.mlc-layer-item-checkbox-label-container,
-.mlc-layer-item-opacity-label-container {
-  width: min(100%, 250px);
+.mlc-layer-item-checkbox-opacity-container {
+  width: 100%;
   padding: 5px;
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
   align-items: center;
-}
 
-.mlc-layer-item-checkbox-label-container {
-  min-width: 200px;
+  .v-slider {
+    width: 75px;
+    flex-grow: 0;
+  }
 }
 </style>

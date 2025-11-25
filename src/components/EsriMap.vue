@@ -220,6 +220,7 @@ function onInnerMapReady(m: Map) {
   console.log('ESRI source added to map');
   emit('ready', m);
   console.log('map ready event emitted');
+  console.log(m);
 }
 
 onMounted(() => {

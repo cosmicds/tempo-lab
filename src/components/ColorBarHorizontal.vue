@@ -1,6 +1,10 @@
 
 <template>
-<div :id="id" class="colorbar-container-horizontal">
+<div
+  :id="id" 
+  class="colorbar-container-horizontal"
+  :style="cssVars"
+>
   <div class="colorbar-labels"> 
     <div><slot name="start">{{ startValue }}</slot></div>
     <div>
@@ -71,7 +75,12 @@ export default defineComponent({
     extend: {
       type: (Boolean || String) as PropType<ExtendType>,
       default: () => 'both'
-    }
+    },
+
+    height: {
+      type: String,
+      default: "1.25em",
+    },
     
   },
   
@@ -96,7 +105,13 @@ export default defineComponent({
     
     showEndTriangle() {
       return this.extend === 'both' || this.extend === 'end' || this.extend;
-    }
+    },
+
+    cssVars() {
+      return {
+        "--height": this.height,
+      };
+    },
   },
   
   
@@ -236,7 +251,6 @@ export default defineComponent({
 .colorbar-container-horizontal {
   position: relative;
   display: block;
-  --height: 1.25em;
   width: 100%;
 }
 .colorbar {
