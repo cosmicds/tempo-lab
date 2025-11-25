@@ -1,10 +1,39 @@
 <template>
   <div id='dtrs-days-picker' :class="{'dtrs-error-highlight': showErrorForEmpty && empty}">
-    <label class="text-subtitle-2 mb-2 d-block">Days of Week
-      <span v-show="showErrorForEmpty && empty" aria-live="polite" style="font-weight: bold;">
-        (Select at least 1)
-      </span>
-    </label>
+    <div class="d-flex flex-wrap align-content-center">
+      <label class="text-subtitle-2 mb-2 d-block">Days of Week
+        <span v-show="showErrorForEmpty && empty" aria-live="polite" style="font-weight: bold;">
+          (Select at least 1)
+        </span>
+      </label>
+      <div>
+        <!-- clear -->
+        <v-btn 
+          size="x-small" 
+          variant="outlined" 
+          class="mr-2 mb-2 ml-4"
+          @click="selectedDays = []"
+        >
+          Clear
+          <template #prepend>
+            <v-icon icon="mdi-close-circle" color="error"/>
+          </template>
+        </v-btn>
+        
+        <v-btn 
+          size="x-small" 
+          variant="outlined" 
+          class="mr-2 mb-2"
+          @click="selectedDays = DAYS.slice()"
+        >
+          All
+          <template #prepend>
+            <v-icon icon="mdi-check-circle" color="success"/>
+          </template>
+        </v-btn>
+        
+      </div>
+    </div>
     <!-- just do labeled checkboxes -->
     <div :style="cssVars" id="dtrs-days-block">
     <label v-for="(day, idx) in DAYS" :key="idx" class="mr-3" style="text-wrap: nowrap;">

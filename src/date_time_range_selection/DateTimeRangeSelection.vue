@@ -5,15 +5,17 @@
       <!-- Selection Type Radio Buttons -->
       <v-radio-group 
         v-model="timeSelectionRadio" 
+        class="mb-4"
         direction="horizontal" 
         density="comfortable"
+        hide-details
       >
         <v-radio 
           :label="`Date Shown On Map: ${currentDateString}`" 
             value="tracked"
         />    
         <v-radio 
-          label="Single Day" 
+          label="1 Day" 
             value="single"
         >    
         <template #label>
@@ -63,7 +65,7 @@
         </v-expand-transition>
 
         <v-radio 
-          label="Multiple Days" 
+          label="More than 1 Day" 
           value="multiple"
         />
       </v-radio-group>
@@ -87,33 +89,28 @@
               value="monthrange">Quick Select</v-tab>
             </v-tabs> -->
             
-            <div>
-              <v-btn-toggle
+            <div class="ml-4 mb-4 pl-4 dtr-select-by-div">
+              <v-radio-group
+                id="dtr-select-by-group"
                 v-model="tab"
                 mandatory
-                color="var(--info-background)"
-                density="compact"
+                label="Select days by"
               >
-                <v-btn 
+                <v-radio 
                   class="daterange-btn"
-                  :variant="tab == 'daterange' ? 'flat' : 'tonal'" 
                   value="daterange" 
-                  size="small"
+                  label="Date Range"
                 >
-
-                  Custom Range
-                </v-btn>
-                <v-btn 
+                </v-radio>
+                <v-radio 
                   class="monthrange-btn"
-                  :variant="tab == 'monthrange' ? 'flat' : 'tonal'" 
                   value="monthrange" 
-                  size="small"
+                  label="Month / Year"
                 >
-
-                  Quick Select
-                </v-btn>
-              </v-btn-toggle>
-            </div>
+                  
+                </v-radio>
+              </v-radio-group>
+            
             
             <v-tabs-window
               v-model="tab"
@@ -139,17 +136,7 @@
               selected-class="dtrs-tab-window-selected" 
               class="dtrs-tab-window" 
               value="monthrange">
-                <div class="mb-4">
-                  <MonthsPicker
-                    v-model="selectedMonths"
-                    show-error-for-empty
-                  />
-                  <SeasonPicker
-                  class="mt-4"
-                  v-model="selectedMonths"
-                />
-                </div>
-                
+              
                 <div class="mb-4">
                   <YearsPicker
                     v-model="selectedYears"
@@ -157,47 +144,83 @@
                     show-error-for-empty
                   />
                 </div>
+                
+                <div class="mb-4">
+                  <MonthsPicker
+                    v-model="selectedMonths"
+                    show-error-for-empty
+                  />
+                </div>
+                
               </v-tabs-window-item>
             </v-tabs-window>
                 
             
             
+            <!-- Pattern Section (Multi-day) -->
+            <v-expansion-panels 
+              class="mb-2"
+              variant="default"
+              focusable
+              color="var(--info-background)"
+              expand-icon="mdi-filter-menu"
+              collapse-icon="mdi-chevron-up"
+            >
+              <v-expansion-panel 
+                value="filter-days" 
+                bg-color="surface"
+              >
+                <v-expansion-panel-title class="d-flex flex-wrap ga-2">
+                  <div>Filter Days: </div>
+                  <div><DaysPreview :days="selectedDays" /></div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text  class="pattern-section">
+                  <div class="mb-4">
+                    <DaysPicker
+                      v-model="selectedDays"
+                      show-error-for-empty
+                    />
+                  </div>
+                    <DayPatterns
+                      v-model="selectedDays"
+                    />
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+            
+            <!-- Pattern Section (Multi-time) -->
             <v-expansion-panels 
               class="mb-4"
               variant="default"
               focusable 
-              :multiple="false"
               color="var(--info-background)"
+              expand-icon="mdi-filter-menu"
+              collapse-icon="mdi-chevron-up"
             >
-
-            <!-- Pattern Section (Multi-day, Multi-time) -->
-            <v-expansion-panel 
-              value="pattern" 
-              title="Filter Days / Times"
-              bg-color="surface"
-            >
-            <v-expansion-panel-text  class="pattern-section">
-
-              <div class="mb-4">
-                  <DaysPicker
-                    v-model="selectedDays"
-                    show-error-for-empty
-                  />
-              </div>
-                  <DayPatterns
-                    v-model="selectedDays"
-                  />
-
-                <!-- Times Multi-select -->
-                <div class="mb-4">
-                  <SpecificTimesSelector
-                    v-model="selectedTimes"
-                    v-model:timePlusMinus="timePlusMinus"
-                  />
-                </div>
-            </v-expansion-panel-text>
-            </v-expansion-panel>
+              <v-expansion-panel 
+                value="filter-times" 
+                bg-color="surface"
+              >
+                <v-expansion-panel-title class="d-flex flex-wrap ga-2">
+                  <div>Filter Times: </div>
+                  <div>
+                    (<span v-if="allDay">All Day</span>
+                    <span v-else-if="selectedTimes.length === 0">No Times Selected</span>
+                    <span v-else>{{selectedTimes.join(',')}}</span>)
+                  </div>
+                </v-expansion-panel-title>
+                <v-expansion-panel-text  class="pattern-section">
+                  <!-- Times Multi-select -->
+                  <div class="mb-4">
+                    <SpecificTimesSelector
+                      v-model="selectedTimes"
+                      v-model:timePlusMinus="timePlusMinus"
+                    />
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
             </v-expansion-panels>
+            </div>
           </div>
       </v-expand-transition>
 
@@ -253,8 +276,8 @@ import DateRangePicker from './DateRangePicker.vue';
 import DaysPicker from './DaysPicker.vue';
 import DayPatterns from './DayPatterns.vue';
 import MonthsPicker from './MonthsPicker.vue';
-import SeasonPicker from './SeasonPicker.vue';
 import YearsPicker from './YearsPicker.vue';
+import DaysPreview from './DaysPreview.vue';
 import SpecificTimesSelector from './SpecificTimesSelector.vue';
 import TimelineVisualization from './TimelineVisualization.vue';
 import { DAYS, MONTHS, generateTimeRanges, DEFAULT_TOLERANCE, ALL_DAY_TOLERANCE } from './date_time_range_generators';
@@ -627,5 +650,18 @@ watch(() => props.currentDate, (newDate) => {
 
 .monthrange-btn .v-btn__overlay {
   display: none;
+}
+
+.dtr-select-by-div {
+  border-left: 2px solid white;
+  border-radius: 4px;
+}
+
+label#dtr-select-by-group {
+  font-size: 1.17;
+  font-weight: 700;
+  margin-inline: 0;
+  color: inherit;
+  opacity: 1;
 }
 </style>
