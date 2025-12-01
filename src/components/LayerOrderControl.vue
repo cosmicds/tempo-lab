@@ -8,7 +8,7 @@
     <template #item="{ element }">
       <div class="layer-order-row">
         <div class="drag-handle">
-          <v-icon>mdi-menu</v-icon>
+          <v-icon size="x-small">mdi-menu</v-icon>
         </div>
         <layer-control-item
           :map="mapRef"
@@ -20,17 +20,20 @@
           >
             <div v-html="layerInfo[element]"></div>
           </template>
-          <template #extras
+          <template #extras="{ visible }"
             v-if="element.startsWith(tempoPrefix)"
           >
-            <div class="here"></div>
-            <local-scope :cbar="colorbarOptions[element.slice(tempoPrefix.length)]">
+            <local-scope
+              :cbar="colorbarOptions[element.slice(tempoPrefix.length)]"
+            >
               <template #default="{ cbar }">
                 <colorbar-horizontal
+                  v-show="visible"
                   :cmap-name="showRGBMode ? cbar.rgbcolormap : cbar.colormap"
                   :cmap="colormapFunction(showRGBMode ? cbar.rgbcolormap : cbar.colormap)"
                   background-color="transparent"
                   height="15px"
+                  font-size="9pt"
                   :nsteps="255"
                   :start-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[0] / cbar.cbarScale)"
                   :end-value="String((showRGBMode ? cbar.rgbstretch : cbar.stretch)[1] / cbar.cbarScale)"
@@ -167,6 +170,6 @@ li {
 
 .mlc-layer-item {
   border-left: 1px solid white;
-  padding: 5px;
+  padding: 2px;
 }
 </style>

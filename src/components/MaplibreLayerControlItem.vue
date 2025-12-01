@@ -69,12 +69,13 @@ watch(() => [props.map, props.layerId],
   ([map, layerId]: [Map, string]) => {
     opacity = useMaplibreLayerOpacity(map, layerId).opacity;
     visible = useMaplibreLayerVisibility(map, layerId).visible;
-  });
+  }
+);
 </script>
 
 <style scoped lang="less">
 :deep(.v-checkbox .v-label) {
-  font-size: 11pt;
+  font-size: 10pt;
 }
 
 .mlc-layer-item {
@@ -87,7 +88,7 @@ watch(() => [props.map, props.layerId],
 
 .mlc-layer-item-checkbox-opacity-container {
   width: 100%;
-  padding: 5px;
+  padding: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
