@@ -21,9 +21,14 @@
       
       <v-card-text class="pa-4">
         <v-row>
+          <v-btn v-show="!showAggControls" @click="showAggControls = !showAggControls" class="mb-4">
+            <v-icon>{{ showAggControls ? 'mdi-chevron-left' : 'mdi-menu-open' }}</v-icon>
+          </v-btn>
           <!-- Left Panel: Folding Options -->
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="pa-3">
+          
+          <v-scroll-x-transition>
+            <v-sheet v-show="showAggControls" class="pa-0 flex-1-0-0" width="fit-content">
+              <v-col  md="4" style="max-width: fit-content;">
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
                 v-model:validFoldingForData="validFoldingForData"
@@ -53,12 +58,13 @@
                 v-model:selectedTimeBin="selectedTimeBin"
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
-              />            
-            </v-card>
-          </v-col>
+              />     
+            </v-col>       
+            </v-sheet>
+          </v-scroll-x-transition>
           
           <!-- Right Panel: Timeseries Graph -->
-          <v-col cols="12" md="8">
+          <v-col :md="showAggControls ? 8 : 'auto'" sm="12">
             <v-card variant="outlined" class="pa-3" style="height: auto;">
               <v-card-title>
                 Time Series Comparison
@@ -131,6 +137,8 @@ interface DataFoldingProps {
 }
 
 const props = defineProps<DataFoldingProps>();
+
+const showAggControls = ref(false);
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
