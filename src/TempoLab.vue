@@ -127,8 +127,8 @@ onMounted(() => {
   }
   layout = new GoldenLayout(rootEl);
 
-  layout.registerComponentFactoryFunction("side-panel", container => {
-    container.element.id = "side-panel";
+  layout.registerComponentFactoryFunction("datasets-panel", container => {
+    container.element.id = "datasets-panel";
     sidePanelTarget.value = container.element;
   });
 
@@ -157,7 +157,7 @@ onMounted(() => {
         mapConfig(mapWidth), 
         {
           type: 'component',
-          componentType: 'side-panel',
+          componentType: 'datasets-panel',
           title: 'Controls',
           draggable: false,
           width: sidePanelWidth,
@@ -220,7 +220,7 @@ body {
   gap: 5px;
 }
 
-#side-panel {
+#datasets-panel {
   overflow-y: scroll;
   padding-left: 2px;
 }
