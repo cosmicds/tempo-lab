@@ -39,7 +39,7 @@
       </v-checkbox>
       <power-plants-filter-control
         :map="map"
-        layer-id="power-plants-heatmap"
+        v-show="mapPowerPlantVisibilities[index]"
       >
       </power-plants-filter-control>
     </div>
@@ -47,8 +47,11 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
+
 import { useTempoStore } from "@/stores/app";
+import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
 
 const store = useTempoStore();
 const {
@@ -58,6 +61,10 @@ const {
   showRGBMode,
   accentColor2
 } = storeToRefs(store);
+
+const mapPowerPlantVisibilities = computed(() =>
+  maps.value.map(m => useMaplibreLayerVisibility(m, "power-plants-layer"))
+);
 </script>
 
 <style scoped lang="less">

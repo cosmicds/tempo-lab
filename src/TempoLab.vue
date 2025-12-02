@@ -80,13 +80,13 @@ onBeforeMount(() => {
   }
 });
 
-function mapConfig(): ComponentItemConfig {
+function mapConfig(width=70): ComponentItemConfig {
   return {
     type: 'component',
     componentType: 'map-panel',
     title: 'Map',
     draggable: false,
-    width: 70,
+    width,
   };
 }
 
@@ -140,27 +140,34 @@ onMounted(() => {
     mapTargets[id] = target;
   });
 
+  const sidePanelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
+  const mapWidth = 100 - sidePanelWidth;
+
   const config: LayoutConfig = {
     settings: {
       hasHeaders: false,
       responsiveMode: "always",
     },
+    dimensions: {
+      defaultMinItemWidth: "250px",
+    },
     root: {
       type: 'row',
       content: [
-        mapConfig(), 
+        mapConfig(mapWidth), 
         {
           type: 'component',
           componentType: 'side-panel',
           title: 'Controls',
           draggable: false,
-          width: 30,
+          width: sidePanelWidth,
         },
       ],
     },
   };
   layout.resizeWithContainerAutomatically = true;
   layout.loadLayout(config);
+  console.log(layout);
 
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {

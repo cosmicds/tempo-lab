@@ -79,6 +79,8 @@
                 :color="tempoRed"
                 density="compact"
                 hide-details
+                :thumb-size="12"
+                :track-size="3"
               >
               </v-slider>
               <v-checkbox
@@ -1193,6 +1195,10 @@ watch(tableSelection, (newVal) => {
 </script>
 
 <style scoped lang="less">
+#dataset-sections {
+  font-size: 11pt !important;
+}
+
 // prevent overflows of the content
 #add-region-time {
   display: flex;
