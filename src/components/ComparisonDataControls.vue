@@ -18,7 +18,7 @@
         @click="showAdvancedLayers = !showAdvancedLayers"
         @keyup.enter="showAdvancedLayers = !showAdvancedLayers"
         :text="showAdvancedLayers ? 'Show me less' : 'Show me more!'"
-        density="default"
+        density="compact"
         hide-details
         :color="accentColor2"
       >
@@ -59,3 +59,13 @@ const {
   accentColor2
 } = storeToRefs(store);
 </script>
+
+<style scoped lang="less">
+.comparison-data-controls {
+  font-size: 11pt !important;
+}
+
+:deep(.v-checkbox .v-label) {
+  font-size: 10pt;
+}
+</style>
