@@ -14,26 +14,26 @@
     class="mr-2 mb-2"
     @click="selectedDays = ['Sunday','Saturday']"
   >Weekends</v-btn>
-  <!-- full weeek -->
+  <!--
   <v-btn 
     size="x-small" 
     variant="outlined" 
     class="mr-2 mb-2"
     @click="selectedDays = DAYS.slice()"
   >Full Week</v-btn>
-  <!-- clear -->
   <v-btn 
     size="x-small" 
     variant="outlined" 
     class="mr-2 mb-2"
     @click="selectedDays = []"
   >Clear</v-btn>
+  -->
 </div>
 
 </template>
 
 <script lang="ts" setup>
-import { type DayType, DAYS } from './date_time_range_generators';
+import { type DayType } from './date_time_range_generators';
 const selectedDays = defineModel<DayType[]>({
   type: Array as () => DayType[]
 });

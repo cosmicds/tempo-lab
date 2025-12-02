@@ -1,11 +1,37 @@
 <template>
   <div id="dtrs-months-picker" :class="{'dtrs-error-highlight': showErrorForEmpty && empty}">
-    <label class="text-subtitle-2 mb-2 d-block">Months
-      <span v-show="showErrorForEmpty && empty" aria-live="polite" style="font-weight: bold;">
+    <div class="d-flex flex-wrap align-content-center">
+      <label class="text-subtitle-2 mb-2 d-inline">Months
+      </label>
+      <div>
+      <v-btn 
+        size="x-small" 
+        variant="outlined" 
+        class="mr-2 mb-2 ml-4"
+        @click="selectedMonths = []"
+      >Clear
+      <template #prepend>
+        <v-icon icon="mdi-close-circle" color="error"/>
+      </template>
+    </v-btn>
+      <v-btn 
+        size="x-small" 
+        variant="outlined" 
+        class="mr-2 mb-2"
+        @click="selectedMonths = MONTHS.slice()"
+      >All
+      <template #prepend>
+        <v-icon icon="mdi-check-circle" color="success"/>
+      </template>
+    </v-btn>
+      </div>
+      <div v-show="showErrorForEmpty && empty" aria-live="polite" style="font-weight: bold;" class="mb-2">
         (Select at least 1)
-      </span>
-    </label>
-    <div :style="cssVars" class="dtrs-months-block">
+      </div>
+    </div>
+    <fieldset 
+      :style="cssVars" 
+      :class="{'dtrs-months-block':true, 'dtrs-error-month': empty} ">
       <div v-for="month in MONTHS" :key="month">
         <label class="mr-3" style="text-wrap: nowrap;" :for="`dtrs-month-${month}`">
           <input 
@@ -17,7 +43,7 @@
           <span class="ml-1">{{ month }}</span>
         </label>
       </div>
-    </div>
+    </fieldset>
   </div>
 </template>
 
@@ -69,6 +95,10 @@ onBeforeUnmount(() => {
 .dtrs-months-block {
   display: grid;
   grid-template-columns: repeat(var(--column-count), auto);
+  border: none;
+  margin-inline: -8px;
+  padding-inline: 8px;
+  border-radius: 4px;
 }
 #dtrs-months-picker {
   border-radius: 8px;
@@ -76,7 +106,10 @@ onBeforeUnmount(() => {
   margin: 4px;
   
 }
-.dtrs-error-highlight {
-  box-shadow: inset 0 0 8px 0px rgba(255,0,0,0.82)
+
+
+fieldset.dtrs-months-block.dtrs-error-month {
+  background-color: rgba(255,0,0,.2)
 }
+
 </style>
