@@ -95,7 +95,7 @@ watch(() => [props.map, props.layerId],
   align-items: center;
 
   .v-slider {
-    width: 75px;
+    width: 70px;
     flex-grow: 0;
   }
 }
