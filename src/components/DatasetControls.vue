@@ -97,6 +97,8 @@
                   :title="region.name"
                   :style="{ 'background-color': region.color }"
                   @click="() => focusRegion = region"
+                  density="compact"
+                  slim
                 >
                   <template #append>
                     <!-- New: Edit Geometry button (disabled if any selection using region has samples) -->
@@ -113,6 +115,7 @@
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
+                      size="small"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         editRegionName(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -124,6 +127,7 @@
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
+                      size="small"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         store.deleteRegion(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -1278,5 +1282,10 @@ watch(tableSelection, (newVal) => {
   background-color: #656565;
 }
 
-
+:deep(.v-checkbox .v-label),
+:deep(.v-slider__label),
+:deep(.v-list-item-title)
+{
+  font-size: 10pt;
+}
 </style>

@@ -217,10 +217,12 @@ body {
   display: flex;
   flex-direction: row;
   padding-left: 10px;
+  gap: 5px;
 }
 
 #side-panel {
   overflow-y: scroll;
+  padding-left: 2px;
 }
 
 .comparison-data-controls {
