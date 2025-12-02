@@ -6,44 +6,29 @@
     <header-bar />
     <div ref="root" class="layout-root"></div>
 
-    <template v-if="mapTargets">
+    <div v-if="mapTargets">
       <teleport
         v-for="[key, target] in Object.entries(mapTargets)"
         :key="key"
         :to="target"
       >
+        <v-slide-x-transition>
+          <comparison-data-controls
+            class="comparison-data-controls"
+            v-show="datasetControlsOpen"
+          />
+        </v-slide-x-transition>
         <map-with-controls />
       </teleport>
-    </template>
+    </div>
 
     <teleport
       v-if="sidePanelTarget"
       :to="sidePanelTarget"
     >
-      <v-tabs
-        v-model="tab"
-        :color="tempoRed"
-      >
-        <v-tab :value="1" variant="flat">Data Layers</v-tab>
-        <v-tab :value="0" variant="flat">TEMPO Deep Dive</v-tab>
-      </v-tabs>
-      
-      <v-tabs-window v-model="tab">
-        <v-tabs-window-item
-          class="tab-content"
-          :value="0"
-          :key="0"
-        >
-          <dataset-controls />
-        </v-tabs-window-item>
-        <v-tabs-window-item
-          :value="1"
-          :key="1"
-          class="tab-content"
-        >
-          <comparison-data-controls />
-        </v-tabs-window-item>
-      </v-tabs-window>
+      <dataset-controls
+       class="dataset-controls"
+      />
     </teleport>
   </v-app>
 </template>
@@ -60,7 +45,6 @@ type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
 const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
 const sidePanelTarget = ref<MaybeHTMLElement>(null);
-const tab = ref(1);
 
 
 const store = useTempoStore();
@@ -69,6 +53,7 @@ const {
   accentColor2,
   debugMode,
   tempoRed,
+  datasetControlsOpen,
 } = storeToRefs(store);
 
 const query = new URLSearchParams(window.location.search);
@@ -221,8 +206,18 @@ body {
   font-family: "Lexend", sans-serif;
 }
 
+.map-panel {
+  display: flex;
+  flex-direction: row;
+  padding-left: 10px;
+}
+
 #side-panel {
   overflow-y: scroll;
+}
+
+.comparison-data-controls {
+  width: 300px;
 }
 
 :root {

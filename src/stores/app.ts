@@ -36,6 +36,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
 
   const maps = ref<Map[]>([]);
 
+  const datasetControlsOpen = ref(false);
+
   const selectionActive = ref<SelectionType>(null);
   const focusRegion = ref<UnifiedRegion | null>(null);
   const regionOpacity = ref(0.7);
@@ -361,6 +363,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     showSamplingPreviewMarkers,
     showAdvancedLayers,
     showRGBMode,
+
+    datasetControlsOpen,
 
     homeState,
     initState,
