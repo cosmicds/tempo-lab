@@ -37,10 +37,10 @@
         hide-details
       >
       </v-checkbox>
-          <power-plants-filter-control
-            :map="map"
-          >
-          </power-plants-filter-control>
+      <power-plants-filter-control
+        :map="map"
+      >
+      </power-plants-filter-control>
     </div>
   </div>
 </template>

@@ -6,25 +6,30 @@
     <header-bar />
     <div ref="root" class="layout-root"></div>
 
+    <teleport
+      v-if="layersPanelTarget"
+      :to="layersPanelTarget"
+    >
+      <v-slide-x-transition>
+        <comparison-data-controls
+          class="comparison-data-controls"
+        />
+      </v-slide-x-transition>
+    </teleport>
+
     <div v-if="mapTargets">
       <teleport
         v-for="[key, target] in Object.entries(mapTargets)"
         :key="key"
         :to="target"
       >
-        <v-slide-x-transition>
-          <comparison-data-controls
-            class="comparison-data-controls"
-            v-show="datasetControlsOpen"
-          />
-        </v-slide-x-transition>
         <map-with-controls />
       </teleport>
     </div>
 
     <teleport
-      v-if="sidePanelTarget"
-      :to="sidePanelTarget"
+      v-if="datasetsPanelTarget"
+      :to="datasetsPanelTarget"
     >
       <dataset-controls
        class="dataset-controls"
@@ -44,7 +49,8 @@ import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serial
 type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
 const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
-const sidePanelTarget = ref<MaybeHTMLElement>(null);
+const datasetsPanelTarget = ref<MaybeHTMLElement>(null);
+const layersPanelTarget = ref<MaybeHTMLElement>(null);
 
 
 const store = useTempoStore();
@@ -53,7 +59,6 @@ const {
   accentColor2,
   debugMode,
   tempoRed,
-  datasetControlsOpen,
 } = storeToRefs(store);
 
 const query = new URLSearchParams(window.location.search);
@@ -129,7 +134,12 @@ onMounted(() => {
 
   layout.registerComponentFactoryFunction("datasets-panel", container => {
     container.element.id = "datasets-panel";
-    sidePanelTarget.value = container.element;
+    datasetsPanelTarget.value = container.element;
+  });
+
+  layout.registerComponentFactoryFunction("layers-panel", container => {
+    container.element.id = "layers-panel";
+    layersPanelTarget.value = container.element;
   });
 
   layout.registerComponentFactoryFunction("map-panel", container => {
@@ -140,8 +150,8 @@ onMounted(() => {
     mapTargets[id] = target;
   });
 
-  const sidePanelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
-  const mapWidth = 100 - sidePanelWidth;
+  const panelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
+  const mapWidth = 100 - 2 * panelWidth;
 
   const config: LayoutConfig = {
     settings: {
@@ -154,13 +164,20 @@ onMounted(() => {
     root: {
       type: 'row',
       content: [
+        {
+          type: 'component',
+          componentType: 'layers-panel',
+          title: 'Layers',
+          draggable: false,
+          width: panelWidth,
+        },
         mapConfig(mapWidth), 
         {
           type: 'component',
           componentType: 'datasets-panel',
           title: 'Controls',
           draggable: false,
-          width: sidePanelWidth,
+          width: panelWidth,
         },
       ],
     },
@@ -220,12 +237,25 @@ body {
   gap: 5px;
 }
 
+#layers-panel {
+  overflow-y: scroll;
+  margin-right: 5px;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 #datasets-panel {
   overflow-y: scroll;
   padding-left: 2px;
 }
 
-.comparison-data-controls {
+.comparison-data-controls,
+.dataset-controls {
   width: 300px;
 }
 
