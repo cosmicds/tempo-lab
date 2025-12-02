@@ -160,10 +160,9 @@
               <h4>My Time Ranges</h4>
               <v-list>
                 <v-list-item
-                  class="my-2 rounded-lg"
+                  class="my-2 rounded-lg time-range-v-list-item"
                   v-for="(timeRange, index) in timeRanges"
                   :key="index"
-                  style="background-color: #444444"
                 >
                   
                   <template #default>
@@ -1266,4 +1265,13 @@ watch(tableSelection, (newVal) => {
 .time-range-action-buttons {
   text-align: right;
 }
+
+.time-range-v-list-item:nth-child(odd) {
+  background-color: #444444;
+}
+.time-range-v-list-item:nth-child(even) {
+  background-color: #656565;
+}
+
+
 </style>

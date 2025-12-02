@@ -5,7 +5,7 @@
         density="compact"
         color="var(--info-background)"
       >
-        <v-toolbar-title :text="`TEMPO Data Viewer: ${mapTitle}`"></v-toolbar-title>
+        <v-toolbar-title text="TEMPO Data Viewer"></v-toolbar-title>
         <!-- switch for preview points -->
         <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
           <template #activator="{ props }">
@@ -394,13 +394,6 @@ watch(colorMap, (value) => {
   console.log('color map changed to', value);
 });
 
-const mapTitle = computed(() => {
-  const currentMolecule = MOLECULE_OPTIONS.find(m => m.value === molecule.value);
-  if (!currentMolecule) {
-    return '';
-  }
-  return currentMolecule.title;
-});
 
 // TODO: Maybe there's a built-in Date function to get this formatting?
 const thumbLabel = computed(() => {
