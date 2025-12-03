@@ -26,6 +26,7 @@
     <v-card
       ref="card"
       class="cds-dialog-card"
+      :width="width"
     >
         <v-toolbar
           density="compact"
@@ -42,7 +43,13 @@
           </v-btn>
         </v-toolbar>
       
-      <v-card-text>
+      <v-card-text 
+        class="cds-dialog-v-card-text" 
+        :style="{
+          'max-height': maxHeight ?? '60vh',
+          'max-width': maxWidth ?? 'unset',
+          ...(height ? { height: height } : {}),
+          }">
         
         <slot>
           Add content to the default slot
@@ -61,7 +68,6 @@ import { UseDraggableDialogOptions, useDraggableDialog } from "../composables/us
 
 interface CDSDialogProps {
   title: string;
-  modelValue?: boolean;
   color?: string;
   titleColor?: string;
   shortTitle?: string;
@@ -70,6 +76,10 @@ interface CDSDialogProps {
   scrim?: boolean;
   persistent?: boolean;
   modal?: boolean;
+  maxHeight?: string;
+  maxWidth?: string;
+  width?: string;
+  height?: string;
 }
 
 const modelValue = defineModel<boolean>();
@@ -139,7 +149,6 @@ watch(modelValue, value => {
 }
 .cds-dialog-card {
   align-self: center;
-  max-width: 80%;
 }
 
 .cds-dialog-close-icon {
@@ -153,7 +162,8 @@ watch(modelValue, value => {
 
 .cds-dialog .v-card-text {
   height: fit-content;
-  max-height: 60vh;
+  /* max-height set on element */
+  contain: layout;
 }
 
 .cds-dialog.nonmodal {
