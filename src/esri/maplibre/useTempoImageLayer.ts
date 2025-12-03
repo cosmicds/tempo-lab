@@ -8,7 +8,7 @@ import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
 
 
-export interface UseEsriLayer {
+export interface UseEsriTempoLayer {
   esriImageSource: Ref<maplibregl.RasterTileSource | null>;
   opacity: Ref<number>;
   noEsriData: Ref<boolean>;
@@ -22,13 +22,13 @@ export interface UseEsriLayer {
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
-export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
+export function useTempoLayer(initialMolecule: MaybeRef<MoleculeType>,
   timestamp: Ref<number | null>,
   opacity: MaybeRef<number>,
   fetchOnMount=true,
   layerName?: string,
   initVisible?: boolean,
-): UseEsriLayer {
+): UseEsriTempoLayer {
 
   const esriLayerId = layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
@@ -261,7 +261,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     removeEsriSource,
     renderOptions,
     setVisibility,
-  } as UseEsriLayer;
+  } as UseEsriTempoLayer;
 }
 
 

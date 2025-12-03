@@ -44,7 +44,7 @@ import { ref, watch, toRef, computed, defineExpose, type Ref, useTemplateRef, on
 import type { PropType } from 'vue';
 import type { Map } from 'maplibre-gl';
 import MaplibreMap from './MaplibreMap.vue';
-import { useEsriLayer } from '@/esri/maplibre/useEsriImageLayer';
+import { useTempoLayer } from '@/esri/maplibre/useTempoImageLayer';
 import { useFieldOfRegard } from '@/composables/maplibre/useFieldOfRegard';
 import { type MoleculeType } from '@/esri/utils';
 import type { InitMapOptions, LatLngPair } from '@/types';
@@ -130,7 +130,7 @@ const emit = defineEmits<{
   (e: 'colormap', colormap: AvailableColorMaps): void;
   // Timesteps loaded (can fire multiple times e.g., molecule switch)
   (e:'esri-timesteps-loaded', steps: number[]): void;
-  (e: 'esri-layer', esriLayer: ReturnType<typeof useEsriLayer>)
+  (e: 'esri-layer', esriLayer: ReturnType<typeof useTempoLayer>)
 }>();
 
 // Reference to inner MaplibreMap exposed API
@@ -160,7 +160,7 @@ const timestampRef = toRef(props, 'timestamp');
 const opacityRef = toRef(props, 'opacity');
 
 // ESRI layer composable
-const theEsriLayer = useEsriLayer(
+const theEsriLayer = useTempoLayer(
   molecule,
   timestampRef,
   opacityRef,
