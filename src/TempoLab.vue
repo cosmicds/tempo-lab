@@ -41,11 +41,10 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ComponentContainer, type RowOrColumn, type Stack } from "golden-layout";
+import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
 import { v4 } from "uuid";
 
 import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serializeTempoStore } from "@/stores/app";
-import { getGoldenLayoutContainerSize } from "@/utils/golden_layout";
 
 type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
@@ -79,10 +78,6 @@ const cssVars = computed(() => {
 });
 
 const localStorageKey = "tempods";
-
-let layersPanelStack: Stack | null = null;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-let datasetsPanelStack: Stack | null = null;
 
 onBeforeMount(() => {
   const storedState = window.localStorage.getItem(localStorageKey);
@@ -151,32 +146,6 @@ function removeMapPanel(index: number) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function updateMapSize() {
-  let panelsWidth = 0;
-  const datasetElement = document.querySelector(".dataset-controls");
-  if (datasetElement) {
-    panelsWidth += getGoldenLayoutContainerSize(datasetElement as HTMLElement)?.width ?? 0;
-  }
-
-  const layersElement = document.querySelector(".comparison-data-controls");
-  if (layersElement) {
-    panelsWidth += getGoldenLayoutContainerSize(layersElement as HTMLElement)?.width ?? 0;
-  }
- 
-
-  const containers = Object.values(mapContainers);
-  const mapWidth = (root.value as HTMLElement).clientWidth / containers.length - panelsWidth - 20;
-  console.log(panelsWidth, mapWidth, (root.value as HTMLElement).clientWidth, containers.length);
-  containers.forEach(container => container.setSize(mapWidth));
-}
-
-// bind add and remove to the window for easy access from the console
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).setDatasetsPanelVisibility = setDatasetsPanelVisibility;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).setLayersPanelVisibility = setLayersPanelVisibility;
-
 let datasetsItem: ContentItem | null = null;
 let layersItem: ContentItem | null = null;
 
@@ -186,14 +155,11 @@ function setDatasetsPanelVisibility(visible: boolean) {
 
   const index = row.contentItems.length - 1;
   const item = row.contentItems[index].contentItems[0];
-  console.log(index, item);
   const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
   if (visible === isAtIndex) { return; }
   const layersWidth = layersItem?.container.width ?? 0;
   if (visible) {
     datasetsItem = row.newItem(datasetsPanelConfig(), index + 1);
-    console.log(datasetsItem);
-    console.log(datasetsItem.container);
     datasetsItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
   } else {
     item.remove();
@@ -211,16 +177,11 @@ function setLayersPanelVisibility(visible: boolean) {
   const index = 0;
   const item = row.contentItems[index].contentItems[0];
   const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
-  console.log(item, isAtIndex);
-  console.log(layersPanelConfig());
   if (visible === isAtIndex) { return; }
   const datasetsWidth = datasetsItem?.container.width ?? 0;
   if (visible) {
-    console.log(datasetsWidth);
     layersItem = row.newItem(layersPanelConfig(), index);
     layersItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
-    console.log(layersItem.container);
-    console.log(layersItem);
   } else {
     item.remove();
     layersItem = null;
@@ -247,15 +208,11 @@ onMounted(() => {
   layout.registerComponentFactoryFunction("datasets-panel", container => {
     container.element.id = "datasets-panel";
     datasetsPanelTarget.value = container.element;
-    datasetsPanelStack = container.parent.parent as Stack;
-    console.log(container);
   });
 
   layout.registerComponentFactoryFunction("layers-panel", container => {
     container.element.id = "layers-panel";
     layersPanelTarget.value = container.element;
-    layersPanelStack = container.parent.parent as Stack;
-    console.log(layersPanelStack);
   });
 
   layout.registerComponentFactoryFunction("map-panel", container => {
