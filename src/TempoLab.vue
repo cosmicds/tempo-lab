@@ -102,9 +102,10 @@ function mapConfig(): ComponentItemConfig {
   };
 }
 
-function getPanelWidth(): number {
+const DEFAULT_PANEL_WIDTH_PX = 300;
+function getGLPanelWidth(): number {
   const glRoot = root.value as HTMLElement;
-  return Math.min(Math.max(300 * 100 / glRoot.clientWidth, 10), 25);
+  return Math.min(Math.max(DEFAULT_PANEL_WIDTH_PX * 100 / glRoot.clientWidth, 10), 25);
 }
 
 function layersPanelConfig(width: number | null = null): ComponentItemConfig {
@@ -113,7 +114,7 @@ function layersPanelConfig(width: number | null = null): ComponentItemConfig {
     componentType: 'layers-panel',
     title: 'Layers',
     draggable: false,
-    width: width ?? getPanelWidth(),
+    width: width ?? getGLPanelWidth(),
   };
 }
 
@@ -123,7 +124,7 @@ function datasetsPanelConfig(width: number | null = null): ComponentItemConfig {
     componentType: 'datasets-panel',
     title: 'Controls',
     draggable: false,
-    width: width ?? getPanelWidth(),
+    width: width ?? getGLPanelWidth(),
   };
 }
 
@@ -176,6 +177,9 @@ function updateMapSize() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).setLayersPanelVisibility = setLayersPanelVisibility;
 
+let datasetsItem: ContentItem | null = null;
+let layersItem: ContentItem | null = null;
+
 function setDatasetsPanelVisibility(visible: boolean) {
   if (!layout) { return; }
   const row = layout.rootItem as RowOrColumn;
@@ -185,13 +189,18 @@ function setDatasetsPanelVisibility(visible: boolean) {
   console.log(index, item);
   const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
   if (visible === isAtIndex) { return; }
+  const layersWidth = layersItem?.container.width ?? 0;
   if (visible) {
-    const newItem = row.newItem(datasetsPanelConfig(), index + 1);
-    console.log(newItem);
-    newItem.container.setSize(300);
+    datasetsItem = row.newItem(datasetsPanelConfig(), index + 1);
+    console.log(datasetsItem);
+    console.log(datasetsItem.container);
+    datasetsItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
   } else {
     item.remove();
-    // updateMapSize();
+    datasetsItem = null;
+  }
+  if (layersItem) {
+    layersItem.container.setSize(layersWidth);
   }
 }
 
@@ -205,13 +214,19 @@ function setLayersPanelVisibility(visible: boolean) {
   console.log(item, isAtIndex);
   console.log(layersPanelConfig());
   if (visible === isAtIndex) { return; }
+  const datasetsWidth = datasetsItem?.container.width ?? 0;
   if (visible) {
-    const newItem = row.newItem(layersPanelConfig(), index);
-    console.log(newItem);
-    newItem.container.setSize(300);
+    console.log(datasetsWidth);
+    layersItem = row.newItem(layersPanelConfig(), index);
+    layersItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
+    console.log(layersItem.container);
+    console.log(layersItem);
   } else {
     item.remove();
-    // updateMapSize();
+    layersItem = null;
+  }
+  if (datasetsItem) {
+    datasetsItem?.container.setSize(datasetsWidth);
   }
 }
 
@@ -355,7 +370,7 @@ body {
 
 .comparison-data-controls,
 .dataset-controls {
-  width: 300px;
+  width: 100%;
 }
 
 :root {
