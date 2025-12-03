@@ -42,9 +42,12 @@ export interface PlotlyGraphProps {
   names?: string[];
   layoutOptions?: Partial<Plotly.Layout>;
   configOptions?: Partial<Plotly.Config>;
+  showZero?: boolean;
 }
 
-const props = defineProps<PlotlyGraphProps>();
+const props = withDefaults(defineProps<PlotlyGraphProps>(), {
+  showZero: true
+});
 
 const id = `timeseries-${v4()}`;
 
@@ -131,6 +134,7 @@ function renderPlot() {
   
 
   let max = 0;
+  let min = Infinity;
   
   props.datasets.forEach((data, index) => {
     // create a hash from the data.x and data.y to be it's "id"
@@ -145,7 +149,9 @@ function renderPlot() {
     
     const id = hashDataset(data);
     
-    max = Math.max(max, Math.max(...data.y.filter((v): v is number => v !== null)));
+    const validY = data.y.filter((v): v is number => v !== null);
+    max = Math.max(max, Math.max(...validY));
+    min = Math.min(min, Math.min(...validY));
 
     const legendGroup = v4();
     if (!traceVisible.value.has(id)) {
@@ -200,7 +206,7 @@ function renderPlot() {
     // double checking to have valid types
     if (hasErrors && data.lower && data.upper && data.errorType == 'band' && props.showErrors) {
       
-      const {lower, upper, max: newMax} = createErrorBands(
+      const {lower, upper, max: newMax, min: newMin} = createErrorBands(
         data,
         props.colors ? props.colors[index % props.colors.length] : 'red',
         datasetName,
@@ -208,6 +214,7 @@ function renderPlot() {
       );
 
       max = Math.max(max, newMax);
+      min = Math.min(min, newMin);
 
       if (lower === null || upper === null) {
         console.error("Error creating error bands for dataset", index, data);
@@ -228,12 +235,16 @@ function renderPlot() {
 
   const paddingFactor = 1.1;
   const axisMax = Math.max(1, paddingFactor * max);
+  const axisMin = props.showZero ? Math.min(0, min) : min;
+  
   const layout: Partial<Plotly.Layout> = {
+    ...(props.layoutOptions || {}),
     yaxis: {
       title: { text: "Molecules / cm<sup>2</sup>" },
-      range: [0, axisMax],
+      range: [axisMin, axisMax],
+      autorange: false,
+      ...(props.layoutOptions?.yaxis || {}),
     },
-    ...(props.layoutOptions || {}),
   };
 
   newPlot(graph.value ?? id, plotlyData, layout, {...props.configOptions}).then((el: PlotlyHTMLElement) => {
@@ -322,6 +333,8 @@ watch(() => props.datasets, (_newData, _oldData) => {
   console.log("Data prop changed, re-rendering plot");
   renderPlot();
 }, { deep: true });
+
+watch(() => props.showZero, renderPlot);
 
 </script>
 
