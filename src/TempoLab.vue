@@ -102,13 +102,18 @@ function mapConfig(): ComponentItemConfig {
   };
 }
 
+function getPanelWidth(): number {
+  const glRoot = root.value as HTMLElement;
+  return Math.min(Math.max(300 * 100 / glRoot.clientWidth, 10), 25);
+}
+
 function layersPanelConfig(width: number | null = null): ComponentItemConfig {
   return {
     type: 'component',
     componentType: 'layers-panel',
     title: 'Layers',
     draggable: false,
-    width: width ?? panelWidth,
+    width: width ?? getPanelWidth(),
   };
 }
 
@@ -118,7 +123,7 @@ function datasetsPanelConfig(width: number | null = null): ComponentItemConfig {
     componentType: 'datasets-panel',
     title: 'Controls',
     draggable: false,
-    width: width ?? panelWidth,
+    width: width ?? getPanelWidth(),
   };
 }
 
@@ -179,10 +184,11 @@ function setDatasetsPanelVisibility(visible: boolean) {
   const item = row.contentItems[index].contentItems[0];
   console.log(index, item);
   const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
-  console.log(item, isAtIndex);
   if (visible === isAtIndex) { return; }
   if (visible) {
-    row.addItem(datasetsPanelConfig(), index + 1);
+    const newItem = row.newItem(datasetsPanelConfig(), index + 1);
+    console.log(newItem);
+    newItem.container.setSize(300);
   } else {
     item.remove();
     // updateMapSize();
@@ -197,9 +203,12 @@ function setLayersPanelVisibility(visible: boolean) {
   const item = row.contentItems[index].contentItems[0];
   const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
   console.log(item, isAtIndex);
+  console.log(layersPanelConfig());
   if (visible === isAtIndex) { return; }
   if (visible) {
-    row.addItem(layersPanelConfig(), index);
+    const newItem = row.newItem(layersPanelConfig(), index);
+    console.log(newItem);
+    newItem.container.setSize(300);
   } else {
     item.remove();
     // updateMapSize();
@@ -213,7 +222,6 @@ function setLayersPanelVisibility(visible: boolean) {
 (window as any).removeMapPanel = removeMapPanel;
 
 let layout: GoldenLayout | null = null;
-let panelWidth = 0;
 onMounted(() => {
   const rootEl = root.value as HTMLElement;
   if (!rootEl) {
@@ -244,10 +252,10 @@ onMounted(() => {
     mapTargets[id] = target;
   });
 
-  panelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
-  const mapWidth = 100 - 2 * panelWidth;
+  // const panelWidth = getPanelWidth();
+  // const mapWidth = 100 - 2 * panelWidth;
 
-  const initialContent = [mapConfig(mapWidth)];
+  const initialContent = [mapConfig()];
   if (layerControlsOpen.value) {
     initialContent.unshift(layersPanelConfig());
   }
