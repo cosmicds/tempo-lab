@@ -12,7 +12,7 @@
     </div>
 
     <v-btn
-      @click="datasetControlsOpen = !datasetControlsOpen"
+      @click="layerControlsOpen = !layerControlsOpen"
       class="layers-button"
       aria-label="Toggle layer controls"
       variant="outlined"
@@ -24,6 +24,20 @@
     >
       <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
       <v-icon>mdi-layers</v-icon>
+    </v-btn>
+    <v-btn
+      @click="datasetControlsOpen = !datasetControlsOpen"
+      class="layers-button"
+      aria-label="Toggle dataset controls"
+      variant="outlined"
+      rounded="lg"
+      density="default"
+      :color="accentColor2"
+      elevation="0"
+      size="lg"
+    >
+      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
+      <v-icon>mdi-data</v-icon>
     </v-btn>
 
     <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
@@ -171,6 +185,7 @@ const {
   accentColor2,
   shareButtonClickedCount,
   datasetControlsOpen,
+  layerControlsOpen,
 } = storeToRefs(store);
 
 const display = useDisplay();

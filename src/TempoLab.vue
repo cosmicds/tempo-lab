@@ -39,16 +39,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, type Ref } from "vue";
+import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type RowOrColumn } from "golden-layout";
+import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ComponentContainer, type RowOrColumn, type Stack } from "golden-layout";
 import { v4 } from "uuid";
 
 import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serializeTempoStore } from "@/stores/app";
+import { getGoldenLayoutContainerSize } from "@/utils/golden_layout";
 
 type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
 const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
+const mapContainers = reactive<Record<string, ComponentContainer>>({});
 const datasetsPanelTarget = ref<MaybeHTMLElement>(null);
 const layersPanelTarget = ref<MaybeHTMLElement>(null);
 
@@ -59,6 +61,8 @@ const {
   accentColor2,
   debugMode,
   tempoRed,
+  datasetControlsOpen,
+  layerControlsOpen,
 } = storeToRefs(store);
 
 const query = new URLSearchParams(window.location.search);
@@ -76,6 +80,10 @@ const cssVars = computed(() => {
 
 const localStorageKey = "tempods";
 
+let layersPanelStack: Stack | null = null;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let datasetsPanelStack: Stack | null = null;
+
 onBeforeMount(() => {
   const storedState = window.localStorage.getItem(localStorageKey);
   if (storedState) {
@@ -85,13 +93,32 @@ onBeforeMount(() => {
   }
 });
 
-function mapConfig(width=70): ComponentItemConfig {
+function mapConfig(): ComponentItemConfig {
   return {
     type: 'component',
     componentType: 'map-panel',
     title: 'Map',
     draggable: false,
-    width,
+  };
+}
+
+function layersPanelConfig(width: number | null = null): ComponentItemConfig {
+  return {
+    type: 'component',
+    componentType: 'layers-panel',
+    title: 'Layers',
+    draggable: false,
+    width: width ?? panelWidth,
+  };
+}
+
+function datasetsPanelConfig(width: number | null = null): ComponentItemConfig {
+  return {
+    type: 'component',
+    componentType: 'datasets-panel',
+    title: 'Controls',
+    draggable: false,
+    width: width ?? panelWidth,
   };
 }
 
@@ -118,6 +145,67 @@ function removeMapPanel(index: number) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function updateMapSize() {
+  let panelsWidth = 0;
+  const datasetElement = document.querySelector(".dataset-controls");
+  if (datasetElement) {
+    panelsWidth += getGoldenLayoutContainerSize(datasetElement as HTMLElement)?.width ?? 0;
+  }
+
+  const layersElement = document.querySelector(".comparison-data-controls");
+  if (layersElement) {
+    panelsWidth += getGoldenLayoutContainerSize(layersElement as HTMLElement)?.width ?? 0;
+  }
+ 
+
+  const containers = Object.values(mapContainers);
+  const mapWidth = (root.value as HTMLElement).clientWidth / containers.length - panelsWidth - 20;
+  console.log(panelsWidth, mapWidth, (root.value as HTMLElement).clientWidth, containers.length);
+  containers.forEach(container => container.setSize(mapWidth));
+}
+
+// bind add and remove to the window for easy access from the console
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).setDatasetsPanelVisibility = setDatasetsPanelVisibility;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).setLayersPanelVisibility = setLayersPanelVisibility;
+
+function setDatasetsPanelVisibility(visible: boolean) {
+  if (!layout) { return; }
+  const row = layout.rootItem as RowOrColumn;
+
+  const index = row.contentItems.length - 1;
+  const item = row.contentItems[index].contentItems[0];
+  console.log(index, item);
+  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
+  console.log(item, isAtIndex);
+  if (visible === isAtIndex) { return; }
+  if (visible) {
+    row.addItem(datasetsPanelConfig(), index + 1);
+  } else {
+    item.remove();
+    // updateMapSize();
+  }
+}
+
+function setLayersPanelVisibility(visible: boolean) {
+  if (!layout) { return; }
+  const row = layout.rootItem as RowOrColumn;
+
+  const index = 0;
+  const item = row.contentItems[index].contentItems[0];
+  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
+  console.log(item, isAtIndex);
+  if (visible === isAtIndex) { return; }
+  if (visible) {
+    row.addItem(layersPanelConfig(), index);
+  } else {
+    item.remove();
+    // updateMapSize();
+  }
+}
+
 // bind add and remove to the window for easy access from the console
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).addMapPanel = addMapPanel;
@@ -125,6 +213,7 @@ function removeMapPanel(index: number) {
 (window as any).removeMapPanel = removeMapPanel;
 
 let layout: GoldenLayout | null = null;
+let panelWidth = 0;
 onMounted(() => {
   const rootEl = root.value as HTMLElement;
   if (!rootEl) {
@@ -135,11 +224,15 @@ onMounted(() => {
   layout.registerComponentFactoryFunction("datasets-panel", container => {
     container.element.id = "datasets-panel";
     datasetsPanelTarget.value = container.element;
+    datasetsPanelStack = container.parent.parent as Stack;
+    console.log(container);
   });
 
   layout.registerComponentFactoryFunction("layers-panel", container => {
     container.element.id = "layers-panel";
     layersPanelTarget.value = container.element;
+    layersPanelStack = container.parent.parent as Stack;
+    console.log(layersPanelStack);
   });
 
   layout.registerComponentFactoryFunction("map-panel", container => {
@@ -147,11 +240,20 @@ onMounted(() => {
     const id = v4();
     const target = ref<MaybeHTMLElement>(null);
     target.value = container.element;
+    mapContainers[id] = container;
     mapTargets[id] = target;
   });
 
-  const panelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
+  panelWidth = Math.min(Math.max(300 * 100 / window.innerWidth, 10), 25);
   const mapWidth = 100 - 2 * panelWidth;
+
+  const initialContent = [mapConfig(mapWidth)];
+  if (layerControlsOpen.value) {
+    initialContent.unshift(layersPanelConfig());
+  }
+  if (datasetControlsOpen.value) {
+    initialContent.push(datasetsPanelConfig());
+  }
 
   const config: LayoutConfig = {
     settings: {
@@ -163,28 +265,14 @@ onMounted(() => {
     },
     root: {
       type: 'row',
-      content: [
-        {
-          type: 'component',
-          componentType: 'layers-panel',
-          title: 'Layers',
-          draggable: false,
-          width: panelWidth,
-        },
-        mapConfig(mapWidth), 
-        {
-          type: 'component',
-          componentType: 'datasets-panel',
-          title: 'Controls',
-          draggable: false,
-          width: panelWidth,
-        },
-      ],
+      content: initialContent,
     },
   };
   layout.resizeWithContainerAutomatically = true;
   layout.loadLayout(config);
   console.log(layout);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).layout = layout;
 
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
@@ -193,6 +281,9 @@ onMounted(() => {
     }
   });
 });
+
+watch(datasetControlsOpen, setDatasetsPanelVisibility);
+watch(layerControlsOpen, setLayersPanelVisibility);
 </script>
 
 <style lang="less">
