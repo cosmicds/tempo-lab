@@ -1,28 +1,28 @@
 <template>
   <v-dialog 
     :class="['cds-dialog', `${displayedShortTitle.toLowerCase().replace(/ /g, '-')}-cds-dialog`, !modal ? 'nonmodal' : '']" 
-    v-model="showDialog" 
+    v-model="modelValue" 
     :scrim="scrim"
     :persistent="persistent"
     :no-click-animation="!modal"
     >
     <!-- add the activator slot, but only use it if the appropriate value is given for activator -->
-     <template v-slot:activator="$attrs">
+    <template v-slot:activator="$attrs">
       <slot name="activator" v-bind="$attrs">
         <v-btn
           v-if="button"
           :color="color"
           :title="displayedShortTitle"
           class="cds-dialog-button"
-          @click="showDialog = true"
-          @keyup.enter="showDialog = true"
+          @click="modelValue = true"
+          @keyup.enter="modelValue = true"
           tabindex="0"
           >
           Open {{ displayedShortTitle }}
         </v-btn>
       </slot>
     </template>
-     
+    
     <v-card
       ref="card"
       class="cds-dialog-card"
@@ -72,8 +72,9 @@ interface CDSDialogProps {
   modal?: boolean;
 }
 
+const modelValue = defineModel<boolean>();
+
 const props = withDefaults(defineProps<CDSDialogProps>(), {
-  modelValue: false,
   color: "red",
   shortTitle: "",
   draggable: false,
@@ -84,12 +85,8 @@ const props = withDefaults(defineProps<CDSDialogProps>(), {
   modal: true,
 });
 
-const emit = defineEmits<{
-  (event: "update:modelValue", value: boolean): void;
-}>();
 
 const card = useTemplateRef<InstanceType<typeof VCard>>("card");
-const showDialog = ref(props.modelValue);
 const displayedShortTitle = computed(() => props.shortTitle || props.title);
 const cardRoot = ref<HTMLElement | null>(null);
 
@@ -115,22 +112,18 @@ function updateRoot() {
 }
 
 function close(event: PointerEvent) {
-  showDialog.value = false;
+  modelValue.value = false;
   event.stopPropagation();
 }
 
 onMounted(() => {
-  if (props.draggable && props.modelValue) {
+  if (props.draggable && modelValue.value) {
     updateRoot();
   }
 });
 
-watch(showDialog, value => {
-  emit("update:modelValue", value);
-});
 
-watch(() => props.modelValue, value => {
-  showDialog.value = value;
+watch(modelValue, value => {
   if (value && props.draggable) {
     updateRoot();
   }
