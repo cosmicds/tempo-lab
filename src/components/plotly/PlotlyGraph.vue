@@ -155,15 +155,19 @@ function renderPlot() {
     
     
     const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
+    const cIndex = (props.colors && index < props.colors.length) ? index : (index % (props.colors?.length || 1));
+    
     // https://plotly.com/javascript/error-bars/
     if (props.showErrors && data.errorType === 'bar') {
-      const style = (props.errorBarStyles && props.errorBarStyles[index]) || {};
+      // const mIndex = index % (props.errorBarStyles?.length || 1);
+      const mIndex = (props.errorBarStyles?.length && index < props.errorBarStyles?.length) ? index : (index % (props.errorBarStyles?.length || 1));
+      const style = (props.errorBarStyles && props.errorBarStyles[mIndex]) || {};
       errorOptions['error_y'] = {
         type: 'data',
         symmetric: false,
         array: data.upper as Datum[],
         arrayminus: data.lower as Datum[] | undefined,
-        color: props.colors ? props.colors[index % props.colors.length] : 'red',
+        color: props.colors ? props.colors[cIndex] : 'red',
 
         thickness: 1.5,
         width: 0,
@@ -172,15 +176,17 @@ function renderPlot() {
       
     }
     const datasetName = data.name || props.names?.[index] || `Dataset ${index + 1}`;
+    const lIndex = (props.dataOptions?.length && index < props.dataOptions?.length) ? index : (index % (props.dataOptions?.length || 1));
+    
     const dataTraceOptions = {
       mode: "lines+markers",
       legendgroup: legendGroup,
       showlegend: true,
       name: datasetName,
-      marker: { color: props.colors ? props.colors[index % props.colors.length] : 'red' },
+      marker: { color: props.colors ? props.colors[cIndex] : 'red' },
       visible: traceVisible.value.get(id) ? true : "legendonly",
       ...errorOptions,
-      ...props.dataOptions?.[index],
+      ...props.dataOptions?.[lIndex],
       ...(data.datasetOptions ?? {}), // allow per-dataset options override
     };
 
