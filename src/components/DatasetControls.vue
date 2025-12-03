@@ -478,6 +478,10 @@
           color="#ffcc33" size="small" :block="false" @click="allDatasetSelection = !allDatasetSelection">
             {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
           </v-btn>
+          <v-btn
+            @click="showMultiPlot = true"
+            >Show All Datasets in Multi-Plot
+          </v-btn>
         </template>
       </v-expansion-panel>
     </v-expansion-panels>
@@ -822,6 +826,21 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+    
+    <cds-dialog
+      title="All Datasets Multi-Plot"
+      title-color="var(--info-background)"
+      width="80vw"
+      v-model="showMultiPlot"
+      persistent
+      max-height="90vh"
+      :scrim="false"
+      :drag-predicate="plotlyDragPredicate"
+    >
+      <multi-plot
+        :datasets="datasets.filter(d => d.samples || d.plotlyDatasets)"
+      />
+    </cds-dialog>
 
   </div>
 
@@ -852,6 +871,7 @@ import { allEqual } from "@/utils/array_operations/array_math";
 import { userDatasetToPlotly } from "@/utils/data_converters";
 import UserDatasetTable from "./UserDatasetTable.vue";
 import TimeRangeCard from "@/date_time_range_selection/TimeRangeCard.vue";
+import MultiPlot from "./plotly/MultiPlot.vue";
 
 type UnifiedRegionType = UnifiedRegion;
 
@@ -892,6 +912,7 @@ const openSelection = ref<string | null>(null);
 const tableSelection = ref<UserDataset | null>(null);
 const currentlyEditingDataset = ref<UserDataset | null>(null);
 const showConfirmReset = ref(false);
+const showMultiPlot = ref(false);
 
 const createTimeRangeActive = ref(false);
 const createDatasetActive = ref(false);
