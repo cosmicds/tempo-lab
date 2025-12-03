@@ -37,7 +37,7 @@
       size="lg"
     >
       <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
-      <v-icon>mdi-data</v-icon>
+      <v-icon>mdi-tune</v-icon>
     </v-btn>
 
     <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
