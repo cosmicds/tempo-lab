@@ -10,10 +10,10 @@
 
 
 <script setup lang="ts">
-/* slint-disable @typescript-eslint/no-unused-vars */
-import { onMounted, ref, watch, nextTick } from "vue";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted } from "vue";
 import { v4 } from "uuid";
-import Plotly, { PlotlyHTMLElement, newPlot, restyle, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
+import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 import type { PlotltGraphDataSet } from '../../types';
 import { createErrorBands } from "./plotly_graph_elements";
 
@@ -122,6 +122,10 @@ function renderPlot() {
   const plotlyData: Data[] = [];
   if (props.datasets.length === 0) {
     console.error("No data provided for timeseries graph");
+    if (graph.value) {
+      purge(graph.value);
+      plot.value = null;
+    }
     return;
   }
   
@@ -294,6 +298,16 @@ function updateErrorDisplay(visible: boolean, legendGroup?: string) {
 onMounted(() => {
   renderPlot();
 });
+
+
+onUnmounted(() => {
+  // Clean up Plotly instance
+  if (graph.value) {
+    purge(graph.value);
+  }
+  plot.value = null;
+});
+
 
 
 watch(() => props.showErrors, renderPlot);
