@@ -44,7 +44,7 @@ interface MultiPlotProps {
 
 const { datasets } = defineProps<MultiPlotProps>();
 
-const showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
+const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 
 // Common layout options for all plots
 const commonLayoutOptions=  {

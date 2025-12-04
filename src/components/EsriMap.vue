@@ -180,10 +180,10 @@ watch(() => renderOptions.value.colormap, cmap => emit("colormap", cmap));
 
 watch(map, (newMap, oldMap) => {
   if (oldMap) {
-    store.deregisterMap(oldMap);
+    store.deregisterMap(oldMap as unknown as Map);
   }
   if (newMap) {
-    store.registerMap(newMap);
+    store.registerMap(newMap as unknown as Map);
   }
 });
 
