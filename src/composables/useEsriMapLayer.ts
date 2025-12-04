@@ -103,7 +103,7 @@ export function useEsriImageServiceLayer(
   const dynamicMapService = ref<ImageService | null>(null);
   
   function onSourceLoad(e: MapSourceDataEvent) {
-    // console.log('Source data event: ', e.sourceId, e.isSourceLoaded);
+    // console.log(`sourcedata event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
       console.log(`ESRI source ${esriLayerId} loaded`);
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
@@ -113,11 +113,13 @@ export function useEsriImageServiceLayer(
         map.value?.setLayoutProperty(esriLayerId, 'visibility', 'none');
       }
       map.value?.off('sourcedata', onSourceLoad);
+    } else {
+      console.error(`Source load event received but source not loaded yet for ${esriLayerId}`);
     }
   }
   
   function createImageService(map: Map, url: string, options) {
-    console.log(`[${esriLayerId}] Creating image service with options:`, options);
+    // console.log(`[${esriLayerId}] Creating image service with options:`, options);
     return new ImageService(
       esriLayerId,
       map,
@@ -132,7 +134,6 @@ export function useEsriImageServiceLayer(
     
   }
   
-  
   function addEsriSource(mMap: Map) {
     if (!mMap) return;
     map.value = mMap;
@@ -143,6 +144,7 @@ export function useEsriImageServiceLayer(
     // this event will run until the source is loaded
     mMap.on('sourcedata', onSourceLoad);
     
+    console.log(`[${esriLayerId}] Adding ESRI source to map`);
     // on click on the layer
     if (options.clickValue) {
       mMap.on('click', (e) => {

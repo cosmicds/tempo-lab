@@ -170,7 +170,6 @@ const calendar = ref<DatePickerInstance | null>(null);
 
 function handleEsriTimeSelected(ts: number, _index: number) {
   const idx = timestamps.value.indexOf(ts);
-  console.log(`ESRI time selected: ${new Date(ts)} (nearest index ${idx})`);
   if (idx >= 0) {
     timeIndex.value = idx;
   }

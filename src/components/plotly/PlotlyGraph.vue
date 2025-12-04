@@ -330,7 +330,6 @@ onUnmounted(() => {
 watch(() => props.showErrors, renderPlot);
 
 watch(() => props.datasets, (_newData, _oldData) => {
-  console.log("Data prop changed, re-rendering plot");
   renderPlot();
 }, { deep: true });
 

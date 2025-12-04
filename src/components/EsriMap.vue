@@ -169,7 +169,6 @@ const theEsriLayer = useEsriLayer(
 );
 
 const { loadingEsriTimeSteps, addEsriSource, esriTimesteps, renderOptions } = theEsriLayer;
-console.log(theEsriLayer);
 
 watch(esriTimesteps, (newSteps, old) => {
   if (newSteps.length > 0 && newSteps !== old) {
@@ -212,14 +211,11 @@ function onInnerMapReady(m: Map) {
   // Resolve base map readiness immediately
   mapReady.value = true;
   promiseResolve(m);
-  console.log('onReady promise on ref exposed API resolved');
   map.value = m;
   // Attach ESRI source right after base readiness (microtask keeps UI snappy)
   addEsriSource(m);
   emit('esri-layer', theEsriLayer);
-  console.log('ESRI source added to map');
   emit('ready', m);
-  console.log('map ready event emitted');
   console.log(m);
 }
 

@@ -147,7 +147,6 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
       singleDateSelected.value = new Date(newTimestamps[0]);
     } else {
       setNearestDate(singleDateSelected.value.getTime());
-      console.log(minIndex.value, maxIndex.value);
     }
   }, { immediate: true });
 

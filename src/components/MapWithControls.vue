@@ -295,7 +295,6 @@ function removeAdvancedLayers(m: Map | null) {
 }
 
 const onMapReady = (m: Map) => {
-  console.log('Map ready event received');
   map.value = m; // ESRI source already added by EsriMap
   if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);

@@ -213,7 +213,6 @@ onMounted(() => {
       return newLayer && oldLayer.layout?.visibility !== newLayer.layout?.visibility;
     });
     if (visibilityChanged) {
-      console.log('Layer visibility changed, updating layer list');
       onLayersChanged(props.map.getStyle().layers || []);
     }
   });

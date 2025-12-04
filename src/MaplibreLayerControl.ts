@@ -351,7 +351,6 @@ export class MaplibreLayersControl implements IControl {
         return newLayer && oldLayer.layout?.visibility !== newLayer.layout?.visibility;
       });
       if (visibilityChanged) {
-        console.log('Layer visibility changed, updating layer list');
         this.onLayersChanged(map.getStyle().layers || []);
       }
     });
