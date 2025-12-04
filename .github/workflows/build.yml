@@ -19,9 +19,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
     
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: '18.17.1'
+          node-version: '20'
+
+      - name: Use Yarn 4
+        run: |
+          corepack enable
+          yarn set version 4.5.3
 
       - name: Yarn install
         run: yarn install
