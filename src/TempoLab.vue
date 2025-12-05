@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
+import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn, type Stack } from "golden-layout";
 import { v4 } from "uuid";
 
 import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serializeTempoStore } from "@/stores/app";
@@ -165,9 +165,7 @@ function setDatasetsPanelVisibility(visible: boolean) {
     item.remove();
     datasetsItem = null;
   }
-  if (layersItem) {
-    layersItem.container.setSize(layersWidth);
-  }
+  layersItem?.container.setSize(layersWidth);
 }
 
 function setLayersPanelVisibility(visible: boolean) {
@@ -186,9 +184,18 @@ function setLayersPanelVisibility(visible: boolean) {
     item.remove();
     layersItem = null;
   }
-  if (datasetsItem) {
-    datasetsItem?.container.setSize(datasetsWidth);
+  datasetsItem?.container.setSize(datasetsWidth);
+}
+
+function layoutContent(): ComponentItemConfig[] {
+  const content = [mapConfig()];
+  if (layerControlsOpen.value) {
+    content.unshift(layersPanelConfig());
   }
+  if (datasetControlsOpen.value) {
+    content.push(datasetsPanelConfig());
+  }
+  return content;
 }
 
 // bind add and remove to the window for easy access from the console
@@ -227,14 +234,6 @@ onMounted(() => {
   // const panelWidth = getPanelWidth();
   // const mapWidth = 100 - 2 * panelWidth;
 
-  const initialContent = [mapConfig()];
-  if (layerControlsOpen.value) {
-    initialContent.unshift(layersPanelConfig());
-  }
-  if (datasetControlsOpen.value) {
-    initialContent.push(datasetsPanelConfig());
-  }
-
   const config: LayoutConfig = {
     settings: {
       hasHeaders: false,
@@ -245,7 +244,8 @@ onMounted(() => {
     },
     root: {
       type: 'row',
-      content: initialContent,
+      content: layoutContent(),
+      isClosable: false,
     },
   };
   layout.resizeWithContainerAutomatically = true;
