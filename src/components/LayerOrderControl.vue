@@ -146,6 +146,10 @@ li {
 
 .drag-handle {
   font-size: 20pt;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 
   &:hover {
     cursor: grab;
