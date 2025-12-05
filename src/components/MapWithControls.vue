@@ -689,7 +689,7 @@ watch(focusRegion, region => {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding-inline: 8px;
 
   .location-and-sharing {
     position: absolute;

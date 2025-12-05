@@ -8,12 +8,14 @@
     <div class="global-filters">
       <div>Power Plant Filters</div>
       <v-btn
+        size="small"
         @click="() => {
           openAllPanels();
           handleGlobalSelect(true);
         }"
       >All</v-btn>
       <v-btn
+        size="small"
         @click="() => {
           openAllPanels();
           handleGlobalSelect(false);
@@ -29,6 +31,7 @@
           <span>{{ category }}</span>
           <span>
             <v-btn
+              size="small"
               @click="() => {
                 openPanel(index); 
                 handleCategoryGlobalSelect(category, true);
@@ -36,6 +39,7 @@
               @click.stop
             >All</v-btn>
             <v-btn
+              size="small"
               @click="() => {
                 openPanel(index); 
                 handleCategoryGlobalSelect(category, false);
@@ -83,7 +87,6 @@ import { setLayerVisibility } from "@/maplibre_controls";
 
 interface Props {
   map: Map;
-  layerId: string;
 }
 
 const props = defineProps<Props>();
