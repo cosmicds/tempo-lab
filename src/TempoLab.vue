@@ -328,6 +328,7 @@ body {
 .comparison-data-controls,
 .dataset-controls {
   width: 100%;
+  padding-inline: 8px;
 }
 
 :root {

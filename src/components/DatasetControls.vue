@@ -39,7 +39,6 @@
         variant="accordion"
         id="user-options-panels"
         multiple
-        class="pl-3"
       > 
         <v-expansion-panel
           title="Regions"
@@ -489,7 +488,7 @@
     </v-expansion-panels>
     </div>
     
-    <div class="d-flex flex-wrap flex-row ma-2 align-center justify-center ga-1">
+    <div class="d-flex flex-wrap flex-row align-center justify-center ga-1">
       
     <v-btn 
       :color="accentColor2"
