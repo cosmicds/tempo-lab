@@ -11,6 +11,35 @@
     </a>
     </div>
 
+    <v-btn
+      @click="layerControlsOpen = !layerControlsOpen"
+      class="layers-button"
+      aria-label="Toggle layer controls"
+      variant="outlined"
+      rounded="lg"
+      density="default"
+      :color="accentColor2"
+      elevation="0"
+      size="lg"
+    >
+      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
+      <v-icon>mdi-layers</v-icon>
+    </v-btn>
+    <v-btn
+      @click="datasetControlsOpen = !datasetControlsOpen"
+      class="layers-button"
+      aria-label="Toggle dataset controls"
+      variant="outlined"
+      rounded="lg"
+      density="default"
+      :color="accentColor2"
+      elevation="0"
+      size="lg"
+    >
+      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
+      <v-icon>mdi-tune</v-icon>
+    </v-btn>
+
     <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
     <!-- <cds-dialog
       title="Time Series"
@@ -148,12 +177,15 @@ library.add(faArrowsRotate);
 
 const emit = defineEmits<{
   (event: "intro-slide", value: number): void;
+  (event: 'layers'): void;
 }>();
 
 const store = useTempoStore();
 const {
   accentColor2,
   shareButtonClickedCount,
+  datasetControlsOpen,
+  layerControlsOpen,
 } = storeToRefs(store);
 
 const display = useDisplay();
@@ -198,6 +230,7 @@ a[href="https://tempo.si.edu"]>img {
   justify-content: space-between;
   width: 100%;
   padding: 10px;
+  gap: 3px;
 
   >* {
     background-color: transparent;
@@ -205,6 +238,10 @@ a[href="https://tempo.si.edu"]>img {
 
   >div {
     outline: 1px solid transparent;
+  }
+
+  .layers-button {
+    padding: 8px;
   }
 
   #menu-area {

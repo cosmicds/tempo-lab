@@ -6,7 +6,18 @@
     <header-bar />
     <div ref="root" class="layout-root"></div>
 
-    <template v-if="mapTargets">
+    <teleport
+      v-if="layersPanelTarget"
+      :to="layersPanelTarget"
+    >
+      <v-slide-x-transition>
+        <comparison-data-controls
+          class="comparison-data-controls"
+        />
+      </v-slide-x-transition>
+    </teleport>
+
+    <div v-if="mapTargets">
       <teleport
         v-for="[key, target] in Object.entries(mapTargets)"
         :key="key"
@@ -14,44 +25,23 @@
       >
         <map-with-controls />
       </teleport>
-    </template>
+    </div>
 
     <teleport
-      v-if="sidePanelTarget"
-      :to="sidePanelTarget"
+      v-if="datasetsPanelTarget"
+      :to="datasetsPanelTarget"
     >
-      <v-tabs
-        v-model="tab"
-        :color="tempoRed"
-      >
-        <v-tab :value="1" variant="flat">Data Layers</v-tab>
-        <v-tab :value="0" variant="flat">TEMPO Deep Dive</v-tab>
-      </v-tabs>
-      
-      <v-tabs-window v-model="tab">
-        <v-tabs-window-item
-          class="tab-content"
-          :value="0"
-          :key="0"
-        >
-          <dataset-controls />
-        </v-tabs-window-item>
-        <v-tabs-window-item
-          :value="1"
-          :key="1"
-          class="tab-content"
-        >
-          <comparison-data-controls />
-        </v-tabs-window-item>
-      </v-tabs-window>
+      <dataset-controls
+       class="dataset-controls"
+      />
     </teleport>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, type Ref } from "vue";
+import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type RowOrColumn } from "golden-layout";
+import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
 import { v4 } from "uuid";
 
 import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serializeTempoStore } from "@/stores/app";
@@ -59,8 +49,9 @@ import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serial
 type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
 const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
-const sidePanelTarget = ref<MaybeHTMLElement>(null);
-const tab = ref(1);
+const mapContainers = reactive<Record<string, ComponentContainer>>({});
+const datasetsPanelTarget = ref<MaybeHTMLElement>(null);
+const layersPanelTarget = ref<MaybeHTMLElement>(null);
 
 
 const store = useTempoStore();
@@ -69,6 +60,8 @@ const {
   accentColor2,
   debugMode,
   tempoRed,
+  datasetControlsOpen,
+  layerControlsOpen,
 } = storeToRefs(store);
 
 const query = new URLSearchParams(window.location.search);
@@ -101,7 +94,32 @@ function mapConfig(): ComponentItemConfig {
     componentType: 'map-panel',
     title: 'Map',
     draggable: false,
-    width: 70,
+  };
+}
+
+const DEFAULT_PANEL_WIDTH_PX = 300;
+function getGLPanelWidth(): number {
+  const glRoot = root.value as HTMLElement;
+  return Math.min(Math.max(DEFAULT_PANEL_WIDTH_PX * 100 / glRoot.clientWidth, 10), 25);
+}
+
+function layersPanelConfig(width: number | null = null): ComponentItemConfig {
+  return {
+    type: 'component',
+    componentType: 'layers-panel',
+    title: 'Layers',
+    draggable: false,
+    width: width ?? getGLPanelWidth(),
+  };
+}
+
+function datasetsPanelConfig(width: number | null = null): ComponentItemConfig {
+  return {
+    type: 'component',
+    componentType: 'datasets-panel',
+    title: 'Controls',
+    draggable: false,
+    width: width ?? getGLPanelWidth(),
   };
 }
 
@@ -128,6 +146,58 @@ function removeMapPanel(index: number) {
   }
 }
 
+let datasetsItem: ContentItem | null = null;
+let layersItem: ContentItem | null = null;
+
+function setDatasetsPanelVisibility(visible: boolean) {
+  if (!layout) { return; }
+  const row = layout.rootItem as RowOrColumn;
+
+  const index = row.contentItems.length - 1;
+  const item = row.contentItems[index].contentItems[0];
+  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
+  if (visible === isAtIndex) { return; }
+  const layersWidth = layersItem?.container.width ?? 0;
+  if (visible) {
+    datasetsItem = row.newItem(datasetsPanelConfig(), index + 1);
+    datasetsItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
+  } else {
+    item.remove();
+    datasetsItem = null;
+  }
+  layersItem?.container.setSize(layersWidth);
+}
+
+function setLayersPanelVisibility(visible: boolean) {
+  if (!layout) { return; }
+  const row = layout.rootItem as RowOrColumn;
+
+  const index = 0;
+  const item = row.contentItems[index].contentItems[0];
+  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
+  if (visible === isAtIndex) { return; }
+  const datasetsWidth = datasetsItem?.container.width ?? 0;
+  if (visible) {
+    layersItem = row.newItem(layersPanelConfig(), index);
+    layersItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
+  } else {
+    item.remove();
+    layersItem = null;
+  }
+  datasetsItem?.container.setSize(datasetsWidth);
+}
+
+function layoutContent(): ComponentItemConfig[] {
+  const content = [mapConfig()];
+  if (layerControlsOpen.value) {
+    content.unshift(layersPanelConfig());
+  }
+  if (datasetControlsOpen.value) {
+    content.push(datasetsPanelConfig());
+  }
+  return content;
+}
+
 // bind add and remove to the window for easy access from the console
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (window as any).addMapPanel = addMapPanel;
@@ -142,9 +212,14 @@ onMounted(() => {
   }
   layout = new GoldenLayout(rootEl);
 
-  layout.registerComponentFactoryFunction("side-panel", container => {
-    container.element.id = "side-panel";
-    sidePanelTarget.value = container.element;
+  layout.registerComponentFactoryFunction("datasets-panel", container => {
+    container.element.id = "datasets-panel";
+    datasetsPanelTarget.value = container.element;
+  });
+
+  layout.registerComponentFactoryFunction("layers-panel", container => {
+    container.element.id = "layers-panel";
+    layersPanelTarget.value = container.element;
   });
 
   layout.registerComponentFactoryFunction("map-panel", container => {
@@ -152,30 +227,32 @@ onMounted(() => {
     const id = v4();
     const target = ref<MaybeHTMLElement>(null);
     target.value = container.element;
+    mapContainers[id] = container;
     mapTargets[id] = target;
   });
+
+  // const panelWidth = getPanelWidth();
+  // const mapWidth = 100 - 2 * panelWidth;
 
   const config: LayoutConfig = {
     settings: {
       hasHeaders: false,
       responsiveMode: "always",
     },
+    dimensions: {
+      defaultMinItemWidth: "250px",
+    },
     root: {
       type: 'row',
-      content: [
-        mapConfig(), 
-        {
-          type: 'component',
-          componentType: 'side-panel',
-          title: 'Controls',
-          draggable: false,
-          width: 30,
-        },
-      ],
+      content: layoutContent(),
+      isClosable: false,
     },
   };
   layout.resizeWithContainerAutomatically = true;
   layout.loadLayout(config);
+  console.log(layout);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).layout = layout;
 
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
@@ -184,6 +261,9 @@ onMounted(() => {
     }
   });
 });
+
+watch(datasetControlsOpen, setDatasetsPanelVisibility);
+watch(layerControlsOpen, setLayersPanelVisibility);
 </script>
 
 <style lang="less">
@@ -221,8 +301,34 @@ body {
   font-family: "Lexend", sans-serif;
 }
 
-#side-panel {
+.map-panel {
+  display: flex;
+  flex-direction: row;
+  padding-left: 10px;
+  gap: 5px;
+}
+
+#layers-panel {
   overflow-y: scroll;
+  margin-right: 5px;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+#datasets-panel {
+  overflow-y: scroll;
+  padding-left: 2px;
+}
+
+.comparison-data-controls,
+.dataset-controls {
+  width: 100%;
+  padding-inline: 8px;
 }
 
 :root {

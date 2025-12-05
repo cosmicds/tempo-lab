@@ -39,7 +39,6 @@
         variant="accordion"
         id="user-options-panels"
         multiple
-        class="pl-3"
       > 
         <v-expansion-panel
           title="Regions"
@@ -79,6 +78,8 @@
                 :color="tempoRed"
                 density="compact"
                 hide-details
+                :thumb-size="12"
+                :track-size="3"
               >
               </v-slider>
               <v-checkbox
@@ -95,6 +96,8 @@
                   :title="region.name"
                   :style="{ 'background-color': region.color }"
                   @click="() => focusRegion = region"
+                  density="compact"
+                  slim
                 >
                   <template #append>
                     <!-- New: Edit Geometry button (disabled if any selection using region has samples) -->
@@ -111,6 +114,7 @@
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
+                      size="small"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         editRegionName(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -122,6 +126,7 @@
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
+                      size="small"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         store.deleteRegion(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -483,7 +488,7 @@
     </v-expansion-panels>
     </div>
     
-    <div class="d-flex flex-wrap flex-row ma-2 align-center justify-center ga-1">
+    <div class="d-flex flex-wrap flex-row align-center justify-center ga-1">
       
     <v-btn 
       :color="accentColor2"
@@ -1193,6 +1198,10 @@ watch(tableSelection, (newVal) => {
 </script>
 
 <style scoped lang="less">
+#dataset-sections {
+  font-size: 11pt !important;
+}
+
 // prevent overflows of the content
 #add-region-time {
   display: flex;
@@ -1272,5 +1281,10 @@ watch(tableSelection, (newVal) => {
   background-color: #656565;
 }
 
-
+:deep(.v-checkbox .v-label),
+:deep(.v-slider__label),
+:deep(.v-list-item-title)
+{
+  font-size: 10pt;
+}
 </style>

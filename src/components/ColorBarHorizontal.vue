@@ -81,6 +81,11 @@ export default defineComponent({
       type: String,
       default: "1.25em",
     },
+
+    fontSize: {
+      type: String,
+      default: "10pt",
+    },
     
   },
   
@@ -110,6 +115,7 @@ export default defineComponent({
     cssVars() {
       return {
         "--height": this.height,
+        "--font-size": this.fontSize,
       };
     },
   },
@@ -252,6 +258,7 @@ export default defineComponent({
   position: relative;
   display: block;
   width: 100%;
+  font-size: var(--font-size);
 }
 .colorbar {
   width: 100%;
@@ -271,17 +278,10 @@ export default defineComponent({
 
 .colorbar-labels {
   
-  width: calc(100% - 2*var(--height));
+  width: 100%;
   height: -webkit-max-content;
   height: -moz-max-content;
   height: max-content;
-  /* left: 50%; */
-  -webkit-transform-origin: top center;
-      -ms-transform-origin: top center;
-          transform-origin: top center;
-  -webkit-transform: translate(var(--height), 0);
-      -ms-transform: translate(var(--height), 0);
-          transform: translate(var(--height), 0);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
