@@ -66,6 +66,7 @@ const {
 
 const query = new URLSearchParams(window.location.search);
 debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.toLowerCase() == "true";
+const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
 const cssVars = computed(() => {
@@ -80,7 +81,8 @@ const cssVars = computed(() => {
 const localStorageKey = "tempods";
 
 onBeforeMount(() => {
-  const storedState = window.localStorage.getItem(localStorageKey);
+  
+  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
   if (storedState) {
     const state = deserializeTempoStore(storedState);
     store.$patch(state);
@@ -255,7 +257,7 @@ onMounted(() => {
   (window as any).layout = layout;
 
   window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden") {
+    if (document.visibilityState === "hidden" && !ignoreCache) {
       const stringified = serializeTempoStore(store); 
       window.localStorage.setItem(localStorageKey, stringified);
     }
