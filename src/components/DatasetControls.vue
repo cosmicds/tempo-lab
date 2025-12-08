@@ -322,7 +322,7 @@
                     <v-expand-transition>
                       <div
                         class="selection-icons"
-                        v-show="(dataset.samples || dataset.plotlyDatasets) && (touchscreen ? openSelection == dataset.id : isHovering)"
+                        v-show="(dataset.samples || dataset.plotlyDatasets) && (touchscreen ? openSelection == dataset.id : isHovering ?? true)"
                       >
                         <v-tooltip
                           v-if="dataset.timeRange.type === 'single' || dataset.folded"

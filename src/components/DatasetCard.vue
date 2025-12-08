@@ -36,7 +36,7 @@
               {{ dataset.name ?? dataset.region.name }}
             </v-chip>
             <v-expand-transition>
-              <div v-if="isHovering ?? true" class="d-flex flex-wrap align-center ga-2 mb-2">
+              <div class="d-flex flex-wrap align-center ga-2 mb-2">
                 <v-chip 
                   label
                   size="small" 
