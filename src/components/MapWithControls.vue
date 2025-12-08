@@ -466,6 +466,7 @@ function updateURL() {
 // ESRI timesteps arrive from EsriMap component; store directly in timestamps
 function onEsriTimestepsLoaded(steps: number[]) {
   if (!Array.isArray(steps) || steps.length === 0) return;
+  console.log(`%c[EsriMap] onEsriTimestepsLoaded: received ${steps.length} steps`, 'color: purple');
   const sorted = steps.slice().sort();
   timestamps.value = sorted;
   if (timeIndex.value >= sorted.length) {

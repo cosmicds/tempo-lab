@@ -46,11 +46,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import VueDatePicker from "@vuepic/vue-datepicker";
-// @ts-expect-error it's a css file
 import '@vuepic/vue-datepicker/dist/main.css';
-// @ts-expect-error it's a css file
 import "./styles/vue3-date-picker-styles.css";
-// @ts-expect-error it's a css file
 import "./styles/molecule-svg.css";
 import { UseClipboard } from "@vueuse/components";
 

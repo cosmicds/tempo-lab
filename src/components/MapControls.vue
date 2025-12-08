@@ -47,15 +47,6 @@
               </template> -->
             </date-picker>
             <!-- time chips to select time specifically for esri times -->
-            <time-chips
-              v-if="molecule.toLowerCase().includes('month')"
-              :timestamps="esriTimesteps.slice(minIndex, maxIndex + 1)"
-              @select="handleEsriTimeSelected($event.value, $event.index)"
-              :selected-index="timeIndex - minIndex"
-              :use-utc="molecule.toLowerCase().includes('month')"
-              :date-only="molecule.toLowerCase().includes('month')"
-              :hour-only="!molecule.toLowerCase().includes('month')"
-            />
           </v-radio-group>
         </div>        
         <!-- add buttons to increment and decrement the singledateselected -->
@@ -140,20 +131,16 @@ import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 
 import { type MoleculeType } from "@/esri/utils";
 import { useTempoStore } from "@/stores/app";
-import { useEsriTimesteps } from "@/composables/useEsriTimesteps";
+// import { useEsriTimesteps } from "@/composables/useEsriTimesteps";
 
-import TimeChips from "@/components/TimeChips.vue";
+// import TimeChips from "@/components/TimeChips.vue";
 
 const store = useTempoStore();
 const {
-  timestamps,
   singleDateSelected,
   uniqueDays,
   selectedTimezone,
   timezoneOptions,
-  timeIndex,
-  minIndex,
-  maxIndex,
 } = storeToRefs(store);
 
 const emit = defineEmits<{
@@ -161,21 +148,12 @@ const emit = defineEmits<{
 }>();
 
 const molecule = ref<MoleculeType>('no2');
-const { esriTimesteps } = useEsriTimesteps(molecule);
 
 const radio = ref<number | null>(null);
 const touchscreen = supportsTouchscreen();
 
 const calendar = ref<DatePickerInstance | null>(null);
 
-function handleEsriTimeSelected(ts: number, _index: number) {
-  const idx = timestamps.value.indexOf(ts);
-  if (idx >= 0) {
-    timeIndex.value = idx;
-  }
-  // We may need something like this when we get back the monthly average service.
-  //singleDateSelected.value = new Date(ts);
-}
 
 watch(molecule, (newMol: MoleculeType) => {
   emit("molecule", newMol);

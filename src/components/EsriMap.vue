@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRef, computed, defineExpose, type Ref, useTemplateRef, onMounted, defineModel } from 'vue';
+import { ref, watch, toRef, computed, type Ref, useTemplateRef, onMounted } from 'vue';
 import type { PropType } from 'vue';
 import type { Map } from 'maplibre-gl';
 import MaplibreMap from './MaplibreMap.vue';
