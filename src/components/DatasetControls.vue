@@ -247,7 +247,7 @@
               v-model:selected-datasets="selectedDatasets"
               @edit-region="(e) => handleEditDataset(e)"
             >
-              <template #action-row="{ isHovering, dataset }">
+              <template #action-row="{ dataset }">
                     <div
                       v-if="(dataset.loading || !dataset.samples)  && !(dataset.timeRange?.type === 'folded' && dataset.plotlyDatasets)"
                       class="dataset-loading"
