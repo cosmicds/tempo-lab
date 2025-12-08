@@ -2,7 +2,7 @@ import { computed, toRef, ref, watch, type MaybeRef, onMounted } from "vue";
 
 import { ESRI_URLS, getEsriTimesteps, MoleculeType } from "../esri/utils";
 
-const timestepCache: Record<MoleculeType, number[]> = {};
+const timestepCache: Record<MoleculeType, number[]> | object = {};
 
 export function useEsriTimesteps(initialMolecule: MaybeRef<MoleculeType>, updateOnMount=true) {
   const molecule = toRef(initialMolecule);

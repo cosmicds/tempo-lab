@@ -97,16 +97,14 @@ export function useTempoLayer(initialMolecule: MaybeRef<MoleculeType>,
   const dynamicMapService = ref<ImageService | null>(null);
   
   function onSourceLoad(e: MapSourceDataEvent) {
-    console.log(`sourcedate event for ${esriLayerId}: `);
+    // console.log(`sourcedate event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
       console.log(`[${esriLayerId}] ESRI source loaded with time`, new Date(timestamp.value ?? 0 ));
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
       updateEsriOpacity();
       updateEsriTimeRange();
       map.value?.off('sourcedata', onSourceLoad);
-    } else {
-      console.error(`[${esriLayerId}] Source load event received but source not loaded yet`);
-    }
+    } 
   }
   
   function setVisibility(visible: boolean) {

@@ -11,7 +11,7 @@
         density="compact"
         color="var(--info-background)"
       >
-        <v-toolbar-title>Data Aggregation</v-toolbar-title>
+        <v-toolbar-title>Time Graph</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn
           icon="mdi-close"
@@ -21,7 +21,7 @@
       
       <v-card-text class="pa-4">
         <v-row>
-          <v-btn v-show="!showAggControls" @click="showAggControls = !showAggControls" class="mb-4">
+          <v-btn @click="showAggControls = !showAggControls" class="mb-4">
             <v-icon>{{ showAggControls ? 'mdi-chevron-left' : 'mdi-menu-open' }}</v-icon>
           </v-btn>
           <!-- Left Panel: Folding Options -->
@@ -67,14 +67,14 @@
           <v-col :md="showAggControls ? 8 : 'auto'" sm="12">
             <v-card variant="outlined" class="pa-3" style="height: auto;">
               <v-card-title>
-                Time Series Comparison
+                <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
               <div style="height: calc(100% - 40px);">
                 <folded-plotly-graph
                   :datasets="graphData"
-                  :show-errors="showErrors"
+                  :show-errors="showErrors" 
                   :fold-type="selectedFoldType"
-                  :colors="[theColor, '#333']"
+                  :colors="[theColor, '#333']" 
                   :timezones="selectedTimezone"
                   :data-options="[
                     {mode: 'markers'}, // options for the original data
@@ -120,6 +120,7 @@ import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
+import { moleculeDescriptor } from '@/esri/utils';
 const store = useTempoStore();
 const {
   debugMode,

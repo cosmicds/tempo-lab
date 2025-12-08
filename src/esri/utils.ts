@@ -1,6 +1,10 @@
 import { extractTimeSteps, fetchEsriTimeSteps, VariableNames } from "./ImageLayerConfig";
 
-export const ESRI_URLS = {
+import type { MoleculeType } from "@/types";
+export type { MoleculeType } from "@/types";
+
+
+export const ESRI_URLS: Record<MoleculeType, { url: string; variable: VariableNames }> = {
   'no2': {
     url: "https://gis.earthdata.nasa.gov/image/rest/services/C2930763263-LARC_CLOUD/TEMPO_NO2_L3_V03_HOURLY_TROPOSPHERIC_VERTICAL_COLUMN/ImageServer",
     variable: "NO2_Troposphere",
@@ -29,10 +33,10 @@ export const ESRI_URLS = {
   //   url: "https://gis.earthdata.nasa.gov/gp/rest/services/Hosted/TEMPO_HCHO_L3_V03_Daily_Maximum/ImageServer",
   //   variable: "HCHO",
   // },
-} as const as Record<string, { url: string; variable: VariableNames }>;
+} as const;
 
 
-export const MOLECULE_OPTIONS = [
+export const MOLECULE_OPTIONS: {title: string, value: MoleculeType }[] = [
   { title: 'NO₂', value: 'no2' },
   // { title: 'Monthly Mean NO₂', value: 'no2Monthly' },
   // { title: 'Daily Max NO₂', value: 'no2DailyMax' },
@@ -42,7 +46,44 @@ export const MOLECULE_OPTIONS = [
   // { title: 'Daily Max HCHO', value: 'hchoDailyMax' },
 ] as const;
 
-export type MoleculeType = keyof typeof ESRI_URLS;
+export interface MoleculeDescriptor {
+    fullName: {text: string, html: string},
+    shortName: {text: string, html: string},
+    unit: {text: string, html: string},
+    shortUnit: {text: string, html: string},
+  }
+
+/**
+ * @type Record<MoleculeType, MoleculeDescriptor>
+ */
+export const MOLECULE_NAMES: Record<MoleculeType, MoleculeDescriptor>  = {
+  no2: {
+    fullName: {text: 'Nitrogen Dioxide', html: 'Nitrogen Dioxide'},
+    shortName: {text: 'NO₂', html: 'NO<sub>2</sub>'},
+    unit: {text: 'molecules/cm²', html: "Molecules / cm<sup>2</sup>"},
+    shortUnit: {text: 'mol./cm²', html: "mol./cm<sup>2</sup>"},
+  },
+  o3: {
+    fullName: {text: 'Ozone', html: 'Ozone'},
+    shortName: {text: 'O₃', html: 'O<sub>3</sub>'},
+    unit: {text: 'Dobson Units', html: 'Dobson Units'},
+    shortUnit: {text: 'DU', html: 'DU'},
+  },
+  hcho: {
+    fullName: {text: 'Formaldehyde', html: 'Formaldehyde'},
+    shortName: {text: 'HCHO',html: 'HCHO'},
+    unit: {text: 'molecules/cm²', html: "Molecules / cm<sup>2</sup>"},
+    shortUnit: {text: 'mol./cm²', html: "mol./cm<sup>2</sup>"},
+  }, 
+} as const;
+
+export function moleculeDescriptor(molecule: MoleculeType): MoleculeDescriptor {
+  if (molecule && molecule.toLowerCase() in MOLECULE_NAMES) {
+    return MOLECULE_NAMES[molecule.toLowerCase()];
+  }
+  throw new Error(`Unknown molecule type: ${molecule}`);
+}
+
 
 export function moleculeName(molecule: MoleculeType): string {
   return MOLECULE_OPTIONS.find(m => m.value == molecule)?.title ?? "";

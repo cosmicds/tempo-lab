@@ -69,6 +69,12 @@ for (let h = 0; h < 48; h += 0.1) {
   }
 }
 
+const _defaultyAxisStyle: Partial<Layout> = {
+  'yaxis': {
+    title: { text: "Molecules / cm<sup>2</sup>" }
+  }
+};
+
 export const foldTypeStyles: Record<PredefinedFoldTypes, Partial<Layout>> = {
   // Hour-based bins
   'hourOfDay': {
@@ -320,6 +326,6 @@ export function deepMerge(target: object, source: object): object {
 
 
 export function mergeFoldTypeLayout(foldType: FoldType, customLayout?: Partial<Layout>): Partial<Layout> {
-  const foldStyle = getFoldTypeStyle(foldType);
+  const foldStyle = deepMerge(getFoldTypeStyle(foldType), _defaultyAxisStyle);
   return deepMerge(deepMerge(foldStyle, ploylyGridStyles) , customLayout || {});
 }

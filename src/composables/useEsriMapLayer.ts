@@ -113,8 +113,6 @@ export function useEsriImageServiceLayer(
         map.value?.setLayoutProperty(esriLayerId, 'visibility', 'none');
       }
       map.value?.off('sourcedata', onSourceLoad);
-    } else {
-      console.error(`Source load event received but source not loaded yet for ${esriLayerId}`);
     }
   }
   
