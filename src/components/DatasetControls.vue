@@ -245,6 +245,7 @@
               :datasets="datasets"
               :turn-on-selection="allDatasetSelection"
               v-model:selected-datasets="selectedDatasets"
+              @edit-region="(e) => handleEditDataset(e)"
             >
               <template #action-row="{ isHovering, dataset }">
                     <div
@@ -269,6 +270,7 @@
                           </span>
                         </template>
                       </v-progress-linear>
+                      
                       <v-tooltip
                         text="Remove selection"
                         location="top"
@@ -283,6 +285,7 @@
                           ></v-btn>
                         </template>
                       </v-tooltip>
+                      
                       <div v-if="!(dataset.loading || dataset.samples || dataset.plotlyDatasets)">
                         <hr/>
                         <v-tooltip
@@ -319,9 +322,9 @@
                     <v-expand-transition>
                       <div
                         class="selection-icons"
-                        v-show="(dataset.samples || dataset.plotlyDatasets) && (touchscreen ? openSelection == dataset.id : isHovering || true)"
+                        v-show="(dataset.samples || dataset.plotlyDatasets) && (touchscreen ? openSelection == dataset.id : isHovering)"
                       >
-                      <v-tooltip
+                        <v-tooltip
                           v-if="dataset.timeRange.type === 'single' || dataset.folded"
                           text="Show graph"
                           location="top"
@@ -400,8 +403,9 @@
                         </v-tooltip>
                       </div>
                     </v-expand-transition>
+                    
                     <cds-dialog
-                      :title="graphTitle(dataset)"
+                      title="Timeseries Graph"
                       v-model="openGraphs[dataset.id]"
                       title-color="var(--info-background)"
                       draggable
@@ -410,6 +414,7 @@
                       :modal="false"
                       :drag-predicate="plotlyDragPredicate"
                     >
+                    
                     <template v-if="dataset.timeRange.type === 'folded' && dataset.plotlyDatasets">
                         <v-checkbox
                           v-model="showErrorBands"
@@ -418,350 +423,108 @@
                           hide-details
                         >
                         </v-checkbox>
-                        <folded-plotly-graph
-                          :datasets="dataset.plotlyDatasets"
+                        <user-dataset-plot
+                          :dataset="dataset"
                           :show-errors="showErrorBands"
                           :colors="[dataset.customColor ?? dataset.region.color, '#333']"
                           :data-options="[{mode: 'markers'}, {mode: 'markers'}]"
                           :names="[`Original Data`, `Binned`]"
-                          :layout-options="{width: 600, height: 400}"
+                          :layout-options="{
+                            width: 600, 
+                            height: 400,
+                            ...(dataset.folded ? {} : { xaxis: {title: {text: 'Local Time for Region'}}}),
+                          }"
                           :fold-type="dataset.folded?.foldType"
                           :timezones="dataset.folded?.timezone"
                         />
                       </template>
-                      <template v-else>
-                        <plotly-graph
-                          :datasets="dataset ? [userDatasetToPlotly(dataset, true)] : []"
-                          :colors="[dataset.customColor || dataset.region.color]"
-                          show-errors
-                          :data-options="[{mode: 'markers'}]"
-                          :names="dataset.name ? [dataset.name] : undefined"
-                          :layout-options="{
-                            width: 600, 
-                            height: 400,
-                            // https://plotly.com/javascript/reference/layout/xaxis/#layout-xaxis-title-text
-                            xaxis: {title: {text: 'Local Time for Region'}},
-                            }"
-                        />
-                      </template>
-                      <div class="explainer-text" style="width: 500px; margin-inline: auto;">
-                        Note: We do not allow aggregation of data for a single day. Please create or select a longer dataset if you would like to explore more
-                      </div>
                     </cds-dialog>
-                    <v-dialog
-                      :model-value="sampleErrorID !== null"
-                      max-width="50%"
-                    >
-                      <v-card>
-                        <v-toolbar
-                          density="compact"
-                        >
-                          <v-toolbar-title text="Error Loading Data"></v-toolbar-title>
-                          <v-spacer></v-spacer>
-                          <v-btn
-                            icon="mdi-close"
-                            @click="sampleErrorID = null"
-                          >
-                          </v-btn>
-                        </v-toolbar>
-                        <v-card-text>
-                          There was an error loading data for this selection. Either there is no data for the
-                          region/time range/molecule combination that you selected, or there was an error loading
-                          data from the server. You can delete this selection and try making a new one.
-                        </v-card-text>
-                      </v-card>
-                    </v-dialog>
                   </template>
-            </dataset-card>
+                </dataset-card>
+              </div>
+              
+              <div class="d-flex flex-column align-items-center justify-space-between ga-2">
+                <v-btn 
+                v-if="datasets.length > 1"
+                :disabled="datasets.length === 0 || !datasets.every(d => d.samples || d.plotlyDatasets)"
+                color="#ffcc33" size="small" :block="false" @click="allDatasetSelection = !allDatasetSelection">
+                {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
+              </v-btn>
+              <v-btn 
+              :color="accentColor2"
+              :disabled="selectedDatasets.length == 0"
+              :variant="selectedDatasets.length > 0 ? 'flat' : 'outlined'"
+              @click="showMultiPlot = true">
+              Graph Selected Datasets
+            </v-btn>
           </div>
-          <div v-if="!validDataSetSelection" class="pa-2 mb-2 error-explainer-text">
-            Note: You can only overlay datasets with the same molecule and fold type.
-          </div>
-          <v-btn 
-          v-if="datasets.length > 1"
-          :disabled="datasets.length === 0 || !datasets.every(d => d.samples || d.plotlyDatasets)"
-          color="#ffcc33" size="small" :block="false" @click="allDatasetSelection = !allDatasetSelection">
-            {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
-          </v-btn>
-          <v-btn
-            @click="showMultiPlot = true"
-            >Show All Datasets in Multi-Plot
-          </v-btn>
         </template>
       </v-expansion-panel>
     </v-expansion-panels>
-    </div>
+  </div>
+  
+  <div class="d-flex flex-wrap flex-row align-center justify-center ga-1">
     
-    <div class="d-flex flex-wrap flex-row align-center justify-center ga-1">
-      
-    <v-btn 
-      :color="accentColor2"
-      :disabled="!validDataSetSelection"
-      v-if="selectedDatasets.length > 0" 
-      @click="showSelectedDatasetsGraph = true">
-      Graph Selected Datasets
-    </v-btn>
-    <cds-dialog
-      title="Graph of Selected Datasets"
-      v-model="showSelectedDatasetsGraph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <plotly-graph
-        :datasets="selectedDatasetsGraphData"
-        :colors="selectedDatasetsGraphDataColors"
-        :show-errors="showErrorBands"
-        :data-options="selectedDatasetsGraphData.map(() => ({mode: 'markers'}))"
-        :names="selectedDatasetsGraphData.map(d => d.name ?? '')"
-        :layout-options="{
-          width: 600, 
-          height: 400,
-          xaxis: {title: {text: 'Local Time for Region'}},
-        }"
-      />
-    </cds-dialog>
     
-    <v-btn v-if="false && no2GraphData.length > 0" @click="showNO2Graph = true">
-      Show NO₂ Graph
-    </v-btn>
-    <cds-dialog
-      title="Nitrogen Dioxide Data"
-      v-model="showNO2Graph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <plotly-graph
-        :datasets="no2GraphData.map(d => userDatasetToPlotly(d, true))"
-        :colors="no2GraphData.map(d => d.customColor || d.region.color)"
-        :show-errors="showErrorBands"
-        :data-options="no2GraphData.map(() => ({mode: 'markers'}))"
-        :names="no2GraphData.map(d => d.name ?? '')"
-        :layout-options="{
-          width: 600, 
-          height: 400,
-          xaxis: {title: {text: 'Local Time for Region'}},
-        }"
-      />
-    </cds-dialog>
-
-    <v-btn v-if="false && o3GraphData.length > 0" @click="showO3Graph = true">
-      Show Ozone Graph
-    </v-btn>
-    <cds-dialog
-      title="Ozone Data"
-      v-model="showO3Graph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <plotly-graph
-        :datasets="o3GraphData.map(d => userDatasetToPlotly(d, true))"
-        :colors="o3GraphData.map(d => d.customColor || d.region.color)"
-        :show-errors="showErrorBands"
-        :data-options="o3GraphData.map(() => ({mode: 'markers'}))"
-        :names="o3GraphData.map(d => d.name ?? '')"
-        :layout-options="{
-          width: 600, 
-          height: 400,
-          xaxis: {title: {text: 'Local Time for Region'}},
-        }"
-      />
-    </cds-dialog>
     
-    <v-btn v-if="false && hchoGraphData.length > 0" @click="showHCHOGraph = true">
-      Show Formaldehyde Graph
-    </v-btn>
-    <cds-dialog
-      title="Formaldehyde Data"
-      v-model="showHCHOGraph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <plotly-graph
-        :datasets="hchoGraphData.map(d => userDatasetToPlotly(d, true))"
-        :colors="hchoGraphData.map(d => d.customColor || d.region.color)"
-        :show-errors="showErrorBands"
-        :data-options="hchoGraphData.map(() => ({mode: 'markers'}))"
-        :names="hchoGraphData.map(d => d.name ?? '')"
-        :layout-options="{
-          width: 600, 
-          height: 400,
-          xaxis: {title: {text: 'Local Time for Region'}},
-        }"
-      />
-    </cds-dialog>
-    
-    <div 
-      v-if="!allEqual(no2foldedGraphData.map(v => v.foldType)) || 
-            !allEqual(o3foldedGraphData.map(v => v.foldType)) || 
-            !allEqual(hchofoldedGraphData.map(v => v.foldType))"
-      class="mixed-foldType-warning pa-2 ma-2 text-large text-red explainer-text"
-    >
-    Warning: Be sure to only select datasets that have the same type of fold. It is not possible to overlay different FoldTypes.
-    </div>
-    
-    <v-btn v-if="false && no2foldedGraphData.length > 0" @click="showfoldedNO2Graph = true">
-      Show Folded NO₂ Data
-    </v-btn>
-    <cds-dialog
-      title="Nitrogen Dioxide Data"
-      v-model="showfoldedNO2Graph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <folded-plotly-graph
-        :datasets="no2foldedGraphData.length > 0 ? no2foldedGraphData : []"
-        :show-errors="showErrorBands"
-        :colors="no2foldedGraphData.map( v => v.color) ?? ['#FF5733', '#333']"
-        :data-options="[{mode: 'markers'}, {mode: 'markers'}]"
-        :layout-options="{width: 600, height: 400}"
-        :fold-type="no2foldedGraphData[0].foldType"
-        :timezones="no2foldedGraphData.map(v => v.timezone) ?? 'UTC'"
-      />
-    </cds-dialog>
-
-    <v-btn v-if="false && o3foldedGraphData.length > 0" @click="showfoldedO3Graph = true">
-      Show Folded O₃ Data
-    </v-btn>
-    <cds-dialog
-      title="Ozone Data"
-      v-model="showfoldedO3Graph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <folded-plotly-graph
-        :datasets="o3foldedGraphData.length > 0 ? o3foldedGraphData : []"
-        :show-errors="showErrorBands"
-        :colors="o3foldedGraphData.map( v => v.color) ?? ['#FF5733', '#333']"
-        :data-options="[{mode: 'markers'}, {mode: 'markers'}]"
-        :layout-options="{width: 600, height: 400}"
-        :fold-type="o3foldedGraphData[0].foldType"
-        :timezones="o3foldedGraphData.map(v => v.timezone) ?? 'UTC'"
-      />
-    </cds-dialog>
-
-    <v-btn v-if="false && hchofoldedGraphData.length > 0" @click="showfoldedHCHOGraph = true">
-      Show Folded HCHO Data
-    </v-btn>
-    <cds-dialog
-      title="Formaldehyde Data"
-      v-model="showfoldedHCHOGraph"
-      draggable
-      persistent
-      :modal="false"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
-    >
-      <v-checkbox
-        v-model="showErrorBands"
-        label="Show Errors"
-        density="compact"
-        hide-details
-      >
-      </v-checkbox>
-      <folded-plotly-graph
-        :datasets="hchofoldedGraphData.length > 0 ? hchofoldedGraphData : []"
-        :show-errors="showErrorBands"
-        :colors="hchofoldedGraphData.map( v => v.color) ?? ['#FF5733', '#333']"
-        :data-options="[{mode: 'markers'}, {mode: 'markers'}]"
-        :layout-options="{width: 600, height: 400}"
-        :fold-type="hchofoldedGraphData[0].foldType"
-        :timezones="hchofoldedGraphData.map(v => v.timezone) ?? 'UTC'"
-      />
-    </cds-dialog>
     <!--  -->
     <hr class="ma-2" style="width: 100%;"/>
-        <v-btn
-      v-if="regions.length > 0 || timeRanges.length > 1"
+    <v-btn
+    v-if="regions.length > 0 || timeRanges.length > 1"
       color="#a63a3f"
       @click="showConfirmReset = true"
-    >
+      >
       Delete ALL selections
     </v-btn>
-    </div>
-
-    <v-dialog
-      v-model="showEditRegionNameDialog"
-    >
-      <!-- text field that requires a confirmation -->
-        <c-text-field
-          label="Region Name"
-          title="Enter a new name for this region"
-          hide-details
-          dense
-          :button-color="accentColor"
-          @confirm="(name: string) => {
-            if (regionBeingEdited) {
-              store.setRegionName(regionBeingEdited as UnifiedRegionType, name);
-              showEditRegionNameDialog = false;
-            }
-          }"
+  </div>
+  
+  <v-dialog
+  v-model="showEditRegionNameDialog"
+  >
+  <!-- text field that requires a confirmation -->
+  <c-text-field
+  label="Region Name"
+  title="Enter a new name for this region"
+  hide-details
+  dense
+  :button-color="accentColor"
+  @confirm="(name: string) => {
+    if (regionBeingEdited) {
+      store.setRegionName(regionBeingEdited as UnifiedRegionType, name);
+      showEditRegionNameDialog = false;
+    }
+  }"
           @cancel="() => {
             showEditRegionNameDialog = false;
             regionBeingEdited = null;
           }"
         ></c-text-field>
+      </v-dialog>
+      
+    <v-dialog
+      :model-value="sampleErrorID !== null"
+      max-width="50%"
+    >
+      <v-card>
+        <v-toolbar
+          density="compact"
+        >
+          <v-toolbar-title text="Error Loading Data"></v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn
+            icon="mdi-close"
+            @click="sampleErrorID = null"
+          >
+          </v-btn>
+        </v-toolbar>
+        <v-card-text>
+          There was an error loading data for this selection. Either there is no data for the
+          region/time range/molecule combination that you selected, or there was an error loading
+          data from the server. You can delete this selection and try making a new one.
+        </v-card-text>
+      </v-card>
     </v-dialog>
-
+    
     <v-dialog
       v-model="showEditTimeRangeNameDialog"
     >
@@ -785,19 +548,19 @@
         ></c-text-field>
     </v-dialog>
         
-      <v-dialog
-        v-model="showDatasetEditor"
-      >
-        <user-dataset-editor
-          v-if="currentlyEditingDataset !== null"
-          v-model="currentlyEditingDataset" 
-          :name-only="datasetEditorNameOnly"
-          @complete="() => {
-            showDatasetEditor = false;
-            currentlyEditingDataset = null;
-          }"
-          />
-        </v-dialog>
+    <v-dialog
+      v-model="showDatasetEditor"
+    >
+      <user-dataset-editor
+        v-if="currentlyEditingDataset !== null"
+        v-model="currentlyEditingDataset" 
+        :name-only="datasetEditorNameOnly"
+        @complete="() => {
+          showDatasetEditor = false;
+          currentlyEditingDataset = null;
+        }"
+        />
+    </v-dialog>
         
     <!-- Data Aggregation Dialog -->
     <advanced-operations
@@ -833,17 +596,16 @@
     </v-dialog>
     
     <cds-dialog
-      title="All Datasets Multi-Plot"
+      title="Timeseries Graphs"
       title-color="var(--info-background)"
-      width="80vw"
+      :width="selectedDatasets.length > 1 ? '90vw' : '600px'"
       v-model="showMultiPlot"
       persistent
       max-height="90vh"
-      :scrim="false"
-      :drag-predicate="plotlyDragPredicate"
+      :scrim="true"
     >
       <multi-plot
-        :datasets="datasets.filter(d => d.samples || d.plotlyDatasets)"
+        :datasets="datasets.filter(d => (d.samples || d.plotlyDatasets) && selectedDatasets.includes(d.id) )"
       />
     </cds-dialog>
 
@@ -867,16 +629,16 @@ import { atleast1d } from "../utils/atleast1d";
 import DateTimeRangeSelection from "../date_time_range_selection/DateTimeRangeSelection.vue";
 import AdvancedOperations from "./AdvancedOperations.vue";
 import { TimeRangeSelectionType } from "@/types/datetime";
-import PlotlyGraph from "./plotly/PlotlyGraph.vue";
-import FoldedPlotlyGraph from "./FoldedPlotlyGraph.vue";
+// import PlotlyGraph from "./plotly/PlotlyGraph.vue";
+// import FoldedPlotlyGraph from "./FoldedPlotlyGraph.vue";
 import CTextField from "./CTextField.vue";
 import DatasetCard from "./DatasetCard.vue";
 import { toZonedTime } from "date-fns-tz";
-import { allEqual } from "@/utils/array_operations/array_math";
-import { userDatasetToPlotly } from "@/utils/data_converters";
+// import { userDatasetToPlotly } from "@/utils/data_converters";
 import UserDatasetTable from "./UserDatasetTable.vue";
 import TimeRangeCard from "@/date_time_range_selection/TimeRangeCard.vue";
-import MultiPlot from "./plotly/MultiPlot.vue";
+import MultiPlot from "./plotly/MultiMoleculePlot.vue";
+import UserDatasetPlot from "./plotly/UserDatasetPlot.vue";
 
 type UnifiedRegionType = UnifiedRegion;
 
@@ -1022,93 +784,14 @@ function editTimeRangeName(timeRange: TimeRange) {
   showEditTimeRangeNameDialog.value = true;
 }
 
-function graphTitle(dataset: UserDataset): string {
+function _graphTitle(dataset: UserDataset): string {
   const molecule = dataset.molecule;
   const molTitle = MOLECULE_OPTIONS.find(m => m.value === molecule)?.title || '';
-  return `${molTitle} Time Series for ${dataset.region.name}`;
+  return dataset.name ?? `${molTitle} Time Series for ${dataset.region.name}`;
 }
 
-const showSelectedDatasetsGraph = ref(false);
-const selectedDatasetsGraphData = computed(() =>{
-  // check if folded
-  if (selectedDatasets.value.length === 0) {
-    return [];
-  }
-  const firstDataset = datasets.value.find(s => s.id === selectedDatasets.value[0]);
-  if (!firstDataset) {
-    return [];
-  }
-  const isFolded = firstDataset.timeRange?.type === 'folded';
-  if (isFolded) {
-    // folded datasets
-    const validFoldedDatasets = datasets.value
-      .filter(
-        s => selectedDatasets.value.includes(s.id) &&
-        s.timeRange?.type === 'folded' && 
-        s.plotlyDatasets && 
-        s.plotlyDatasets.length > 0
-      );
-    return validFoldedDatasets.map(s => {    
-      return {
-        ...s.plotlyDatasets![1],
-        foldType: s.folded?.foldType,
-        timezone: s.folded?.timezone,
-        color: s.customColor || s.region.color,
-      };
-    }); // "!" tells TS that we know it's not undefined
-  } else {
-    // normal datasets
-    return datasets.value
-      .filter(s => selectedDatasets.value.includes(s.id))
-      .map(s => userDatasetToPlotly(s, true));
-  }
-});
-
-const selectedDatasetsGraphDataColors = computed<string[]>(() => {
-  if (selectedDatasets.value.length === 0) {
-    return [];
-  }
-  const firstDataset = datasets.value.find(s => s.id === selectedDatasets.value[0]);
-  if (!firstDataset) {
-    return [];
-  }
-  const isFolded = firstDataset.timeRange?.type === 'folded';
-  if (isFolded) {
-    // folded datasets
-    const validFoldedDatasets = datasets.value
-      .filter(
-        s => selectedDatasets.value.includes(s.id) &&
-        s.timeRange?.type === 'folded' && 
-        s.plotlyDatasets && 
-        s.plotlyDatasets.length > 0
-      );
-    return validFoldedDatasets.map(s => s.customColor || s.region.color);
-  } else {
-    // normal datasets
-    return datasets.value
-      .filter(s => selectedDatasets.value.includes(s.id))
-      .map(s => s.customColor || s.region.color);
-  }
-  
-});
-
-const showNO2Graph = ref(false);
-const no2GraphData = computed(() =>{
-  return datasets.value.filter(s => s.molecule.includes('no2') && store.datasetHasSamples(s));
-});
-
-// ozone version
-const showO3Graph = ref(false);
-const o3GraphData = computed(() =>{
-  return datasets.value.filter(s => s.molecule.includes('o3') && store.datasetHasSamples(s));
-});
 
 
-// formaldehyde version
-const showHCHOGraph = ref(false);
-const hchoGraphData = computed(() =>{
-  return datasets.value.filter(s => s.molecule.includes('hcho') && store.datasetHasSamples(s));
-});
 
 function _toZonedTime(date: number | Date | string, timezone): number | Date {
   if (typeof date === 'number') {
@@ -1130,81 +813,8 @@ watch(selectedDatasets, (newVal) => {
   console.log('Selected datasets changed:', newVal);
 });
 
-// is the current selection of datasets valid for graphing together?
-const validDataSetSelection = computed<boolean>(() => {
-  // must have same time range type and molecule
-  const selected = datasets.value.filter(s => selectedDatasets.value.includes(s.id));
-  if (selected.length === 0) {
-    console.log('Not enough datasets selected for comparison');
-    return true;
-  }
-  const firstMolecule = selected[0].molecule;
-  const firstTimeRangeType = selected[0].timeRange;
-  const notFolded = (tr: TimeRange) => tr?.type !== 'folded';
-  const val = selected.every(s => s.molecule === firstMolecule && notFolded(s.timeRange) === notFolded(firstTimeRangeType));
-  console.log('Valid dataset selection for graphing:', val, selected.map(s => ({id: s.id, molecule: s.molecule, timeRangeType: s.timeRange?.type})));
-  return val;
-});
 
-const showfoldedNO2Graph = ref(false);
-const no2foldedGraphData = computed(() =>{
-  const validFoldedDatasets = datasets.value
-    .filter(
-      s => s.molecule.includes('no2') && 
-      s.timeRange?.type === 'folded' && 
-      s.plotlyDatasets && 
-      s.plotlyDatasets.length > 0 &&
-      selectedDatasets.value.includes(s.id)
-    );
-  return validFoldedDatasets.map(s => {    
-    return {
-      ...s.plotlyDatasets![1],
-      foldType: s.folded?.foldType,
-      timezone: s.folded?.timezone,
-      color: s.customColor || s.region.color,
-    };
-  }); // "!" tells TS that we know it's not undefined
-});
 
-const showfoldedO3Graph = ref(false);
-const o3foldedGraphData = computed(() =>{
-  const validFoldedDatasets = datasets.value
-    .filter(
-      s => s.molecule.includes('o3') && 
-      s.timeRange?.type === 'folded' && 
-      s.plotlyDatasets && 
-      s.plotlyDatasets.length > 0 &&
-      selectedDatasets.value.includes(s.id)
-    );
-  return validFoldedDatasets.map(s => {
-    return {
-      ...s.plotlyDatasets![1],
-      foldType: s.folded?.foldType,
-      timezone: s.folded?.timezone,
-      color: s.customColor || s.region.color,
-    };
-  }); // "!" tells TS that we know it's not undefined
-}); 
-
-const showfoldedHCHOGraph = ref(false);
-const hchofoldedGraphData = computed(() =>{
-  const validFoldedDatasets = datasets.value
-    .filter(
-      s => s.molecule.includes('hcho') && 
-      s.timeRange?.type === 'folded' && 
-      s.plotlyDatasets && 
-      s.plotlyDatasets.length > 0 &&
-      selectedDatasets.value.includes(s.id)
-    );
-  return validFoldedDatasets.map(s => {
-    return {
-      ...s.plotlyDatasets![1],
-      foldType: s.folded?.foldType,
-      timezone: s.folded?.timezone,
-      color: s.customColor || s.region.color,
-    };
-  }); // "!" tells TS that we know it's not undefined
-}); 
 
 const showErrorBands = ref(true);
 

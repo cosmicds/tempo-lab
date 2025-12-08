@@ -164,7 +164,7 @@ export interface TimeRange {
   config?: TimeRangeConfig;
 }
 
-
+export type MoleculeType = 'no2' | 'o3' | 'hcho';
 
 export interface UserDataset {
   id: string;
@@ -172,7 +172,7 @@ export interface UserDataset {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   region: any;
   timeRange: TimeRange;
-  molecule: string;
+  molecule: MoleculeType;
   samples?: Record<number, AggValue>;
   errors?: Record<number, DataPointError>;
   locations?: {x: number, y: number}[];

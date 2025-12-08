@@ -8,6 +8,8 @@
     :names="names"
     :layout-options="mergedLayoutOptions"
     :config-options="configOptions"
+    :yaxis-title="yaxisTitle"
+    :xaxis-title="xaxisTitle"
     @click="(value) => emit('click', value)"
   />
 </template>
@@ -43,6 +45,7 @@ export interface FoldedPlotlyGraphProps extends PlotlyGraphProps {
 }
 
 const props = defineProps<FoldedPlotlyGraphProps>();
+console.log(props);
 
 const rezonedDatasets = computed(() => {
   // do nothing if the timeseries isn't usind Date object

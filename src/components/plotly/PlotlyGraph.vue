@@ -13,7 +13,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted } from "vue";
 import { v4 } from "uuid";
-import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
+import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 import type { PlotltGraphDataSet } from '../../types';
 import { createErrorBands } from "./plotly_graph_elements";
 
@@ -43,16 +43,19 @@ export interface PlotlyGraphProps {
   layoutOptions?: Partial<Plotly.Layout>;
   configOptions?: Partial<Plotly.Config>;
   showZero?: boolean;
+  xaxisTitle?: string;
+  yaxisTitle?: string;
 }
 
 const props = withDefaults(defineProps<PlotlyGraphProps>(), {
-  showZero: true
+  showZero: true,
 });
 
 const id = `timeseries-${v4()}`;
 
 const plot = ref<PlotlyHTMLElement | null>(null);
 const graph = ref<HTMLDivElement | null>(null);
+let resizeObserver: ResizeObserver | null = null; // eslint-disable-line prefer-const
 
 const emit = defineEmits<{
   // Datum is from type of x in DataSet
@@ -239,11 +242,15 @@ function renderPlot() {
   
   const layout: Partial<Plotly.Layout> = {
     ...(props.layoutOptions || {}),
+    xaxis: {
+      ...(props.layoutOptions?.xaxis || {}),
+      ...(props.xaxisTitle ? {title: { text: props.xaxisTitle }} : {}),
+    },
     yaxis: {
-      title: { text: "Molecules / cm<sup>2</sup>" },
       range: [axisMin, axisMax],
       autorange: false,
       ...(props.layoutOptions?.yaxis || {}),
+      ...(props.yaxisTitle ? {title: { text: props.yaxisTitle }} : {}),
     },
   };
 
@@ -311,13 +318,34 @@ function updateErrorDisplay(visible: boolean, legendGroup?: string) {
   }
 }
 
+function onResize() {
+  if (graph.value && plot.value) {
+    relayout(graph.value, {
+      autosize: true
+    });
+  }
+}
 
 onMounted(() => {
   renderPlot();
+  
+  // Set up resize observer
+  if (graph.value?.parentElement) {
+    resizeObserver = new ResizeObserver(() => {
+      onResize();
+    });
+    resizeObserver.observe(graph.value.parentElement);
+  }
 });
 
 
 onUnmounted(() => {
+  // Clean up resize observer
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  
   // Clean up Plotly instance
   if (graph.value) {
     purge(graph.value);
@@ -341,5 +369,4 @@ watch(() => props.showZero, renderPlot);
 .js-plotly-plot  {
   min-width: 30px;
 }
-
 </style>
