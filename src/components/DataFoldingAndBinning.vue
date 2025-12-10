@@ -95,6 +95,12 @@
               button on the graph menu (visible when you hover over the graph), or try clicking the 
               legend items to show/hide overlapping data. 
             </div>
+            <!-- Save button visible when aggregation controls panel is collapsed -->
+            <div v-if="!showAggControls && canSave" class="d-flex justify-end mt-3">
+              <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
+                Save Folded Data
+              </v-btn>
+            </div>
             </v-card>
           </div>
         </v-row>
