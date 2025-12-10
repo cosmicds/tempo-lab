@@ -21,14 +21,12 @@
       
       <v-card-text class="pa-4">
         <v-row>
-          <v-btn v-show="!showAggControls" @click="showAggControls = !showAggControls" class="mb-4">
-            <v-icon>{{ showAggControls ? 'mdi-chevron-left' : 'mdi-menu-open' }}</v-icon>
-          </v-btn>
-          <!-- Left Panel: Folding Options -->
-          
-          <v-scroll-x-transition>
-            <v-sheet v-show="showAggControls" class="pa-0 flex-1-0-0" width="fit-content">
-              <v-col  md="4" style="max-width: fit-content;">
+          <!-- Left Panel: Folding Options with collapsible drawer -->
+          <div class="df__left-pane">
+            <CollapsableSidePanel 
+              v-model="showAggControls"
+              :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
+              >
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
                 v-model:validFoldingForData="validFoldingForData"
@@ -58,13 +56,12 @@
                 v-model:selectedTimeBin="selectedTimeBin"
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
-              />     
-            </v-col>       
-            </v-sheet>
-          </v-scroll-x-transition>
+              />
+            </CollapsableSidePanel>
+          </div>
           
           <!-- Right Panel: Timeseries Graph -->
-          <v-col :md="showAggControls ? 8 : 'auto'" sm="12">
+          <div class="df__right-pane" style="flex:1; min-width:0; margin-left:1em;">
             <v-card variant="outlined" class="pa-3" style="height: auto;">
               <v-card-title>
                 Time Series Comparison
@@ -99,7 +96,7 @@
               legend items to show/hide overlapping data. 
             </div>
             </v-card>
-          </v-col>
+          </div>
         </v-row>
       </v-card-text>
     </v-card>
@@ -120,6 +117,7 @@ import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
+import CollapsableSidePanel from './CollapsableSidePanel.vue';
 const store = useTempoStore();
 const {
   debugMode,
@@ -729,6 +727,10 @@ watch(() => props.selection, () => {
   margin-bottom: 0.5em;
 }
 
-
+.df__left-pane {
+  min-width: min-content;
+  max-width: fit-content;
+  width: 30%;
+}
 
 </style>
