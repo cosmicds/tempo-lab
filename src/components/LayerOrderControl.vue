@@ -85,7 +85,12 @@ const _emit = defineEmits<Emits>();
 const { 
   currentOrder, 
   controller 
-} = useMaplibreLayerOrderControl(mapRef, toValue(props.order), true);
+} = useMaplibreLayerOrderControl(
+  mapRef, 
+  toValue(props.order),
+  true,
+  [['stamen-toner-lines', ['coastline-custom', 'states-custom', 'stamen-toner-lines']]]
+);
 
 const tempoPrefix = "tempo-";
 
