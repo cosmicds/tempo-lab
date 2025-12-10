@@ -38,8 +38,14 @@ function arrayMove<T>(arr: T[], fromIndex: number, toIndex: number) {
   
 }
 
+interface LinkedLayers {
+  primary: string,
+  linkedLayers: string[],
+}
+
 interface Options {
   keepAtTop?: boolean;
+  linkedLayers?: [string, string[]][];
 }
 
 class PsuedoEvent {
@@ -76,6 +82,7 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   private initialized = false;
   private eventHandlers: [string, () => void][] = [];
   private _layerOrder: string[] = [];
+  private _linked: LinkedLayers[] = [];
   
   constructor(map: M.Map, initialOrder: string[], options: Options = {}) {
     super();
@@ -83,6 +90,9 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     console.log('Creating MaplibreLayerOrderControl with initial order', initialOrder, 'and options', options);
     this.map = map;
     this.keepAtTop = options.keepAtTop ?? false;
+    if (options.linkedLayers) {
+      this._linked = options.linkedLayers.map(link => this._newLink(link));
+    }
     
     const idleListener = () => {
       this.orderLayers();
@@ -98,11 +108,6 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   on(event: MaplibreLayerOrderControlEvent, handler: () => void) {
     this.addEventListener(event, handler);
   }
-  
-  
-  
-  
-  
 
   get desiredLayerAvailability() {
     return this.desiredLayerOrder.reduce((acc, layer) => {
@@ -136,6 +141,94 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     };
   }
   
+  private _moveLayerBelow(layer: string, anchor: string) {
+    this.map.moveLayer(layer, anchor);
+  }
+  
+  private _moveLayerAbove(layer: string, anchor: string) {
+    // this.map.moveLayer(anchor, layer); 
+    // without moving the anchor
+    const currentOrder = this.map.getLayersOrder();
+    const anchorIndex = currentOrder.indexOf(anchor);
+    const nextLayerUpIndex = anchorIndex + 1;
+    if (nextLayerUpIndex >= currentOrder.length) {
+      // anchor is already top layer
+      this.map.moveLayer(layer);
+    } else {
+      // move below the next layer up
+      const nextLayerUp = currentOrder[nextLayerUpIndex];
+      this.map.moveLayer(layer, nextLayerUp);
+    }
+  }
+  
+  private applyLinkedLayers() {
+    if (!this._linked.length) return;
+    console.log('Applying linked layers', this._linked);
+    
+    const mapOrder = new Map<string, number>(
+      this.map.getLayersOrder().map((layer, index) => [layer, index])
+    );
+    console.log('Current map layer order', mapOrder.size);
+    
+    for (const linked of this._linked) {
+      const { primary } = linked;
+      const linkedLayers = linked.linkedLayers.filter(l => this.hasLayer(l) && mapOrder.has(l));
+      // make sure primary exists and we have linked layers
+      if (!primary || linkedLayers.length === 0) continue;
+      if (!this.hasLayer(primary)) continue;
+      
+      let anchor = primary;
+      const primaryIndex = linkedLayers.indexOf(primary);
+      
+      // if we don't include the primary, then
+      // we will stack them below the primary
+      const belowPrimary = primaryIndex === -1 ? linkedLayers : linkedLayers.slice(0, primaryIndex);
+      const abovePrimary = primaryIndex === -1 ? [] : linkedLayers.slice(primaryIndex + 1);
+      
+      
+      // Stack upwards from the primary
+      for (const layer of abovePrimary) {
+        this._moveLayerAbove(layer, anchor);
+        anchor = layer;
+      }
+      
+      // Stack downwards from the primary
+      // don't update anchor when going down
+      // because we want to keep stacking/pusing downwards
+      anchor = primary;
+      for (const layer of belowPrimary) {
+        if (layer === primary) continue;
+        this._moveLayerBelow(layer, anchor);
+      }
+      
+    }
+  }
+  
+  private _newLink(linkage: [string, string[]]): LinkedLayers {
+    const [anchor, layersToLink] = linkage;
+    return {
+      primary: anchor,
+      linkedLayers: layersToLink,
+    };
+  }
+  
+  
+  setLinkedLayers(linkedLayers: LinkedLayers[]) {
+    this._linked = linkedLayers;
+    this.maintainOrder();
+  }
+  
+  linkLayers(linkage: [string, string[]]) {
+    const [anchor, layersToLink] = linkage;
+    const link: LinkedLayers = {
+      primary: anchor,
+      linkedLayers: layersToLink,
+    };
+    
+    this._linked.push(link);
+    this.maintainOrder();
+  }
+  
   private orderLayers() {
     if (this.keepAtTop) {
       // moves top-most managed available layer to the top
@@ -147,6 +240,9 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
       const topLayer = this.desiredLayerOrder[i];
       this.safeMoveLayerBelow(bottomLayer, topLayer);
     }
+    
+    this.applyLinkedLayers();
+    
     this.dispatchEvent('layer-order-changed');
   }
   
@@ -287,6 +383,8 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     console.error('None of layers you wanted sorted was found');
   }
   
+
+  
   
   safeMoveLayerBelow(layerToMove: string, layerItShouldBeBelow: string): boolean {
     const hasLayer = this.hasLayer(layerToMove);
@@ -367,12 +465,14 @@ interface UseMaplibreLayerOrderControlReturn {
   desiredOrder: Ref<string[]>;
   currentOrder: Ref<string[]>;
   controller: MaplibreLayerOrderControl | null;
+  
 }
 
 export function useMaplibreLayerOrderControl(
   map: Ref<M.Map | null>,
   initialOrder: string[] = [],
   moveToTop: boolean = true,
+  linkedLayers: [string, string[]][] = [],
 ): UseMaplibreLayerOrderControlReturn {
   
 
@@ -386,7 +486,7 @@ export function useMaplibreLayerOrderControl(
     console.log("running init", mapValue, controller);
     if (mapValue && !controller && !initialized) {
       console.log("Creating controller with desired order", desiredOrder.value);
-      controller = new MaplibreLayerOrderControl(mapValue, desiredOrder.value, {keepAtTop: moveToTop});
+      controller = new MaplibreLayerOrderControl(mapValue, desiredOrder.value, {keepAtTop: moveToTop, linkedLayers: linkedLayers});
       controller.on('layer-order-changed', () => {
         console.log('Layer order changed event received',currentOrder.value, controller?.currentlyManagedLayerOrder);
         if (controller && !checkArrayEquality(currentOrder.value, controller.currentlyManagedLayerOrder ?? [])) {
