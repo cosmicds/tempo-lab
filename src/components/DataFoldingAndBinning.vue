@@ -61,8 +61,8 @@
           </div>
           
           <!-- Right Panel: Timeseries Graph -->
-          <div class="df__right-pane" style="flex:1; min-width:0; margin-left:1em;">
-            <v-card variant="outlined" class="pa-3" style="height: auto;">
+          <div class="df__right-pane" style="flex-grow:1; flex-shrink: 0; flex-basis: 0">
+            <v-card class="pa-3" style="height: auto;">
               <v-card-title>
                 Time Series Comparison
               </v-card-title>
@@ -86,7 +86,7 @@
                   :layout-options="{legend: {y:1.15, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
                 />
               </div>
-            <div id="below-graph-stuff" class="mt-2 explainer-text">
+            <div v-if="showAggControls" id="below-graph-stuff" class="mt-2 explainer-text">
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
@@ -731,6 +731,13 @@ watch(() => props.selection, () => {
   min-width: min-content;
   max-width: fit-content;
   width: 30%;
+}
+
+.df__right-pane {
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0;
+  margin-inline: 1em;
 }
 
 </style>
