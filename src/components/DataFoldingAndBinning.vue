@@ -83,7 +83,7 @@
                   ]"
                   :config-options="{responsive: true, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'resetScale2d', ]}"
                   @click="handlePointClick"
-                  :layout-options="{legend: {y:1.15, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
+                  :layout-options="{legend: {y:1.25, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
                 />
               </div>
             <div v-if="showAggControls" id="below-graph-stuff" class="mt-2 explainer-text">
