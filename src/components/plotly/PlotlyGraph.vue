@@ -102,7 +102,7 @@ function filterNullValues(data: PlotltGraphDataSet): PlotltGraphDataSet {
     },
     x: filteredX,
     y: filteredY,
-    name: data.name
+    name: data.name + '　' // add an ideographic space for for legend uniqueness
   };
   if (data.lower) {
     result.lower = filteredLower;
