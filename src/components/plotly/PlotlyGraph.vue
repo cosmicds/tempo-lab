@@ -14,7 +14,7 @@
 import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted } from "vue";
 import { v4 } from "uuid";
 import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
-import type { PlotltGraphDataSet } from '../../types';
+import type { PlotlyGraphDataSet } from '../../types';
 import { createErrorBands } from "./plotly_graph_elements";
 
 // https://stackoverflow.com/a/7616484
@@ -27,14 +27,14 @@ const generateHash = (string) => {
   return hash;
 };
 
-const hashDataset = (data: PlotltGraphDataSet) => {
+const hashDataset = (data: PlotlyGraphDataSet) => {
   const hash = JSON.stringify(data.x) + JSON.stringify(data.y); 
   //JSON.stringify(data.lower) + JSON.stringify(data.upper); // + JSON.stringify(data.errorType);
   return generateHash(hash).toString();
 };
 
 export interface PlotlyGraphProps {
-  datasets: PlotltGraphDataSet[];
+  datasets: PlotlyGraphDataSet[];
   colors?: string[];
   showErrors?: boolean;
   dataOptions?: Partial<Data>[];
@@ -74,7 +74,7 @@ const traceVisible = ref<Map<string, boolean>>(new Map());
 
 
 const filterNulls = ref(true);  
-function filterNullValues(data: PlotltGraphDataSet): PlotltGraphDataSet {
+function filterNullValues(data: PlotlyGraphDataSet): PlotlyGraphDataSet {
   // filter out any place where
   // data.x or data.y is null or undefined or NaN
   if (!data.x || !data.y) {
@@ -100,7 +100,7 @@ function filterNullValues(data: PlotltGraphDataSet): PlotltGraphDataSet {
       }
     }
   });
-  const result: PlotltGraphDataSet = {
+  const result: PlotlyGraphDataSet = {
     ...data,
     datasetOptions: {
       ...data.datasetOptions,
@@ -121,6 +121,8 @@ function filterNullValues(data: PlotltGraphDataSet): PlotltGraphDataSet {
   return result;
 }
 
+
+
 function renderPlot() {
 
   errorTraces = [];
@@ -139,7 +141,13 @@ function renderPlot() {
   let max = 0;
   let min = Infinity;
   
-  props.datasets.forEach((data, index) => {
+  const datasets = props.datasets;
+  
+  // split into multiple traces if error bands are requested
+  // the split should be per dataset, and the split should be on the day
+  
+  
+  datasets.forEach((data, index) => {
     // create a hash from the data.x and data.y to be it's "id"
     data = filterNulls.value ? filterNullValues(data) : data;
     

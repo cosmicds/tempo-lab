@@ -113,7 +113,7 @@ import { storeToRefs } from "pinia";
 import { v4 } from 'uuid';
 import { TimeSeriesFolder, sortfoldBinContent } from '../esri/services/aggregation';
 import FoldedPlotlyGraph from './FoldedPlotlyGraph.vue';
-import type { Prettify, UserDataset, PlotltGraphDataSet, UnifiedRegion } from '../types';
+import type { Prettify, UserDataset, PlotlyGraphDataSet, UnifiedRegion } from '../types';
 import type { TimeRangeSelectionType } from '@/types/datetime';
 import type { AggregationMethod, TimeSeriesData, FoldedTimeSeriesData , FoldType, FoldBinContent} from '../esri/services/aggregation';
 import tz_lookup from '@photostructure/tz-lookup';
@@ -407,7 +407,7 @@ const foldedDatasetName = computed(() => {
 const foldedData = ref<FoldedTimeSeriesData | null>(null);
 const foldedSelection = ref<null>(null);
 // Graph data for display - now a ref that gets manually updated
-const graphData = ref<PlotltGraphDataSet[]>([]);
+const graphData = ref<PlotlyGraphDataSet[]>([]);
 
 watch(foldedData, (newvValue) => {
   // if there is only one bin present the user with an aggregation warning
@@ -422,11 +422,11 @@ watch(foldedData, (newvValue) => {
 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
-  const x: PlotltGraphDataSet['x'] = [];
-  const y: PlotltGraphDataSet['y'] = [];
-  const lower: PlotltGraphDataSet['lower'] = [];
-  const upper: PlotltGraphDataSet['upper'] = [];
+function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
+  const x: PlotlyGraphDataSet['x'] = [];
+  const y: PlotlyGraphDataSet['y'] = [];
+  const lower: PlotlyGraphDataSet['lower'] = [];
+  const upper: PlotlyGraphDataSet['upper'] = [];
 
   // tsa, tsb are the timestamps as strings
   const sortedEntries = Object.entries(timeseries.values).sort(([tsa, _a], [tsb, _b]) => parseInt(tsa) - parseInt(tsb));
@@ -442,7 +442,7 @@ function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotltGraphDataSe
   return { x, y, lower, upper };
 }
 
-function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
+function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
   const x: (number | Date | null)[] = [];
   const y: (number | null)[] = [];
   const lower: (number | null)[] = [];
@@ -499,7 +499,7 @@ function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omi
   return { x, y, lower, upper, errorType: useErrorBars.value ? 'bar' : 'band' };
 }
   
-function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
+function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
   const x: (number | Date | null)[] = [];
   const y: (number | null)[] = [];
   const lower: (number | null)[] = [];
@@ -549,22 +549,22 @@ function updateGraphData() {
   }
   
   // const data = [timeseriesToDataSet(selectionToTimeseries(props.selection))]; // Original data
-  const data: PlotltGraphDataSet[] = [];
+  const data: PlotlyGraphDataSet[] = [];
   
   if (foldedData.value) {
     const t = foldedTimeSeriesRawToDataSet(foldedData.value); // Raw folded data
-    (t as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
-    data.push(t as PlotltGraphDataSet); // Raw folded data
+    (t as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
+    data.push(t as PlotlyGraphDataSet); // Raw folded data
     if (!isFoldWithNoBin.value) {
       const f = foldedTimesSeriesToDataSet(foldedData.value); // Summary folded data
-      (f as PlotltGraphDataSet).name = foldedDatasetName.value;
-      data.push(f as PlotltGraphDataSet); // Summary folded data
+      (f as PlotlyGraphDataSet).name = foldedDatasetName.value;
+      data.push(f as PlotlyGraphDataSet); // Summary folded data
     }
   } else {
     // No folded data, just show original
     const original = timeseriesToDataSet(selectionToTimeseries(props.selection));
-    (original as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
-    data.push(original as PlotltGraphDataSet);
+    (original as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
+    data.push(original as PlotlyGraphDataSet);
   }
   console.log("Prepared graph data:", data);
   graphData.value = data;
@@ -656,9 +656,9 @@ function saveFolding() {
   if (!canSave.value || !props.selection || !foldedData.value) return;
   
   // const rawDataset = foldedTimeSeriesRawToDataSet(foldedData.value);
-  // (rawDataset as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
+  // (rawDataset as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
   // const summaryDataset = foldedTimesSeriesToDataSet(foldedData.value);
-  // (summaryDataset as PlotltGraphDataSet).name = foldedDatasetName.value;
+  // (summaryDataset as PlotlyGraphDataSet).name = foldedDatasetName.value;
 
   const foldedSelection: UserDataset = {
     id: v4(),
@@ -690,13 +690,13 @@ function saveFolding() {
           mode: 'markers',
           // hovertemplate: '%{customdata|%Y-%m-%d %H:%M}<br>%{y:0.2e}±%{error_y.array:0.2e}<extra></extra>'
         }
-      } as PlotltGraphDataSet,
+      } as PlotlyGraphDataSet,
       {
         ...graphData.value[1],
         datasetOptions: {
           mode: 'markers'
         }
-      } as PlotltGraphDataSet
+      } as PlotlyGraphDataSet
     ].slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
   };
   console.log(foldedSelection);

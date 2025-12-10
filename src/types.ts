@@ -133,7 +133,7 @@ export interface DataPointError {
 }
 
 // Dataset shape for PlotlyGraph (date-less or numeric x values allowed)
-export interface PlotltGraphDataSet {
+export interface PlotlyGraphDataSet {
   x: (number | Date | string | null)[]; // Plotly Datum subset
   y: (number | null)[];
   lower?: (number | null)[];
@@ -193,7 +193,7 @@ export interface UserDataset {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } | any,
   // Direct plotly datasets (preferred for folded or synthetic selections)
-  plotlyDatasets?: PlotltGraphDataSet[];
+  plotlyDatasets?: PlotlyGraphDataSet[];
   // add two user editable properties
   name?: string; // user editable
   customColor?: string; // user editable

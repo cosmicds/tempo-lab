@@ -1,5 +1,5 @@
 
-import type { PlotltGraphDataSet } from '../../types';
+import type { PlotlyGraphDataSet } from '../../types';
 import { nanmean } from "@/utils/array_operations/array_math";
 
 function normalizeBadValue(v: number | null | undefined): number | null {
@@ -11,7 +11,7 @@ function normalizeBadValue(v: number | null | undefined): number | null {
 
 import { deepMerge } from "./plotly_styles";
 
-export function createErrorBands(data: PlotltGraphDataSet, color: string, datasetName: string, legendGroup: string, options: object = {}) {
+export function createErrorBands(data: PlotlyGraphDataSet, color: string, datasetName: string, legendGroup: string, options: object = {}) {
   if (!data.upper || !data.lower) return {lower: null, upper: null, max: 0, min: 0};
       
   const upperY: (number | null)[] = [];
