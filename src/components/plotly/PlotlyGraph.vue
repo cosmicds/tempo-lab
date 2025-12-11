@@ -71,7 +71,7 @@ function datumToDate(datum: Datum): Date | null {
 
 const legendGroups: Record<string, string> = {};
 let errorTraces: number[] = [];
-const traceVisible = ref<Map<string, boolean>>(new Map());
+const legendGroupVisible = ref<Map<string, boolean>>(new Map());
 
 
 const filterNulls = ref(true);  
@@ -113,9 +113,10 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
     max = Math.max(max, Math.max(...validY));
     min = Math.min(min, Math.min(...validY));
 
-    const legendGroup = v4();
-    if (!traceVisible.value.has(id)) {
-      traceVisible.value.set(id, true);
+    // const legendGroup = v4();
+    const legendGroup = `legend-group-${index}`;
+    if (!legendGroupVisible.value.has(legendGroup)) {
+      legendGroupVisible.value.set(legendGroup, true);
     }
     legendGroups[id] = legendGroup;
     
@@ -127,7 +128,7 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
       const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
       
       // https://plotly.com/javascript/error-bars/
-      if (props.showErrors && data.errorType === 'bar') {
+      if (data.errorType === 'bar') {
         /* we cycle the styles if it is shorter, like matplotlib does */
         const style = cycle(index, props.errorBarStyles) || {};
 
@@ -139,6 +140,8 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         const _e = createErrorBars(data, cycle(index, props.colors) ?? 'red', options);
         if (_e) {
           errorOptions['error_y'] = _e;
+          errorOptions['error_y']['visible'] = props.showErrors ;
+
         } else {
           console.error(`No errors set for dataset index ${index} and name ${data.name}`,);
         } 
@@ -152,10 +155,11 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         showlegend: jindex === 0,
         name: datasetName,
         marker: { color: cycle(index, props.colors) ?? 'red'},
-        visible: traceVisible.value.get(id) ? true : "legendonly",
+        visible: legendGroupVisible.value.get(legendGroup) ? true : "legendonly",
         ...errorOptions,
         ...(cycle(index, props.dataOptions) ?? {}),
         ...(data.datasetOptions ?? {}), // allow per-dataset options override
+        meta: { hasErrorBar: errorOptions['error_y'] ? true : false },
       };
 
       _plotlyData.push({
@@ -166,7 +170,7 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
       
       const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
       // double checking to have valid types
-      if (hasErrors && data.errorType == 'band' && props.showErrors) {
+      if (hasErrors && data.errorType == 'band') {
         
         const {lower, upper, max: newMax, min: newMin} = createErrorBands(
           data,
@@ -183,9 +187,12 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
           return;
         }
         
-        const errorBandsVisible = traceVisible.value.get(id) ? true : "legendonly";
-        lower['visible'] = errorBandsVisible;
-        upper['visible'] = errorBandsVisible;
+        const errorBandsVisible = legendGroupVisible.value.get(legendGroup) ? true : false;
+        lower['visible'] =  errorBandsVisible && props.showErrors;
+        upper['visible'] =  errorBandsVisible && props.showErrors;
+        // make these identifiable as error bands
+        lower['meta'] = { isErrorBand: true };
+        upper['meta'] = { isErrorBand: true };
         
         _plotlyData.push(lower);
         errorTraces.push(_plotlyData.length - 1);
@@ -198,7 +205,6 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
     
     
   });
-  console.log("legendGroups:", legendGroups);
   return _plotlyData;
 });
 
@@ -235,6 +241,19 @@ const layout = computed<Partial<Plotly.Layout>>(() => {
   };
 });
 
+function getTraceGroupVisibility(trace: Plotly.PlotData): {group: string | undefined, dataId: string | undefined, visibility: boolean} {
+  let group: string | undefined = undefined;
+  let dataId: string | undefined = undefined;
+  
+  group = trace.legendgroup as string;
+  
+  dataId = Object.keys(legendGroups).find(key => (group && legendGroups[key] === group));
+  // if it has a visibility setting, use it
+  return {group, dataId, visibility: dataId ? legendGroupVisible.value.get(group) ?? true : true };
+}
+
+
+
 function renderPlot() {
   newPlot(graph.value ?? id, plotlyData.value, layout.value, {...props.configOptions}).then((el: PlotlyHTMLElement) => {
     plot.value = el;
@@ -251,52 +270,85 @@ function renderPlot() {
       });
     });
     el.on('plotly_legendclick', (data) => {
-      const trace = plotlyData.value[data.curveNumber];
+      const trace = plot.value?.data[data.curveNumber] as Plotly.PlotData;
       if (!trace) { 
         console.error("No trace for legend click", data);
         return true; 
       }
-      // eslint-disable-next-line 
-      // @ts-ignore legend group should exist. but guard anyway
-      const group = trace.legendgroup as string;
-      if (!group) { 
-        console.error("No legend group for trace", trace);
-        return true; 
+      
+      const {group, dataId, visibility: currentlyVisible} = getTraceGroupVisibility(trace);
+      if (!dataId || !group) {
+        console.error(`No ${!dataId ? 'dataId' : 'group'} for legend click trace`, trace);
+        return true;
       }
-      const dataId = Object.keys(legendGroups).find(key => legendGroups[key] === group);
-      if (!dataId) { 
-        console.error("Could not find data ID for legend group", group);
-        return true; 
-      }
-      const currentlyVisible = traceVisible.value.get(dataId) ?? true;
-      traceVisible.value.set(dataId, !currentlyVisible);
-      // if currently visible and errors are visible set stlye the error traces too
-      nextTick(() => { // next tick so that updated traceVisible is available
-        if (props.showErrors) {
-          updateErrorDisplay(!currentlyVisible, group);
-        }
-      });
+      
+      nextTick(() => updateLegendGroupErrorVisibility(group, !currentlyVisible));
+      
+      
       return true;
     });
   });
 }
 
-function updateErrorDisplay(visible: boolean, legendGroup?: string) {
-  if (graph.value) {
-    errorTraces.forEach((traceIndex) => {
-      const trace = plot.value?.data[traceIndex];
-      if (!trace) return;
+type DataWithMeta = Plotly.PlotData & { meta?: Record<string, unknown> };
+
+function setErrorVisibilityForTrace(trace: DataWithMeta, visible: boolean, index: number) {
+  if (!graph.value) return;
+  
+  // check index and trace match
+  const traceIndex = (plot.value?.data as DataWithMeta[]).indexOf(trace);
+  if (traceIndex !== index) {
+    console.error("Trace index mismatch:", index, traceIndex, trace);
+    return;
+  }
+  if (trace.meta?.isErrorBand) {
+    // here we need to use the 'false' instead of 'legendonly'
+    restyle(graph.value, { visible: visible }, index);
+    return;
+  }
+  
+  if (trace.meta?.hasErrorBar) {
+    const update = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      'error_y' : visible ? {...plotlyData.value[index]['error_y'], visible: visible } : {}
+    } as Data;
+    restyle(graph.value, update, index);
+  }
+}
+
+function updateLegendGroupErrorVisibility(legendGroup: string, visible: boolean) {
+  legendGroupVisible.value.set(legendGroup, visible);
+
+  if (graph.value) {    
+    (plot.value?.data as DataWithMeta[]).forEach((trace, index) => {
       if (!graph.value) return;
-      // eslint-disable-next-line 
-      // @ts-ignore legend group should exist. but guard anyway
       const group = trace.legendgroup as string;
-      if (group === undefined) return;
-      if (legendGroup && group !== legendGroup) return;
-      const dataId = Object.keys(legendGroups).find(key => legendGroups[key] === group);
-      if (dataId && traceVisible.value.get(dataId)) {
-        restyle(graph.value, { visible: visible ? true : "legendonly" }, [traceIndex]);
-      } 
+      if (group !== legendGroup) return;
+      
+      setErrorVisibilityForTrace(trace, (visible && props.showErrors), index);
     });
+  } else {
+    console.error("No graph element to update error band visibility");
+  }
+}
+
+
+function updateAllErrorVisibility(visible: boolean) {
+  if (graph.value) {    
+    (plot.value?.data as DataWithMeta[]).forEach((trace, index) => {
+      if (!graph.value) return;
+      
+      const {group, dataId, visibility} = getTraceGroupVisibility(trace as Plotly.PlotData);
+        
+      if (!dataId) {
+        console.error("No dataId for trace, skipping", index, trace);
+        return;
+      }
+    
+      setErrorVisibilityForTrace(trace, (visibility && visible), index);
+    });
+  } else {
+    console.error("No graph element to update error band visibility");
   }
 }
 
@@ -337,9 +389,15 @@ onUnmounted(() => {
 
 
 
-watch(() => props.showErrors, renderPlot);
+watch(() => props.showErrors, updateAllErrorVisibility);
 
-watch(() => props.datasets, (_newData, _oldData) => {
+
+
+watch(() => props.datasets.map(d => d.errorType), (_newData, _oldData) => {
+  // if (graph.value) {
+  //   plotlyData.value.forEach(d => Plotly.update(graph.value!, d, {}));
+    
+  // }
   renderPlot();
 }, { deep: true });
 

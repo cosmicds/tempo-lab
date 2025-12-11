@@ -439,7 +439,7 @@ function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotlyGraphDataSe
     upper.push(error?.upper ?? null);
   });
 
-  return { x, y, lower, upper };
+  return { x, y, lower, upper, errorType: 'bar' };
 }
 
 function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
@@ -554,6 +554,7 @@ function updateGraphData() {
   if (foldedData.value) {
     const t = foldedTimeSeriesRawToDataSet(foldedData.value); // Raw folded data
     (t as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
+    (t as PlotlyGraphDataSet).errorType = 'bar';
     data.push(t as PlotlyGraphDataSet); // Raw folded data
     if (!isFoldWithNoBin.value) {
       const f = foldedTimesSeriesToDataSet(foldedData.value); // Summary folded data
