@@ -1,6 +1,8 @@
 
 import type { PlotlyGraphDataSet } from '../../types';
-import { type Datum } from "plotly.js-dist-min";
+import Plotly, { type Datum } from "plotly.js-dist-min";
+import { diff, nanmedian, arraysEqual } from '@/utils/array_operations/array_math';
+
 
 import { nanmean } from "@/utils/array_operations/array_math";
 
@@ -56,23 +58,40 @@ export function createErrorBands(data: PlotlyGraphDataSet, color: string, datase
     legendgroup: legendGroup,
     name: datasetName,
     marker: { color: color ?? 'red' },
-  };
+  } as Partial<Plotly.PlotData>;
       
   return {
     lower:{
       y: lowerY.map(normalizeBadValue),
       ...deepMerge(traceErrorOptions, options),
-    },
+    } as Plotly.PlotData,
     upper:{
       y: upperY.map(normalizeBadValue),
       ...deepMerge(traceErrorOptions, options),
       fill: "tonexty",
-    },
+    } as Plotly.PlotData,
     max,
     min
 
   };
     
+}
+
+
+export function createErrorBars(data: PlotlyGraphDataSet, color: string, options: Partial<Plotly.ErrorOptions> = {}): Extract<Plotly.ErrorBar, {type: 'data'}> | null {
+  if (!data.upper && !data.lower) return null;
+  
+  
+  const isSymmetric = (!!data.upper !== !!data.lower) || arraysEqual(data.upper, data.lower);
+    
+  return {
+    type: 'data',
+    ...options,
+    color: options.color || color || 'limegreen', /* ts should prevent limegreen, but just in case */
+    symmetric: isSymmetric,
+    array: (isSymmetric ? (data.upper ?? data.lower) : data.upper) as Datum[],
+    arrayminus: (isSymmetric ? undefined : data.lower) as Datum[],
+  };
 }
 
 
@@ -184,7 +203,6 @@ export function splitDatasetByDay(data: PlotlyGraphDataSet): PlotlyGraphDataSet[
   return Object.values(datasetsByDay);
 }
 
-import { diff, nanmedian } from '@/utils/array_operations/array_math';
 
 
 
