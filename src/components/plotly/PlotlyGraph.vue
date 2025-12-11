@@ -15,7 +15,7 @@ import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted } from "v
 import { v4 } from "uuid";
 import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 import type { PlotlyGraphDataSet } from '../../types';
-import { createErrorBands } from "./plotly_graph_elements";
+import { createErrorBands, filterNullValues, splitDatasetByGap } from "./plotly_graph_elements";
 
 // https://stackoverflow.com/a/7616484
 const generateHash = (string) => {
@@ -74,52 +74,6 @@ const traceVisible = ref<Map<string, boolean>>(new Map());
 
 
 const filterNulls = ref(true);  
-function filterNullValues(data: PlotlyGraphDataSet): PlotlyGraphDataSet {
-  // filter out any place where
-  // data.x or data.y is null or undefined or NaN
-  if (!data.x || !data.y) {
-    return data;
-  }
-  const filteredX: Datum[] = [];
-  const filteredY: number[] = [];
-  const filteredLower: (number | null)[] = [];
-  const filteredUpper: (number | null)[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const filteredCustomData: any[] = [];
-  data.x.forEach((x, idx) => {
-    const y = data.y[idx];
-    if (x !== null && x !== undefined && y !== null && y !== undefined && !isNaN(y)) {
-      filteredX.push(x);
-      filteredY.push(y);
-      filteredCustomData.push(data.datasetOptions?.customdata ? data.datasetOptions.customdata[idx] : null);
-      if (data.lower) {
-        filteredLower.push(data.lower[idx] ?? null); // keep length consistent 
-      }
-      if (data.upper) {
-        filteredUpper.push(data.upper[idx] ?? null); // keep length consistent 
-      }
-    }
-  });
-  const result: PlotlyGraphDataSet = {
-    ...data,
-    datasetOptions: {
-      ...data.datasetOptions,
-      customdata: filteredCustomData,
-    },
-    x: filteredX,
-    y: filteredY,
-    name: data.name
-  };
-  if (data.lower) {
-    result.lower = filteredLower;
-  } 
-  if (data.upper) {
-    result.upper = filteredUpper;
-  }
-  result.errorType = data.errorType;
-  
-  return result;
-}
 
 
 
@@ -170,78 +124,83 @@ function renderPlot() {
     }
     legendGroups[id] = legendGroup;
     
+    splitDatasetByGap(data).forEach((data, jindex) => {
     
-    const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
-    const cIndex = (props.colors && index < props.colors.length) ? index : (index % (props.colors?.length || 1));
-    
-    // https://plotly.com/javascript/error-bars/
-    if (props.showErrors && data.errorType === 'bar') {
-      // const mIndex = index % (props.errorBarStyles?.length || 1);
-      const mIndex = (props.errorBarStyles?.length && index < props.errorBarStyles?.length) ? index : (index % (props.errorBarStyles?.length || 1));
-      const style = (props.errorBarStyles && props.errorBarStyles[mIndex]) || {};
-      errorOptions['error_y'] = {
-        type: 'data',
-        symmetric: false,
-        array: data.upper as Datum[],
-        arrayminus: data.lower as Datum[] | undefined,
-        color: props.colors ? props.colors[cIndex] : 'red',
-
-        thickness: 1.5,
-        width: 0,
-        ...style,
-      };
+      /* start of plotly element creation */
+      const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
+      const cIndex = (props.colors && index < props.colors.length) ? index : (index % (props.colors?.length || 1));
       
-    }
-    const datasetName = data.name || props.names?.[index] || `Dataset ${index + 1}`;
-    const lIndex = (props.dataOptions?.length && index < props.dataOptions?.length) ? index : (index % (props.dataOptions?.length || 1));
-    
-    const dataTraceOptions = {
-      mode: "lines+markers",
-      legendgroup: legendGroup,
-      showlegend: true,
-      name: datasetName,
-      marker: { color: props.colors ? props.colors[cIndex] : 'red' },
-      visible: traceVisible.value.get(id) ? true : "legendonly",
-      ...errorOptions,
-      ...props.dataOptions?.[lIndex],
-      ...(data.datasetOptions ?? {}), // allow per-dataset options override
-    };
+      // https://plotly.com/javascript/error-bars/
+      if (props.showErrors && data.errorType === 'bar') {
+        // const mIndex = index % (props.errorBarStyles?.length || 1);
+        const mIndex = (props.errorBarStyles?.length && index < props.errorBarStyles?.length) ? index : (index % (props.errorBarStyles?.length || 1));
+        const style = (props.errorBarStyles && props.errorBarStyles[mIndex]) || {};
+        errorOptions['error_y'] = {
+          type: 'data',
+          symmetric: false,
+          array: data.upper as Datum[],
+          arrayminus: data.lower as Datum[] | undefined,
+          color: props.colors ? props.colors[cIndex] : 'red',
 
-    plotlyData.push({
-      x: data.x,
-      y: data.y,
-      ...dataTraceOptions
-    } as Data);
-    
-    const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
-    // double checking to have valid types
-    if (hasErrors && data.lower && data.upper && data.errorType == 'band' && props.showErrors) {
-      
-      const {lower, upper, max: newMax, min: newMin} = createErrorBands(
-        data,
-        props.colors ? props.colors[index % props.colors.length] : 'red',
-        datasetName,
-        legendGroup,
-      );
-
-      max = Math.max(max, newMax);
-      min = Math.min(min, newMin);
-
-      if (lower === null || upper === null) {
-        console.error("Error creating error bands for dataset", index, data);
-        return;
+          thickness: 1.5,
+          width: 0,
+          ...style,
+        };
+        
       }
+      const datasetName = data.name || props.names?.[index] || `Dataset ${index + 1}`;
+      const lIndex = (props.dataOptions?.length && index < props.dataOptions?.length) ? index : (index % (props.dataOptions?.length || 1));
       
-      const errorBandsVisible = traceVisible.value.get(id) ? true : "legendonly";
-      lower['visible'] = errorBandsVisible;
-      upper['visible'] = errorBandsVisible;
-      
-      plotlyData.push(lower);
-      errorTraces.push(plotlyData.length - 1);
+      const dataTraceOptions = {
+        mode: "lines+markers",
+        legendgroup: legendGroup,
+        showlegend: jindex === 0,
+        name: datasetName,
+        marker: { color: props.colors ? props.colors[cIndex] : 'red' },
+        visible: traceVisible.value.get(id) ? true : "legendonly",
+        ...errorOptions,
+        ...props.dataOptions?.[lIndex],
+        ...(data.datasetOptions ?? {}), // allow per-dataset options override
+      };
 
-      plotlyData.push(upper);
-      errorTraces.push(plotlyData.length - 1);
-    }
+      plotlyData.push({
+        x: data.x,
+        y: data.y,
+        ...dataTraceOptions
+      } as Data);
+      
+      const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
+      // double checking to have valid types
+      if (hasErrors && data.lower && data.upper && data.errorType == 'band' && props.showErrors) {
+        
+        const {lower, upper, max: newMax, min: newMin} = createErrorBands(
+          data,
+          props.colors ? props.colors[index % props.colors.length] : 'red',
+          datasetName,
+          legendGroup,
+        );
+
+        max = Math.max(max, newMax);
+        min = Math.min(min, newMin);
+
+        if (lower === null || upper === null) {
+          console.error("Error creating error bands for dataset", index, data);
+          return;
+        }
+        
+        const errorBandsVisible = traceVisible.value.get(id) ? true : "legendonly";
+        lower['visible'] = errorBandsVisible;
+        upper['visible'] = errorBandsVisible;
+        
+        plotlyData.push(lower);
+        errorTraces.push(plotlyData.length - 1);
+
+        plotlyData.push(upper);
+        errorTraces.push(plotlyData.length - 1);
+      }
+      /* end of plotly element creation */
+    });
+    
   });
 
   const paddingFactor = 1.1;

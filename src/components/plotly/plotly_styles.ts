@@ -139,8 +139,16 @@ export const foldTypeStyles: Record<PredefinedFoldTypes, Partial<Layout>> = {
     xaxis: {
       title: { text: 'Day of Week' },
       tickmode: 'array',
-      tickvals: [0, 1, 2, 3, 4, 5, 6],
+      tickvals: [0, 1, 2, 3, 4, 5, 6].map(v => v + 0.5),
       ticktext: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      minor: {
+        gridcolor: 'black',
+        gridwidth: 1,
+        showgrid: true,
+        tickmode: 'array',
+        tickvals: [0, 1, 2, 3, 4, 5, 6],
+        ticklen: 0,
+      }
     }
   },
   
