@@ -270,3 +270,25 @@ export function allEqual<T>(arr: T[]): boolean {
   const first = arr[0];
   return arr.every(v => v === first);
 }
+
+export function arraysEqual<T>(arr1: T[] | undefined, arr2: T[] | undefined): boolean {
+  /* if either or both are undefined, then not equal */
+  // if (arr1 === undefined && arr2 === undefined) return true; /* ignore: both undefined is equal */
+  if (arr1 === undefined || arr2 === undefined) return false;
+  if (arr1.length !== arr2.length) return false; /* check lengths first */
+  /* single pass element comparison */
+  for (let i = 0; i < arr1.length; i++) {
+    if (arr1[i] !== arr2[i]) return false;
+  }
+  return true;
+}
+
+
+export function cycleIndex<T>(index: number, arr: T[] | undefined | null): number {
+  return (arr && index < arr.length) ? index : (index % (arr?.length || 1));
+}  
+
+export function cycle<T>(index: number, arr: T[] | undefined | null): T | null {
+  if (!arr || arr.length === 0) return null;
+  return arr[cycleIndex(index, arr)];
+}
