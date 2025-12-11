@@ -77,19 +77,13 @@ const traceVisible = ref<Map<string, boolean>>(new Map());
 const filterNulls = ref(true);  
 
 
-
-function renderPlot() {
-
+const plotlyData = computed<Plotly.PlotData[]>(() => {
   errorTraces = [];
   
-  const plotlyData: Data[] = [];
+  const _plotlyData: Plotly.PlotData[] = [];
   if (props.datasets.length === 0) {
     console.error("No data provided for timeseries graph");
-    if (graph.value) {
-      purge(graph.value);
-      plot.value = null;
-    }
-    return;
+    return _plotlyData;
   }
   
 
@@ -164,11 +158,11 @@ function renderPlot() {
         ...(data.datasetOptions ?? {}), // allow per-dataset options override
       };
 
-      plotlyData.push({
+      _plotlyData.push({
         x: data.x,
         y: data.y,
         ...dataTraceOptions
-      } as Data);
+      } as Plotly.PlotData);
       
       const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
       // double checking to have valid types
@@ -193,22 +187,40 @@ function renderPlot() {
         lower['visible'] = errorBandsVisible;
         upper['visible'] = errorBandsVisible;
         
-        plotlyData.push(lower);
-        errorTraces.push(plotlyData.length - 1);
+        _plotlyData.push(lower);
+        errorTraces.push(_plotlyData.length - 1);
 
-        plotlyData.push(upper);
-        errorTraces.push(plotlyData.length - 1);
+        _plotlyData.push(upper);
+        errorTraces.push(_plotlyData.length - 1);
       }
       /* end of plotly element creation */
     });
     
+    
+  });
+  console.log("legendGroups:", legendGroups);
+  return _plotlyData;
+});
+
+
+const layout = computed<Partial<Plotly.Layout>>(() => {
+  let max = 0;
+  let min = Infinity;
+  
+  plotlyData.value.forEach((trace) => {
+    const yValues = trace.y as (number | null)[];
+    const validY = yValues.filter((v): v is number => v !== null);
+    if (validY.length > 0) {
+      max = Math.max(max, Math.max(...validY));
+      min = Math.min(min, Math.min(...validY));
+    }
   });
 
   const paddingFactor = 1.1;
   const axisMax = Math.max(1, paddingFactor * max);
   const axisMin = props.showZero ? Math.min(0, min) : min;
-  
-  const layout: Partial<Plotly.Layout> = {
+
+  return {
     ...(props.layoutOptions || {}),
     xaxis: {
       ...(props.layoutOptions?.xaxis || {}),
@@ -221,8 +233,10 @@ function renderPlot() {
       ...(props.yaxisTitle ? {title: { text: props.yaxisTitle }} : {}),
     },
   };
+});
 
-  newPlot(graph.value ?? id, plotlyData, layout, {...props.configOptions}).then((el: PlotlyHTMLElement) => {
+function renderPlot() {
+  newPlot(graph.value ?? id, plotlyData.value, layout.value, {...props.configOptions}).then((el: PlotlyHTMLElement) => {
     plot.value = el;
     el.on("plotly_click", (data: PlotMouseEvent) => {
       data.points.forEach(point => {
@@ -237,7 +251,7 @@ function renderPlot() {
       });
     });
     el.on('plotly_legendclick', (data) => {
-      const trace = plotlyData[data.curveNumber];
+      const trace = plotlyData.value[data.curveNumber];
       if (!trace) { 
         console.error("No trace for legend click", data);
         return true; 
