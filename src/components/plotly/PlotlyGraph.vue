@@ -11,11 +11,12 @@
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted } from "vue";
+import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted, computed } from "vue";
 import { v4 } from "uuid";
 import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 import type { PlotlyGraphDataSet } from '../../types';
-import { createErrorBands, filterNullValues, splitDatasetByGap } from "./plotly_graph_elements";
+import { createErrorBands, filterNullValues, splitDatasetByGap, createErrorBars } from "./plotly_graph_elements";
+import { cycle } from "@/utils/array_operations/array_math";
 
 // https://stackoverflow.com/a/7616484
 const generateHash = (string) => {
@@ -124,42 +125,42 @@ function renderPlot() {
     }
     legendGroups[id] = legendGroup;
     
-    splitDatasetByGap(data).forEach((data, jindex) => {
+    const useErrorBands = data.errorType == 'band' && props.showErrors;
+    
+    (useErrorBands ? splitDatasetByGap(data) : [data]).forEach((data, jindex) => {
     
       /* start of plotly element creation */
       const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
-      const cIndex = (props.colors && index < props.colors.length) ? index : (index % (props.colors?.length || 1));
       
       // https://plotly.com/javascript/error-bars/
       if (props.showErrors && data.errorType === 'bar') {
-        // const mIndex = index % (props.errorBarStyles?.length || 1);
-        const mIndex = (props.errorBarStyles?.length && index < props.errorBarStyles?.length) ? index : (index % (props.errorBarStyles?.length || 1));
-        const style = (props.errorBarStyles && props.errorBarStyles[mIndex]) || {};
-        errorOptions['error_y'] = {
-          type: 'data',
-          symmetric: false,
-          array: data.upper as Datum[],
-          arrayminus: data.lower as Datum[] | undefined,
-          color: props.colors ? props.colors[cIndex] : 'red',
+        /* we cycle the styles if it is shorter, like matplotlib does */
+        const style = cycle(index, props.errorBarStyles) || {};
 
+        const options = {
           thickness: 1.5,
           width: 0,
           ...style,
         };
+        const _e = createErrorBars(data, cycle(index, props.colors) ?? 'red', options);
+        if (_e) {
+          errorOptions['error_y'] = _e;
+        } else {
+          console.error(`No errors set for dataset index ${index} and name ${data.name}`,);
+        } 
         
       }
       const datasetName = data.name || props.names?.[index] || `Dataset ${index + 1}`;
-      const lIndex = (props.dataOptions?.length && index < props.dataOptions?.length) ? index : (index % (props.dataOptions?.length || 1));
       
       const dataTraceOptions = {
         mode: "lines+markers",
         legendgroup: legendGroup,
         showlegend: jindex === 0,
         name: datasetName,
-        marker: { color: props.colors ? props.colors[cIndex] : 'red' },
+        marker: { color: cycle(index, props.colors) ?? 'red'},
         visible: traceVisible.value.get(id) ? true : "legendonly",
         ...errorOptions,
-        ...props.dataOptions?.[lIndex],
+        ...(cycle(index, props.dataOptions) ?? {}),
         ...(data.datasetOptions ?? {}), // allow per-dataset options override
       };
 
@@ -171,7 +172,7 @@ function renderPlot() {
       
       const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
       // double checking to have valid types
-      if (hasErrors && data.lower && data.upper && data.errorType == 'band' && props.showErrors) {
+      if (hasErrors && data.errorType == 'band' && props.showErrors) {
         
         const {lower, upper, max: newMax, min: newMin} = createErrorBands(
           data,
