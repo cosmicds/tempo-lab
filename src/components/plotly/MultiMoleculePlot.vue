@@ -69,7 +69,7 @@ const commonLayoutOptions=  {
 // Common config options for all plots
 const commonConfigOptions: Partial<Config> = {
   responsive: true,
-  modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'resetScale2d'] as ModeBarDefaultButtons[],
+  modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
 };
 
 // const groupByMolecule = ref(false);
