@@ -21,14 +21,12 @@
       
       <v-card-text class="pa-4">
         <v-row>
-          <v-btn @click="showAggControls = !showAggControls" class="mb-4">
-            <v-icon>{{ showAggControls ? 'mdi-chevron-left' : 'mdi-menu-open' }}</v-icon>
-          </v-btn>
-          <!-- Left Panel: Folding Options -->
-          
-          <v-scroll-x-transition>
-            <v-sheet v-show="showAggControls" class="pa-0 flex-1-0-0" width="fit-content">
-              <v-col  md="4" style="max-width: fit-content;">
+          <!-- Left Panel: Folding Options with collapsible drawer -->
+          <div class="df__left-pane">
+            <CollapsableSidePanel 
+              v-model="showAggControls"
+              :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
+              >
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
                 v-model:validFoldingForData="validFoldingForData"
@@ -58,14 +56,13 @@
                 v-model:selectedTimeBin="selectedTimeBin"
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
-              />     
-            </v-col>       
-            </v-sheet>
-          </v-scroll-x-transition>
+              />
+            </CollapsableSidePanel>
+          </div>
           
           <!-- Right Panel: Timeseries Graph -->
-          <v-col :md="showAggControls ? 8 : 'auto'" sm="12">
-            <v-card variant="outlined" class="pa-3" style="height: auto;">
+          <div class="df__right-pane" style="flex-grow:1; flex-shrink: 0; flex-basis: 0">
+            <v-card class="pa-3" style="height: auto;">
               <v-card-title>
                 <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
@@ -86,10 +83,10 @@
                   ]"
                   :config-options="{responsive: true, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'resetScale2d', ]}"
                   @click="handlePointClick"
-                  :layout-options="{legend: {y:1.15, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
+                  :layout-options="{legend: {y:1.25, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
                 />
               </div>
-            <div id="below-graph-stuff" class="mt-2 explainer-text">
+            <div v-if="showAggControls" id="below-graph-stuff" class="mt-2 explainer-text">
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
@@ -98,8 +95,14 @@
               button on the graph menu (visible when you hover over the graph), or try clicking the 
               legend items to show/hide overlapping data. 
             </div>
+            <!-- Save button visible when aggregation controls panel is collapsed -->
+            <div v-if="!showAggControls && canSave" class="d-flex justify-end mt-3">
+              <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
+                Save Folded Data
+              </v-btn>
+            </div>
             </v-card>
-          </v-col>
+          </div>
         </v-row>
       </v-card-text>
     </v-card>
@@ -121,6 +124,7 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
 import { moleculeDescriptor } from '@/esri/utils';
+import CollapsableSidePanel from './CollapsableSidePanel.vue';
 const store = useTempoStore();
 const {
   debugMode,
@@ -731,6 +735,17 @@ watch(() => props.selection, () => {
   margin-bottom: 0.5em;
 }
 
+.df__left-pane {
+  min-width: min-content;
+  max-width: fit-content;
+  width: 30%;
+}
 
+.df__right-pane {
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0;
+  margin-inline: 1em;
+}
 
 </style>

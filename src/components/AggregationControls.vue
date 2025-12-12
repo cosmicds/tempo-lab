@@ -141,7 +141,7 @@
 
 		<!-- Action Buttons -->
 		<div class="d-flex ga-2">
-			<v-btn color="primary" @click="() => emit('save')" :disabled="!canSave" size="small">
+			<v-btn color="primary" @click="() => emit('save')" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
 				Save Folding
 			</v-btn>
 			<v-btn color="secondary" variant="outlined" @click="() => emit('cancel')" size="small">
