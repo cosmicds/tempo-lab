@@ -99,6 +99,7 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
   datasets.forEach((data, index) => {
     // create a hash from the data.x and data.y to be it's "id"
     data = filterNulls.value ? filterNullValues(data) : data;
+    data.name = data.name +  + '　'; // add an ideographic space for for legend uniqueness
     
     // check x, and have same length y
     if (!data.x || !data.y || data.x.length !== data.y.length) {
