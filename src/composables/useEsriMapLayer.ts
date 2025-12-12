@@ -3,7 +3,7 @@ import { RenderingRuleOptions } from '@/esri/ImageLayerConfig';
 import { Map, type MapSourceDataEvent } from 'maplibre-gl';
 import { validate as uuidValidate } from "uuid";
 
-import { ImageService } from 'mapbox-gl-esri-sources';
+import { ImageService } from '@/esri/ImageServiceLayer/ImageService';
 import { TempoDataService } from '@/esri/services/TempoDataService';
 import { type PointBounds } from '@/esri/geometry';
 
