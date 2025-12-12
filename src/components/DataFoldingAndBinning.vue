@@ -6,20 +6,6 @@
     persistent
     scrollable
   > -->
-    <v-card id="data-aggregation-card">
-      <v-toolbar
-        density="compact"
-        color="var(--info-background)"
-      >
-        <v-toolbar-title>Time Graph</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn
-          icon="mdi-close"
-          @click="closeDialog"
-        ></v-btn>
-      </v-toolbar>
-      
-      <v-card-text class="pa-4">
         <v-row>
           <!-- Left Panel: Folding Options with collapsible drawer -->
           <div class="df__left-pane">
@@ -62,7 +48,7 @@
           
           <!-- Right Panel: Timeseries Graph -->
           <div class="df__right-pane" style="flex-grow:1; flex-shrink: 0; flex-basis: 0">
-            <v-card class="pa-3" style="height: auto;">
+            <v-card style="height: auto;">
               <v-card-title>
                 <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
@@ -104,8 +90,6 @@
             </v-card>
           </div>
         </v-row>
-      </v-card-text>
-    </v-card>
   <!-- </v-dialog> -->
 </template>
 

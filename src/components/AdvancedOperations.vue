@@ -1,6 +1,9 @@
 <template>
-  <v-dialog
+  <cds-dialog
     v-model="dialogOpen"
+    title="Time Graph"
+    density="compact"
+    title-color="var(--info-background)"
     max-width="90vw"
     max-height="90vh"
     persistent
@@ -12,7 +15,7 @@
       :selection="selection"
       @save="saveFolded"
     />
-  </v-dialog>
+  </cds-dialog>
 
   
 </template>
@@ -50,16 +53,15 @@ function saveFolded(selection: UserDataset) {
 
 </script>
 
-<style scoped>
-.v-card {
-  height: 100%;
+<style>
+
+.time-graph-cds-dialog .cds-dialog-card {
+  align-self: auto !important;
 }
 
-.v-row {
-  height: 100%;
-}
-
-.v-col {
-  height: 100%;
+.time-graph-cds-dialog .cds-dialog-v-card-text {
+  max-width: none;
+  max-height: none;
+  height: fit-content;
 }
 </style>
