@@ -15,7 +15,7 @@ import { onMounted, onBeforeUnmount, ref, watch, nextTick, onUnmounted, computed
 import { v4 } from "uuid";
 import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 import type { PlotlyGraphDataSet } from '../../types';
-import { createErrorBands, filterNullValues, splitDatasetByGap, createErrorBars } from "./plotly_graph_elements";
+import { createErrorBands, filterNullValues, splitDatasetByGap, createErrorBars, dataHasErrors } from "./plotly_graph_elements";
 import { cycle } from "@/utils/array_operations/array_math";
 
 // https://stackoverflow.com/a/7616484
@@ -126,9 +126,10 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
     
       /* start of plotly element creation */
       const errorOptions = {} as Record<'error_y',Plotly.ErrorBar>;
+      const hasErrors = dataHasErrors(data);
       
       // https://plotly.com/javascript/error-bars/
-      if (data.errorType === 'bar') {
+      if (hasErrors.hasErrors) {
         /* we cycle the styles if it is shorter, like matplotlib does */
         const style = cycle(index, props.errorBarStyles) || {};
 
@@ -140,7 +141,7 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         const _e = createErrorBars(data, cycle(index, props.colors) ?? 'red', options);
         if (_e) {
           errorOptions['error_y'] = _e;
-          errorOptions['error_y']['visible'] = props.showErrors ;
+          errorOptions['error_y']['visible'] = data.errorType === 'bar' && props.showErrors ;
 
         } else {
           console.error(`No errors set for dataset index ${index} and name ${data.name}`,);
@@ -159,7 +160,13 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         ...errorOptions,
         ...(cycle(index, props.dataOptions) ?? {}),
         ...(data.datasetOptions ?? {}), // allow per-dataset options override
-        meta: { hasErrorBar: errorOptions['error_y'] ? true : false },
+        meta: { 
+          id:id,
+          errorType: 'bar',
+          hasErrors: hasErrors.hasErrors,
+          isErrorBar: true,
+          useErrorBar: data.errorType == 'bar',
+        },
       };
 
       _plotlyData.push({
@@ -168,9 +175,9 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         ...dataTraceOptions
       } as Plotly.PlotData);
       
-      const hasErrors = data.lower && data.upper && data.lower.length === data.y.length && data.upper.length === data.y.length;
+      
       // double checking to have valid types
-      if (hasErrors && data.errorType == 'band') {
+      if (hasErrors.hasErrors) {
         
         const {lower, upper, max: newMax, min: newMin} = createErrorBands(
           data,
@@ -188,11 +195,23 @@ const plotlyData = computed<Plotly.PlotData[]>(() => {
         }
         
         const errorBandsVisible = legendGroupVisible.value.get(legendGroup) ? true : false;
-        lower['visible'] =  errorBandsVisible && props.showErrors;
-        upper['visible'] =  errorBandsVisible && props.showErrors;
+        lower['visible'] =  errorBandsVisible && props.showErrors && (data.errorType == 'band');
+        upper['visible'] =  errorBandsVisible && props.showErrors && (data.errorType == 'band');
         // make these identifiable as error bands
-        lower['meta'] = { isErrorBand: true };
-        upper['meta'] = { isErrorBand: true };
+        lower['meta'] = { 
+          id: id,
+          errorType: 'band',
+          hasErrors: hasErrors.hasErrors,
+          isErrorBand: true,
+          useErrorBand: data.errorType == 'band',
+        };
+        upper['meta'] = { 
+          id: id,
+          errorType: 'band',
+          hasErrors: hasErrors.hasErrors,
+          isErrorBand: true,
+          useErrorBand: data.errorType == 'band',
+        };
         
         _plotlyData.push(lower);
         errorTraces.push(_plotlyData.length - 1);
@@ -282,7 +301,7 @@ function renderPlot() {
         return true;
       }
       
-      nextTick(() => updateLegendGroupErrorVisibility(group, !currentlyVisible));
+      nextTick(() => setLegendGroupErrorVisibility(group, !currentlyVisible));
       
       
       return true;
@@ -290,7 +309,21 @@ function renderPlot() {
   });
 }
 
-type DataWithMeta = Plotly.PlotData & { meta?: Record<string, unknown> };
+interface ErrorBarMeta {
+  id: string;
+  errorType: 'bar';
+  isErrorBar: true;
+  hasErrors?: boolean;
+  useErrorBar?: boolean;
+}
+interface ErrorBandMeta {
+  id: string;
+  errorType: 'band';
+  isErrorBand: true;
+  hasErrors?: boolean;
+  useErrorBand?: boolean;
+}
+type DataWithMeta = Plotly.PlotData & { meta?: ErrorBarMeta | ErrorBandMeta };
 
 function setErrorVisibilityForTrace(trace: DataWithMeta, visible: boolean, index: number) {
   if (!graph.value) return;
@@ -301,22 +334,32 @@ function setErrorVisibilityForTrace(trace: DataWithMeta, visible: boolean, index
     console.error("Trace index mismatch:", index, traceIndex, trace);
     return;
   }
-  if (trace.meta?.isErrorBand) {
-    // here we need to use the 'false' instead of 'legendonly'
-    restyle(graph.value, { visible: visible }, index);
+  
+  
+  if (!trace.meta || (trace.meta && !trace.meta.hasErrors)) {
+    console.log("No errors for trace, skipping visibility update", index, trace);
     return;
   }
+
+  if (trace.meta.errorType === 'band') {
+    console.log("Updating error band visibility", index, visible, trace);
+    // here we need to use the 'false' instead of 'legendonly'
+    restyle(graph.value, { visible: visible && !!trace.meta.useErrorBand }, index);
+    return;
+  } 
   
-  if (trace.meta?.hasErrorBar) {
-    const update = {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      'error_y' : visible ? {...plotlyData.value[index]['error_y'], visible: visible } : {}
+  if (trace.meta.errorType === 'bar') {
+    console.log("Updating error bar visibility", index, visible, trace);
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const update = { 'error_y' : (visible ? {...plotlyData.value[index]['error_y'], 
+      visible: visible && !!trace.meta.useErrorBar
+    } : {})
     } as Data;
     restyle(graph.value, update, index);
   }
 }
 
-function updateLegendGroupErrorVisibility(legendGroup: string, visible: boolean) {
+function setLegendGroupErrorVisibility(legendGroup: string, visible: boolean) {
   legendGroupVisible.value.set(legendGroup, visible);
 
   if (graph.value) {    
@@ -331,6 +374,9 @@ function updateLegendGroupErrorVisibility(legendGroup: string, visible: boolean)
     console.error("No graph element to update error band visibility");
   }
 }
+
+// function updateErrorDisplayTypes(errorType: 'bar' | 'band' | 'none') {
+//   // this
 
 
 function updateAllErrorVisibility(visible: boolean) {
@@ -391,14 +437,68 @@ onUnmounted(() => {
 
 watch(() => props.showErrors, updateAllErrorVisibility);
 
+function updateDatasetMeta(index: number, useErrorBars) {
+  if (!graph.value) return;
+  
+  const trace = plot.value?.data[index] as DataWithMeta;
+  if (!trace) {
+    console.error("No trace for dataset meta update", index);
+    return;
+  }
+  
+  const hasErrors = trace.meta?.hasErrors as boolean | undefined;
+  if (hasErrors === undefined) {
+    console.error("No hasErrors meta for trace dataset meta update", index, trace);
+    return;
+  }
+  
+  if (!trace.meta) {
+    return;
+  }
+  
+  // if an error band
+  if (trace.meta.errorType === 'band') {
+    console.log("Updating error band meta", index, useErrorBars);
+    trace.meta.useErrorBand = !useErrorBars;
+  }
+  
+  if (trace.meta.errorType === 'bar') {
+    console.log("Updating error bar meta", index, useErrorBars);
+    trace.meta.useErrorBar = useErrorBars;
+  }
+  
+}
 
 
-watch(() => props.datasets.map(d => d.errorType), (_newData, _oldData) => {
-  // if (graph.value) {
-  //   plotlyData.value.forEach(d => Plotly.update(graph.value!, d, {}));
+watch(() => props.datasets, (_newData, _oldData) => {
+  // if the dataset hashes changed, re-render
+  const newHashes = _newData.map(d => hashDataset(d));
+  const oldHashes = _oldData.map(d => hashDataset(d));
+  if (newHashes.join(',') !== oldHashes.join(',')) {
+    renderPlot();
+    return;
+  }
+  console.log("Datasets unchanged, updating error styles only");
+  // check if error styles changed
+  
+  
+  // check for error bar style changes and update the meta
+  let changed = false;
+  _newData.forEach((data, index) => {
+    (plot.value?.data as DataWithMeta[])
+      .forEach((d, i) => {
+        if (d.meta?.id === hashDataset(data)) {
+          // if (d.meta.errorType !== data.errorType) {
+          console.log("Updating dataset error type meta", i, data.errorType);
+          updateDatasetMeta(i, data.errorType === 'bar');
+          changed = true;
+          const { visibility } = getTraceGroupVisibility(d as Plotly.PlotData);
+          setErrorVisibilityForTrace(d, visibility && props.showErrors, i);
+          // }
+        }
+      });
+  });
     
-  // }
-  renderPlot();
 }, { deep: true });
 
 watch(() => props.showZero, renderPlot);

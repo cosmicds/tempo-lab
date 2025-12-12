@@ -77,6 +77,19 @@ export function createErrorBands(data: PlotlyGraphDataSet, color: string, datase
     
 }
 
+/* Check if a dataset has error bars defined
+isSymmetric means, either upper = lower, or only one of them is defined
+Errors are either symmetric, or both upper and lower are defined and of same length
+*/
+export function dataHasErrors(data: PlotlyGraphDataSet) {
+  const hasUpper = !!data.upper;
+  const hasLower = !!data.lower;
+  const sameLength = data.upper && data.lower && data.upper.length === data.y.length && data.lower.length === data.y.length;
+  const isSymmetric = (!!data.upper !== !!data.lower) || arraysEqual(data.upper, data.lower);
+  const hasErrors = isSymmetric || (hasUpper && hasLower && sameLength);
+  return { hasErrors, hasUpper, hasLower, isSymmetric };
+}
+  
 
 export function createErrorBars(data: PlotlyGraphDataSet, color: string, options: Partial<Plotly.ErrorOptions> = {}): Extract<Plotly.ErrorBar, {type: 'data'}> | null {
   if (!data.upper && !data.lower) return null;
