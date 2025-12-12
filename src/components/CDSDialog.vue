@@ -46,9 +46,9 @@
       <v-card-text 
         class="cds-dialog-v-card-text" 
         :style="{
-          'max-height': maxHeight ?? '60vh',
-          'max-width': maxWidth ?? 'unset',
-          ...(height ? { height: height } : {}),
+          '--max-height': maxHeight ?? '60vh',
+          '--max-width': maxWidth ?? 'unset',
+          ...(height ? { '--height': height } : {}),
           }">
         
         <slot>
@@ -164,6 +164,11 @@ watch(modelValue, value => {
   height: fit-content;
   /* max-height set on element */
   contain: layout;
+}
+.cds-dialog-v-card-text {
+  max-height: var(--max-height);
+  max-width: var(--max-width);
+  height: var(--height, auto);
 }
 
 .cds-dialog.nonmodal {
