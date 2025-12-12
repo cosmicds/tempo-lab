@@ -47,9 +47,7 @@ interface Props {
   /** Tooltip text for expand and collapse states */
   tooltipText?: [string, string];
 }
-const { tooltipText } = withDefaults(defineProps<Props>(), {
-  tooltipText: () => ['Expand side panel', 'Collapse side panel']
-});
+const { tooltipText = ['Expand side panel', 'Collapse side panel'] } = defineProps<Props>();
 const show = defineModel<boolean>({ default: true });
   
 const isCollapsed = computed({
