@@ -85,17 +85,6 @@
         <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="What's new"></v-tooltip>
         <v-icon>mdi-creation</v-icon>
       </v-btn>
-      <share-button
-        :source="currentUrl"
-        buttonColor="black"
-        :iconColor="accentColor2"
-        elevation="0"
-        size="small"
-        rounded="1"
-        :tooltip-disabled="mobile"
-        @click="shareButtonClickedCount += 1"
-        alert
-      />
       <v-btn aria-role="menu" aria-label="Show menu" class="menu-button" variant="outlined" rounded="lg" :color="accentColor2" elevation="5">
         <v-icon size="x-large">mdi-menu</v-icon>
         <v-menu
