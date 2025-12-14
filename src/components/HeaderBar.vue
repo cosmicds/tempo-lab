@@ -92,6 +92,21 @@
         thickness="3"
       />
 
+     <v-btn
+        @click="showSaveDialog = !showSaveDialog"
+        class="save-button"
+        aria-label="Export current state"
+        variant="outlined"
+        rounded="lg"
+        density="default"
+        :color="accentColor2"
+        elevation="0"
+        size="lg"
+      >
+        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Export current state"></v-tooltip>
+        <v-icon>mdi-content-save</v-icon>
+      </v-btn>
+
       <v-btn aria-role="menu" aria-label="Show menu" class="menu-button" variant="outlined" rounded="lg" :color="accentColor2" elevation="5">
         <v-icon size="x-large">mdi-menu</v-icon>
         <v-menu
@@ -153,6 +168,12 @@
           </v-list>
         </v-menu>
       </v-btn>
+
+      <v-dialog
+        v-model="showSaveDialog"
+      >
+        <save-state />
+      </v-dialog>
     </div>
   </div>
 </template>
@@ -188,6 +209,7 @@ const display = useDisplay();
 const showChanges = ref(false);
 const showAboutData = ref(false);
 const showCredits = ref(false);
+const showSaveDialog = ref(false);
 
 const touchscreen = supportsTouchscreen();
 
@@ -234,7 +256,7 @@ a[href="https://tempo.si.edu"]>img {
     outline: 1px solid transparent;
   }
 
-  .layers-button {
+  .layers-button, .save-button {
     padding: 8px;
   }
 

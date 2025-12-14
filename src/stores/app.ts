@@ -431,7 +431,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
 
 export const useTempoStore = createTempoStore("maplibre");
 
-type TempoStore = ReturnType<typeof useTempoStore>;
+export type TempoStore = ReturnType<typeof useTempoStore>;
 
 function isDateLikeString(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}/.test(value);
