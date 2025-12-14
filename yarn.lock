@@ -636,8 +636,8 @@ __metadata:
   linkType: hard
 
 "@maplibre/maplibre-gl-style-spec@npm:^24.3.1":
-  version: 24.3.1
-  resolution: "@maplibre/maplibre-gl-style-spec@npm:24.3.1"
+  version: 24.4.0
+  resolution: "@maplibre/maplibre-gl-style-spec@npm:24.4.0"
   dependencies:
     "@mapbox/jsonlint-lines-primitives": "npm:~2.0.2"
     "@mapbox/unitbezier": "npm:^0.0.1"
@@ -650,7 +650,7 @@ __metadata:
     gl-style-format: dist/gl-style-format.mjs
     gl-style-migrate: dist/gl-style-migrate.mjs
     gl-style-validate: dist/gl-style-validate.mjs
-  checksum: 10/0f6baad7b11082d5457521384ab95c0ca58adc9e7a8d809d607ad4620574c53c2f4dc59ff7a52ef260e49bde1834edcdc13dc0b05119938b7b449be1fc7d75e8
+  checksum: 10/83d0866859248d73ec6968233a5e3a5a85fb641a8985d8de03ed8fcb45c6829a9a87cddd38174a689b92677b60a7700fc3c332f32a05e1b414711cd1bdcb866f
   languageName: node
   linkType: hard
 
@@ -1000,11 +1000,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 24.10.1
-  resolution: "@types/node@npm:24.10.1"
+  version: 25.0.1
+  resolution: "@types/node@npm:25.0.1"
   dependencies:
     undici-types: "npm:~7.16.0"
-  checksum: 10/ddac8c97be5f7401e31ea0e9316c6e864993c6cd06689b7f9874ecfb576ef8349f2d14298248a08b94a6dd029570a46a285cddc4d50e524817f1a3730b29a86e
+  checksum: 10/a00ac3fc23fb94a06c23f4c9e422ad8f911cb31e4a51e72b7dc7349565b2142df6231f45ebdc4f856e1519f661d8b13074f05855f4b68ce050ac81173dbcbe0f
   languageName: node
   linkType: hard
 
@@ -2293,11 +2293,11 @@ __metadata:
   linkType: hard
 
 "baseline-browser-mapping@npm:^2.9.0":
-  version: 2.9.2
-  resolution: "baseline-browser-mapping@npm:2.9.2"
+  version: 2.9.7
+  resolution: "baseline-browser-mapping@npm:2.9.7"
   bin:
     baseline-browser-mapping: dist/cli.js
-  checksum: 10/6e42ae4aaaa0becd37a58b00aa4734063a59b752b5bb66776fc73858d8d7eecea007f4af67fba7c48a9022ec243ad6a77aee735d9e063b1220a7f39b8cd39f4b
+  checksum: 10/870ff0c62bbc4017afc0c4058fc67929034a3f0a1eecc31f7156b88ff2a629433ba2ce12cd84fa6f34b72748935cfa7d0067c723ec501195a0a807925732827a
   languageName: node
   linkType: hard
 
@@ -2539,9 +2539,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001754, caniuse-lite@npm:^1.0.30001759":
-  version: 1.0.30001759
-  resolution: "caniuse-lite@npm:1.0.30001759"
-  checksum: 10/da0ec28dd993dffa99402914903426b9466d2798d41c1dc9341fcb7dd10f58fdd148122e2c65001246c030ba1c939645b7b4597f6321e3246dc792323bb11541
+  version: 1.0.30001760
+  resolution: "caniuse-lite@npm:1.0.30001760"
+  checksum: 10/ac5c13d00b946c3ace331d25379ed9d85743b1028aba79ae80402cb128b4b491122585144898fefb836d4d9879c13c717a081ae241a00420cbbc7e1b934ec685
   languageName: node
   linkType: hard
 
@@ -3468,9 +3468,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.263":
-  version: 1.5.264
-  resolution: "electron-to-chromium@npm:1.5.264"
-  checksum: 10/83722da6fec39a3b1561a3d1087e726f9366339330891786de0af87cbaacc5c8484cc70ea2687c2c0e7ea702d4f56c45ec28dc5a831315b8f40ebd0da839ffa8
+  version: 1.5.267
+  resolution: "electron-to-chromium@npm:1.5.267"
+  checksum: 10/05e55e810cb6a3cda8d29dfdeec7ac0e59727a77a796a157f1a1d65edac16d45eed69ed5c99e354872ab16c48967c2d0a0600653051ae380a3b7a4d6210b1e60
   languageName: node
   linkType: hard
 
@@ -3521,12 +3521,12 @@ __metadata:
   linkType: hard
 
 "enhanced-resolve@npm:^5.0.0, enhanced-resolve@npm:^5.17.3":
-  version: 5.18.3
-  resolution: "enhanced-resolve@npm:5.18.3"
+  version: 5.18.4
+  resolution: "enhanced-resolve@npm:5.18.4"
   dependencies:
     graceful-fs: "npm:^4.2.4"
     tapable: "npm:^2.2.0"
-  checksum: 10/a4d0a1eacba3079f617b68c8f7e17583c3cbc572055c2edca41c0fa0230a49f6e9b2c6ffd4128cc5f84e15ea6cc313ae2b01e1057fcd252fabef70220a5d9f6a
+  checksum: 10/dcd477cb694d9cc84109a03269c13d3da0851d50099fd3fa7c56b2867dd720d59c7f1431bd47c9cad2825ad52588bd71d3a68cf1e5ee0bc57551d8a3fab4e6f2
   languageName: node
   linkType: hard
 
@@ -8251,8 +8251,8 @@ __metadata:
   linkType: hard
 
 "terser-webpack-plugin@npm:^5.1.1, terser-webpack-plugin@npm:^5.3.11":
-  version: 5.3.14
-  resolution: "terser-webpack-plugin@npm:5.3.14"
+  version: 5.3.16
+  resolution: "terser-webpack-plugin@npm:5.3.16"
   dependencies:
     "@jridgewell/trace-mapping": "npm:^0.3.25"
     jest-worker: "npm:^27.4.5"
@@ -8268,7 +8268,7 @@ __metadata:
       optional: true
     uglify-js:
       optional: true
-  checksum: 10/5b7290f7edb179b83cefb8827c12371ddddc088cf251cf58a1c738d82628331ae6604273b61fe991d77411d4bb6b7178c3826aa47edf01b4ee21f973d6c8b8fb
+  checksum: 10/09dfbff602acfa114cdd174254b69a04adbc47856021ab351e37982202fd1ec85e0b62ffd5864c98beb8e96aef2f43da490b3448b4541db539c2cff6607394a6
   languageName: node
   linkType: hard
 
@@ -8733,8 +8733,8 @@ __metadata:
   linkType: hard
 
 "vuetify@npm:^3.3.3, vuetify@npm:^3.4.11":
-  version: 3.11.2
-  resolution: "vuetify@npm:3.11.2"
+  version: 3.11.3
+  resolution: "vuetify@npm:3.11.3"
   peerDependencies:
     typescript: ">=4.7"
     vite-plugin-vuetify: ">=2.1.0"
@@ -8747,7 +8747,7 @@ __metadata:
       optional: true
     webpack-plugin-vuetify:
       optional: true
-  checksum: 10/6e46096d445a4d270bd918a42df807120fcb6a4f50aa37edc0e9646f08375411a2bc30a7e6e35e01e6d7a162a4fe02a607f05696f583132c9ac87ec64d85503f
+  checksum: 10/a87595158c5b2dd13fc806f966b5d3a997851152202b91a71c8380513552d62082636cc128fcac064aaeba38d1ecb31920b47c18d7da0455d1a86e8243d95da3
   languageName: node
   linkType: hard
 

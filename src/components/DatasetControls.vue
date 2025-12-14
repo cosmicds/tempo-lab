@@ -412,17 +412,12 @@
                       persistent
                       :scrim="false"
                       :modal="false"
+                      max-height="fit-content"
+                      height="fit-content"
                       :drag-predicate="plotlyDragPredicate"
                     >
                     
                     <template v-if="dataset.timeRange.type === 'folded' && dataset.plotlyDatasets">
-                        <v-checkbox
-                          v-model="showErrorBands"
-                          label="Show Errors"
-                          density="compact"
-                          hide-details
-                        >
-                        </v-checkbox>
                         <user-dataset-plot
                           :dataset="dataset"
                           :show-errors="showErrorBands"
