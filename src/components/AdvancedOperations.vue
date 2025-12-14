@@ -4,16 +4,19 @@
     title="Time Graph"
     density="compact"
     title-color="var(--info-background)"
-    max-width="90vw"
+    :width="aggControlsVisible ? '90vw' : '600px'"
     max-height="90vh"
+    height="fit-content"
     persistent
-    scrollable
+    draggable
+    
   > 
     <new-data-generic-aggregation
       v-if="mode === 'new'"
       v-model="dialogOpen"
       :selection="selection"
       @save="saveFolded"
+      @controls-toggle="toggleAggControls"
     />
   </cds-dialog>
 
@@ -31,7 +34,10 @@ interface DataAggregationProps {
 
 const { selection } = defineProps<DataAggregationProps>();
 const dialogOpen = defineModel<boolean>('modelValue', { type: Boolean, required: true });
-
+const aggControlsVisible = ref(false);
+function toggleAggControls(value: boolean) {
+  aggControlsVisible.value = value;
+}
 
 const mode = ref<'aggregate' | 'fold' | 'new'>('new');
 
@@ -55,13 +61,5 @@ function saveFolded(selection: UserDataset) {
 
 <style>
 
-.time-graph-cds-dialog .cds-dialog-card {
-  align-self: auto !important;
-}
 
-.time-graph-cds-dialog .cds-dialog-v-card-text {
-  max-width: none;
-  max-height: none;
-  height: fit-content;
-}
 </style>

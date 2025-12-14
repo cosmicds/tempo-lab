@@ -27,6 +27,9 @@
       ref="card"
       class="cds-dialog-card"
       :width="width"
+      :max-width="maxWidth"
+      :height="height"
+      :max-height="maxHeight"
     >
         <v-toolbar
           density="compact"
@@ -43,18 +46,10 @@
           </v-btn>
         </v-toolbar>
       
-      <v-card-text 
-        class="cds-dialog-v-card-text" 
-        :style="{
-          '--max-height': maxHeight ?? '60vh',
-          '--max-width': maxWidth ?? 'unset',
-          ...(height ? { '--height': height } : {}),
-          }">
-        
+      <v-card-text class="cds-dialog-v-card-text" >
         <slot>
           Add content to the default slot
         </slot>
-        
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -156,19 +151,14 @@ watch(modelValue, value => {
 }
 
 .v-dialog.cds-dialog > .v-overlay__content {
-  align-self: center;
   margin: unset;
 }
 
 .cds-dialog .v-card-text {
-  height: fit-content;
-  /* max-height set on element */
   contain: layout;
 }
 .cds-dialog-v-card-text {
-  max-height: var(--max-height);
-  max-width: var(--max-width);
-  height: var(--height, auto);
+
 }
 
 .cds-dialog.nonmodal {

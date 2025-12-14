@@ -284,7 +284,6 @@ function renderPlot() {
           return;
         }
         console.log("Point clicked:", point);
-        console.log("trace: ", plot.value?.data[traceIndex]);
         const date = datumToDate(point.x);
         if (date !== null) {
           emit("click", {x: point.x, y: point.y as number, customdata: point.customdata} );

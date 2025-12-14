@@ -131,7 +131,12 @@ const showAggControls = ref(false);
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
+  (event: 'controls-toggle', isOpen: boolean): void;
 }>();
+
+watch(showAggControls, (newVal) => {
+  emit('controls-toggle', newVal);
+});
 
 // Dialog state
 const dialogOpen = defineModel<boolean>('modelValue', { type: Boolean, required: true });
