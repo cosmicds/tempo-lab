@@ -83,7 +83,7 @@
         elevation="0"
         size="lg"
       >
-        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
+        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle dataset controls"></v-tooltip>
         <v-icon>mdi-chart-line</v-icon>
       </v-btn>
 
