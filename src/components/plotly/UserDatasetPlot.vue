@@ -57,7 +57,7 @@ const props = defineProps<UserDatasetPlotProps>();
 // Common layout options for all plots
 const dlayoutOptions = {
   margin: { t: 20, r: 30, b: 60, l: 80 },
-  autosize: true,
+  autosize: false,
   ...(props.layoutOptions ?? {}),
 };
 

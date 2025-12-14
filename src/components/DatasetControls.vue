@@ -432,10 +432,12 @@
                           :layout-options="{
                             width: 600, 
                             height: 400,
+                            autosize: false,
                             ...(dataset.folded ? {} : { xaxis: {title: {text: 'Local Time for Region'}}}),
                           }"
                           :fold-type="dataset.folded?.foldType"
                           :timezones="dataset.folded?.timezone"
+                          :config-options="{responsive: false}"
                         />
                       </template>
                     </cds-dialog>
