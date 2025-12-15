@@ -14,6 +14,7 @@
           :map="mapRef"
           :layer-id="element"
           :display-name="displayNameTransform(element)"
+          :synced-items="getConnectedItems(element)"
         >
           <template #info
             v-if="layerInfo[element]"
@@ -82,6 +83,15 @@ interface Emits {
   (e: 'change', newOrder: string[]): void;
 }
 const _emit = defineEmits<Emits>();
+
+  
+const connections = {
+  'stamen-toner-lines': ['coastline-custom', 'states-custom', 'stamen-toner-lines'],
+};
+const getConnectedItems = (layer: string): string[] => {
+  return connections[layer] ?? [];
+};
+
 const { 
   currentOrder, 
   controller 
@@ -89,7 +99,8 @@ const {
   mapRef, 
   toValue(props.order),
   true,
-  [['stamen-toner-lines', ['coastline-custom', 'states-custom', 'stamen-toner-lines']]]
+  Object.entries(connections).map(([key, value]) => [key, value])
+  
 );
 
 const tempoPrefix = "tempo-";
