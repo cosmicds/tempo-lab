@@ -632,7 +632,7 @@ import { TimeRangeSelectionType } from "@/types/datetime";
 // import FoldedPlotlyGraph from "./FoldedPlotlyGraph.vue";
 import CTextField from "./CTextField.vue";
 import DatasetCard from "./DatasetCard.vue";
-import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 // import { userDatasetToPlotly } from "@/utils/data_converters";
 import UserDatasetTable from "./UserDatasetTable.vue";
 import TimeRangeCard from "@/date_time_range_selection/TimeRangeCard.vue";
@@ -711,7 +711,6 @@ function handleDatasetCreated(dataset: UserDataset) {
 }
 
 import UserDatasetEditor from "./UserDatasetEditor.vue";
-import tz_lookup from "@photostructure/tz-lookup";
 const showDatasetEditor = ref(false);
 const datasetEditorNameOnly = ref(false);
 function handleEditDataset(dataset: UserDataset, nameOnly = false) {
@@ -831,19 +830,8 @@ watch(tableSelection, (newVal) => {
 function handlePlotClick(value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}): void {
   if (value.x === null) return;
   console.log('Plot clicked at:', value);
-  // const region = value.region;
-  // let regionCenter: {lat: number, lon: number};
-  // if (region && region.geometryType === 'point') {
-  //   regionCenter = { lat: region.geometryInfo.y, lon: region.geometryInfo.x };
-  // } else {
-  //   const { xmin, ymin, xmax, ymax } = region.geometryInfo;
-  //   regionCenter = { lat: (ymin + ymax) / 2, lon: (xmin + xmax) / 2 };
-  // }
-  // const tzCenter = tz_lookup(regionCenter.lat, regionCenter.lon);
-  // // from zoned time to UTC
-  // const utcDate = fromZonedTime(new Date(value.x), tzCenter);
-  // store.setNearestTime(utcDate);
-  // focusRegion.value = value.region;
+  // store.setNearestTime(new Date(value.x));
+  focusRegion.value = value.region;
   
 }
 
