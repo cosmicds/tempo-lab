@@ -8,7 +8,6 @@
     max-height="90vh"
     height="fit-content"
     persistent
-    draggable
     
   > 
     <new-data-generic-aggregation
