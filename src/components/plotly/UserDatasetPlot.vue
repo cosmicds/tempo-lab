@@ -14,6 +14,7 @@
       :timezones="[dataset.folded.timezone ?? 'UTC']"
       :config-options="dconfigOptions"
       :yaxis-title="moleculeDescriptor(dataset.molecule).unit.html"
+      @plot-click="(value) => emit('plot-click', value)"
     />
     </div>
     <div v-else class="dataset-plot__plot dataset-plot-normal">
@@ -29,6 +30,7 @@
       }"
       :config-options="dconfigOptions"
       :yaxis-title="moleculeDescriptor(dataset.molecule).unit.html"
+      @click="(value) => emit('plot-click', value)"
     />
     </div>
   </div>
@@ -52,6 +54,10 @@ interface UserDatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 
   hideLegend?: boolean;
 }
 const props = defineProps<UserDatasetPlotProps>();
+
+const emit = defineEmits<{
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
+}>();
 
 
 // Common layout options for all plots

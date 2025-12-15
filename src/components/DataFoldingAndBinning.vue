@@ -68,7 +68,7 @@
                     { 'thickness': 3, 'width': 0 } // folded data error bar style
                   ]"
                   :config-options="{responsive: true, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'select2d' ]}"
-                  @click="handlePointClick"
+                  @plot-click="handlePointClick"
                   :layout-options="{legend: {y:1.25, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
                 />
               </div>
@@ -100,7 +100,7 @@ import { storeToRefs } from "pinia";
 import { v4 } from 'uuid';
 import { TimeSeriesFolder, sortfoldBinContent } from '../esri/services/aggregation';
 import FoldedPlotlyGraph from './FoldedPlotlyGraph.vue';
-import type { Prettify, UserDataset, PlotlyGraphDataSet, UnifiedRegion } from '../types';
+import type { Prettify, UserDataset, PlotlyGraphDataSet, UnifiedRegion, MoleculeType } from '../types';
 import type { TimeRangeSelectionType } from '@/types/datetime';
 import type { AggregationMethod, TimeSeriesData, FoldedTimeSeriesData , FoldType, FoldBinContent} from '../esri/services/aggregation';
 import tz_lookup from '@photostructure/tz-lookup';
@@ -126,16 +126,19 @@ interface DataFoldingProps {
 }
 
 const props = defineProps<DataFoldingProps>();
+  
 
 const showAggControls = ref(false);
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
   (event: 'controls-toggle', isOpen: boolean): void;
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}): void;
 }>();
 
 watch(showAggControls, (newVal) => {
   emit('controls-toggle', newVal);
+
 });
 
 // Dialog state
@@ -641,6 +644,13 @@ function handlePointClick(value: {x: Plotly.Datum, y: number, customdata: unknow
   console.log("Custom data Date:", value.customdata ? value.customdata as Date: value.customdata);
   // the from timezoned time is what we want to to send work with if we go back to esri stuff
   console.log("fromZonedTime", value.customdata ? fromZonedTime(value.customdata as Date, selectedTimezone.value) : value.customdata);
+  emit('plot-click', {
+    x: value.x,
+    y: value.y,
+    customdata: value.customdata,
+    molecule: props.selection?.molecule as MoleculeType,
+    region: props.selection?.region as UnifiedRegion
+  });
   return;
 }
 

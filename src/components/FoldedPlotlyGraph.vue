@@ -10,7 +10,7 @@
     :config-options="configOptions"
     :yaxis-title="yaxisTitle"
     :xaxis-title="xaxisTitle"
-    @click="(value) => emit('click', value)"
+    @click="(value) => emit('plot-click', value)"
   />
 </template>
 
@@ -19,7 +19,6 @@ import { computed } from 'vue';
 import PlotlyGraph, { type PlotlyGraphProps } from './plotly/PlotlyGraph.vue';
 import { mergeFoldTypeLayout } from './plotly/plotly_styles';
 import type { FoldType } from '../esri/services/aggregation';
-import type { Datum } from 'plotly.js-dist-min';
 import { toZonedTime } from 'date-fns-tz';
 
 const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -65,7 +64,7 @@ const rezonedDatasets = computed(() => {
 });
 
 const emit = defineEmits<{
-  (event: "click", value: {x: Datum, y: number, customdata: unknown}): void;
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
 }>();
 
 // Merge the fold-type specific layout with any custom layout options

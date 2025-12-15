@@ -8,6 +8,7 @@
           hide-legend
           :layout-options="commonLayoutOptions"
           :config-options="commonConfigOptions"
+          @plot-click="(value) => emit('plot-click', value)"
         />
       </div>
       
@@ -19,6 +20,7 @@
           hide-legend
           :layout-options="commonLayoutOptions"
           :config-options="commonConfigOptions"
+          @plot-click="(value) => emit('plot-click', value)"
         />
       </div>
     </div>
@@ -26,9 +28,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-// import FoldedPlotlyGraph from '../FoldedPlotlyGraph.vue';
-// import PlotlyGraph from './PlotlyGraph.vue';
-// import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config, ModeBarDefaultButtons } from 'plotly.js-dist-min';
 import MultiDatasetPlot from './MultiDatasetPlot.vue';
@@ -41,6 +40,10 @@ interface MultiPlotProps {
 const isSingle = computed(() => {return datasets.length === 1;});
 
 const { datasets } = defineProps<MultiPlotProps>();
+  
+const emit = defineEmits<{
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
+}>();
 
 const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 

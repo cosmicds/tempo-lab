@@ -17,6 +17,7 @@
       :selection="selection"
       @save="saveFolded"
       @controls-toggle="toggleAggControls"
+      @plot-click="handlePlotClick"
     />
   </cds-dialog>
 
@@ -25,8 +26,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { UserDataset } from '../types';
+import type { UserDataset, UnifiedRegion, MoleculeType} from '../types';
 import NewDataGenericAggregation from './DataFoldingAndBinning.vue';
+
+
 
 interface DataAggregationProps {
   selection: UserDataset | null;
@@ -43,8 +46,13 @@ const mode = ref<'aggregate' | 'fold' | 'new'>('new');
 
 const emit = defineEmits<{
   (event: 'save', aggregatedSelection: UserDataset): void;
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}): void;
 }>();
 
+
+function handlePlotClick(value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}) {
+  emit('plot-click', value);
+}
 // Save the aggregation
 // function saveAggregation(selection: UserDataset) {
 //   emit('save', selection);

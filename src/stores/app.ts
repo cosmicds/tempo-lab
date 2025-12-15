@@ -72,7 +72,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     setNearestDate,
     moveBackwardOneDay,
     moveForwardOneDay,
-    nearestDateIndex
+    nearestDateIndex,
+    setNearestTime,
   } = useUniqueTimeSelection(timestamps);
 
 
@@ -422,6 +423,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     moveBackwardOneDay,
     moveForwardOneDay,
     nearestDateIndex,
+    setNearestTime,
 
     reset,
   };
