@@ -98,7 +98,7 @@ const {
 } = useMaplibreLayerOrderControl(
   mapRef, 
   toValue(props.order),
-  true,
+  false,
   Object.entries(connections).map(([key, value]) => [key, value])
   
 );
