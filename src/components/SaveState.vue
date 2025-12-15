@@ -53,9 +53,11 @@ const emit = defineEmits<{
   (event: "error", type: EventType, message: string): void;
 }>();
 
+const DEFAULT_FILENAME = "tempo_lab.json";
+
 async function saveLocalFileSystemAPI(store: TempoStore): Promise<boolean> {
   const options = {
-    suggestedName: "tempo_lab.json",
+    suggestedName: DEFAULT_FILENAME,
     types: [
       {
         description: "JSON",
@@ -92,7 +94,7 @@ function saveLocalLink(store: TempoStore) {
   const blob = new Blob([content], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "tempo_lab.json";
+  link.download = DEFAULT_FILENAME;
   document.body.appendChild(link);
   link.click();
 
@@ -128,13 +130,11 @@ async function loadLocalFileSystemAPI(): Promise<boolean> {
   const file = await handle.getFile();
   const content = await file.text();
 
-  try {
-    updateStoreFromJSON(store, content);
+  const result = updateStoreFromJSON(store, content);
+  if (result) {
     return true;
-  } catch (error: unknown) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    emit("error", "load-local", error.message);
+  } else {
+    emit("error", "load-local", "Error loading TEMPO Lab state from local file");
     return false;
   }
 }
@@ -152,13 +152,11 @@ function loadLocalInput() {
       reader.onload = function (evt) {
         if (!evt || !evt.target) { return; }
         const content = evt.target.result as string;
-        try {
-          updateStoreFromJSON(store, content);
+        const result = updateStoreFromJSON(store, content);
+        if (result) {
           emit("load-local");
-        } catch (error) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          emit("error", "load-local", error.message);
+        } else {
+          emit("error", "load-local", "Error loading TEMPO Lab state from local file");
         }
       };
       reader.readAsText(file);
@@ -166,19 +164,17 @@ function loadLocalInput() {
   });
 
   input.click();
-
-  return true;
 }
 
 async function loadLocal() {
   let result = false;
   if ('showOpenFilePicker' in window) {
     result = await loadLocalFileSystemAPI();
+    if (result) {
+      emit("load-local");
+    }
   } else {
-    result = loadLocalInput();
-  }
-  if (result) {
-    emit("load-local");
+    loadLocalInput();
   }
 }
 </script>

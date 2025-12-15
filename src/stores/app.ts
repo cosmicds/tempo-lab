@@ -441,36 +441,31 @@ export function deserializeTempoStore(value: string): StateTree {
   if (!value) {
     return {};
   }
-  try {
-    const parsed = parse(value);
-    parsed.singleDateSelected = new Date(parsed.singleDateSelected);
-    for (const dataset of parsed.datasets) {
-      const samples = dataset.samples as Record<number, AggValue>;
-      if (samples) {
-        for (const entry of Object.values(samples)) {
-          entry.date = new Date(entry.date);
-        }
+  const parsed = parse(value);
+  parsed.singleDateSelected = new Date(parsed.singleDateSelected);
+  for (const dataset of parsed.datasets) {
+    const samples = dataset.samples as Record<number, AggValue>;
+    if (samples) {
+      for (const entry of Object.values(samples)) {
+        entry.date = new Date(entry.date);
       }
+    }
 
-      // Convert dates in plotlyDatasets if they exist
-      if (dataset.plotlyDatasets) {
-        for (const plotlyDataset of dataset.plotlyDatasets) {
-          if (plotlyDataset.datasetOptions?.customdata) {
-            plotlyDataset.datasetOptions.customdata = plotlyDataset.datasetOptions.customdata.map(d => d ? new Date(d) : d);
-          }
-          
-          // Convert strings in x array if they are dates
-          if (plotlyDataset.x?.[0] && typeof plotlyDataset.x[0] === 'string' && isDateLikeString(plotlyDataset.x[0])) {
-            plotlyDataset.x = plotlyDataset.x.map(d => d ? new Date(d) : d);
-          }
+    // Convert dates in plotlyDatasets if they exist
+    if (dataset.plotlyDatasets) {
+      for (const plotlyDataset of dataset.plotlyDatasets) {
+        if (plotlyDataset.datasetOptions?.customdata) {
+          plotlyDataset.datasetOptions.customdata = plotlyDataset.datasetOptions.customdata.map(d => d ? new Date(d) : d);
+        }
+        
+        // Convert strings in x array if they are dates
+        if (plotlyDataset.x?.[0] && typeof plotlyDataset.x[0] === 'string' && isDateLikeString(plotlyDataset.x[0])) {
+          plotlyDataset.x = plotlyDataset.x.map(d => d ? new Date(d) : d);
         }
       }
     }
-    return parsed;
-  } catch (error) {
-    console.error(error);
-    return {};
   }
+  return parsed;
 }
 
 const OMIT = new Set(["debugMode", "selectionActive", "maps"]);
@@ -500,8 +495,13 @@ export function postDeserializeTempoStore(store: TempoStore) {
   }
 }
 
-export function updateStoreFromJSON(store: TempoStore, json: string) {
-  const state = deserializeTempoStore(json);
-  store.$patch(state);
-  postDeserializeTempoStore(store);
+export function updateStoreFromJSON(store: TempoStore, json: string): boolean {
+  try {
+    const state = deserializeTempoStore(json);
+    store.$patch(state);
+    postDeserializeTempoStore(store);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
