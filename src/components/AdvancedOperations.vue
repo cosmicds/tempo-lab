@@ -13,9 +13,9 @@
     <new-data-generic-aggregation
       v-if="mode === 'new'"
       v-model="dialogOpen"
+      v-model:show-controls="aggControlsVisible"
       :selection="selection"
       @save="saveFolded"
-      @controls-toggle="toggleAggControls"
       @plot-click="handlePlotClick"
     />
   </cds-dialog>
@@ -37,9 +37,6 @@ interface DataAggregationProps {
 const { selection } = defineProps<DataAggregationProps>();
 const dialogOpen = defineModel<boolean>('modelValue', { type: Boolean, required: true });
 const aggControlsVisible = ref(false);
-function toggleAggControls(value: boolean) {
-  aggControlsVisible.value = value;
-}
 
 const mode = ref<'aggregate' | 'fold' | 'new'>('new');
 

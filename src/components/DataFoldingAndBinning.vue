@@ -128,7 +128,8 @@ interface DataFoldingProps {
 const props = defineProps<DataFoldingProps>();
   
 
-const showAggControls = ref(false);
+
+const showAggControls = defineModel('showControls', { type: Boolean, required: false, default: false });
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
@@ -136,10 +137,6 @@ const emit = defineEmits<{
   (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}): void;
 }>();
 
-watch(showAggControls, (newVal) => {
-  emit('controls-toggle', newVal);
-
-});
 
 // Dialog state
 const dialogOpen = defineModel<boolean>('modelValue', { type: Boolean, required: true });
