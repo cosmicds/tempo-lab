@@ -104,7 +104,7 @@
         size="lg"
       >
         <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Export current state"></v-tooltip>
-        <v-icon>mdi-content-save</v-icon>
+        <v-icon>mdi-file-arrow-up-down</v-icon>
       </v-btn>
 
       <v-btn aria-role="menu" aria-label="Show menu" class="menu-button" variant="outlined" rounded="lg" :color="accentColor2" elevation="5">
@@ -171,9 +171,23 @@
 
       <v-dialog
         v-model="showSaveDialog"
+        width="300px"
       >
-        <save-state />
+        <save-state
+          @load-local="showSaveDialog = false"
+          @save-local="showSaveDialog = false"
+          @error="(type: string, message: string) => reportError(type, message)"
+        />
       </v-dialog>
+
+      <v-snackbar
+        v-model="showErrorSnackbar"
+        timeout="2000"
+        color="error"
+      >
+         {{ ioErrorMessage }}
+      </v-snackbar>
+
     </div>
   </div>
 </template>
@@ -210,6 +224,8 @@ const showChanges = ref(false);
 const showAboutData = ref(false);
 const showCredits = ref(false);
 const showSaveDialog = ref(false);
+const showErrorSnackbar = ref(false);
+const ioErrorMessage = ref("");
 
 const touchscreen = supportsTouchscreen();
 
@@ -221,6 +237,11 @@ const smallSize = computed(() => {
 const mobile = computed(() => {
   return smallSize.value && touchscreen;
 });
+
+function reportError(_error: string, message: string) {
+  showErrorSnackbar.value = true;
+  ioErrorMessage.value = message;
+}
 </script>
 
 <style scoped lang="less">
