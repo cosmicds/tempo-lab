@@ -288,7 +288,9 @@ const props = defineProps<{
   currentDate: Date;
   allowedDates?: Date[];
   validTimes?: number[]; // timestamps
-  validate?: boolean;
+  validate?: boolean; // Whether to show the timeline visualization for validation
+  enableParceling?: boolean; // Whether to enable parceling of long ranges
+  parcelSizeMs?: number; // Maximum parcel size in milliseconds
 }>();
 
 // === EMITS ===
@@ -458,6 +460,8 @@ const timeRangeConfig = computed<TimeRangeConfig>(() => {
       weekdays: selectedDays.value.length === DAYS.length ? undefined : selectedDays.value,
       times: allDay.value ? undefined : selectedTimes.value,
       toleranceHours: allDay.value ? [...ALL_DAY_TOLERANCE] : [...DEFAULT_TOLERANCE],
+      parcel: props.enableParceling ?? false,
+      parcelSize: props.parcelSizeMs,
     };
     return patternConfig as TimeRangeConfig;
   }
@@ -493,7 +497,7 @@ function asRangeOrList<T extends string>(arr: T[], order: T[]): string {
   }
   const sortedArrr = arr.slice().sort((a, b) => order.indexOf(a) - order.indexOf(b));
   const isConsecutive = isRingConsecutive(sortedArrr,  order, true);
-  if (isConsecutive && sortedArrr.length > 2) {
+  if (isConsecutive.consecutive && sortedArrr.length > 2) {
     return `${isConsecutive.start.slice(0,3)}-${isConsecutive.end.slice(0,3)}`;
   }
   return arr.map(s => s.slice(0,3)).join(', ');

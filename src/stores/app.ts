@@ -7,7 +7,7 @@ import { parse, stringify } from "zipson";
 
 import type { AggValue, InitMapOptions, LatLngPair, MappingBackends, SelectionType, TimeRange, UnifiedRegion, UserDataset } from "@/types";
 import { ESRI_URLS, MoleculeType } from "@/esri/utils";
-import { TempoDataService } from "@/esri/services/TempoDataService";
+import { TempoDataService, FetchOptions } from "@/esri/services/TempoDataService";
 import { useUniqueTimeSelection } from "@/composables/useUniqueTimeSelection";
 import { useTimezone, type Timezone } from "@/composables/useTimezone";
 import { atleast1d } from "@/utils/atleast1d";
@@ -82,7 +82,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const tempoRed = ref("#b60e32");
 
 
-  function getTempoDataService(molecule: MoleculeType) {
+  function getTempoDataService(molecule: MoleculeType): TempoDataService {
     if (molecule in tempoDataServices) {
       return tempoDataServices[molecule];
     }
@@ -201,10 +201,10 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     datasets.value.splice(index, 1);
   }
 
-  function addDataset(dataset: UserDataset, fetch=true) {
+  function addDataset(dataset: UserDataset, fetch=true, onProgress?: FetchOptions["onProgress"]) {
     datasets.value.push(dataset);
     if (fetch) {
-      fetchDataForDataset(dataset);
+      fetchDataForDataset(dataset, onProgress);
     }
     return dataset;
   }
@@ -260,7 +260,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     });
   }
 
-  async function fetchDataForDataset(dataset: UserDataset) {
+  async function fetchDataForDataset(dataset: UserDataset, onProgress?: FetchOptions["onProgress"]) {
     dataset.loading = true;
 
     // loadingSamples.value = sel.id;
@@ -270,7 +270,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     
     try {
       const service = getTempoDataService(dataset.molecule);
-      const data = await service.fetchTimeseriesData(dataset.region.geometryInfo, timeRanges);
+      service.setAvailableTimestamps(timestamps.value);
+      const data = await service.fetchTimeseriesData(dataset.region.geometryInfo, timeRanges, {onProgress});
       dataset.samples = data.values;
       dataset.errors = data.errors;
       // loadingSamples.value = "finished";
