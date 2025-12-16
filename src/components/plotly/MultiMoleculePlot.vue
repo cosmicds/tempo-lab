@@ -27,9 +27,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { UserDataset } from '@/types';
-import type { Config, ModeBarDefaultButtons } from 'plotly.js-dist-min';
+import type { Config } from 'plotly.js-dist-min';
 import MultiDatasetPlot from './MultiDatasetPlot.vue';
 import UserDatasetPlot from './UserDatasetPlot.vue';
+import { DEFAULT_PLOT_CONFIG, DEFAULT_PLOT_LAYOUT } from "@/components/plotly/defaults";
 
 interface MultiPlotProps {
   datasets: UserDataset[];
@@ -46,7 +47,8 @@ const emit = defineEmits<{
 const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 
 // Common layout options for all plots
-const commonLayoutOptions=  {
+const commonLayoutOptions = {
+  ...DEFAULT_PLOT_LAYOUT,
   autosize: false,
   height: 250,
   width: 700,
@@ -78,9 +80,8 @@ const commonLayoutOptions=  {
 
 // Common config options for all plots
 const commonConfigOptions: Partial<Config> = {
+  ...DEFAULT_PLOT_CONFIG,
   responsive: true,
-  modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
-  displaylogo: false,
 };
 
 // const groupByMolecule = ref(false);

@@ -17,6 +17,7 @@ import Plotly, { PlotlyHTMLElement, newPlot, purge, restyle, relayout, type Data
 import type { PlotlyGraphDataSet } from '../../types';
 import { createErrorBands, filterNullValues, splitDatasetByGap, createErrorBars, dataHasErrors } from "./plotly_graph_elements";
 import { cycle } from "@/utils/array_operations/array_math";
+import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 
 // https://stackoverflow.com/a/7616484
 const generateHash = (string) => {
@@ -247,6 +248,7 @@ const layout = computed<Partial<Plotly.Layout>>(() => {
   const axisMin = props.showZero ? Math.min(0, min) : min;
 
   return {
+    ...DEFAULT_PLOT_LAYOUT,
     ...(props.layoutOptions || {}),
     xaxis: {
       ...(props.layoutOptions?.xaxis || {}),
@@ -275,7 +277,11 @@ function getTraceGroupVisibility(trace: Plotly.PlotData): {group: string | undef
 
 
 function renderPlot() {
-  newPlot(graph.value ?? id, plotlyData.value, layout.value, {...props.configOptions}).then((el: PlotlyHTMLElement) => {
+  const config = {
+    ...DEFAULT_PLOT_CONFIG,
+    ...props.configOptions,
+  };
+  newPlot(graph.value ?? id, plotlyData.value, layout.value, config).then((el: PlotlyHTMLElement) => {
     plot.value = el;
     el.on("plotly_click", (data: PlotMouseEvent) => {
       data.points.forEach(point => {

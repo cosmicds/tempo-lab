@@ -59,9 +59,10 @@ import type {FoldedPlotlyGraphProps} from '../FoldedPlotlyGraph.vue';
 import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
-import type { Config, ModeBarDefaultButtons } from 'plotly.js-dist-min';
+import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
 import { pascalToSnake } from '@/utils/text';
+import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
@@ -77,6 +78,7 @@ const emit = defineEmits<{
 
 // Common layout options for all plots
 const dlayoutOptions = {
+  ...DEFAULT_PLOT_LAYOUT,
   margin: { t: 20, r: 30, b: 60, l: 80 },
   autosize: true,
   ...(props.layoutOptions ?? {}),
@@ -84,9 +86,8 @@ const dlayoutOptions = {
 
 // Common config options for all plots
 const dconfigOptions: Partial<Config> = {
+  ...DEFAULT_PLOT_CONFIG,
   responsive: true,
-  modeBarButtonsToRemove: ['autoscale2d', 'sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
-  displaylogo: false,
   ...(props.configOptions ?? {}),
 };
 

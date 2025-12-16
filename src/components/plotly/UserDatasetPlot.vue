@@ -45,8 +45,9 @@ import type {FoldedPlotlyGraphProps} from '../FoldedPlotlyGraph.vue';
 import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
-import type { Config, ModeBarDefaultButtons } from 'plotly.js-dist-min';
+import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
+import { DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 
 
 interface UserDatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
@@ -70,9 +71,8 @@ const dlayoutOptions = {
 
 // Common config options for all plots
 const dconfigOptions: Partial<Config> = {
+  ...DEFAULT_PLOT_CONFIG,
   responsive: true,
-  modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d', 'autoScale2d'] as ModeBarDefaultButtons[],
-  displaylogo: false,
   ...(props.configOptions ?? {}),
 };
 
