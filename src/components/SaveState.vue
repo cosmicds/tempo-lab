@@ -1,31 +1,70 @@
 <template>
   <v-card class="save-state">
-    <v-card-title>Save/open</v-card-title>
-    <h3>Save to:</h3>
+    <v-toolbar
+      density="compact"
+      color="var(--info-background)"
+    >
+      <v-toolbar-title text="Save and Load"></v-toolbar-title>
+    </v-toolbar>
     <div class="icon-row">
-      <v-icon
-        icon="mdi-file"
-        :color="accentColor"
-        @click="() => saveLocal()"
-      />
-      <v-icon
-        icon="mdi-google-drive"
-        :color="accentColor"
-        disabled
-      />
+      <h3>Save to:</h3>
+      <v-tooltip
+        location="top"
+        text="Save to local file"
+      >
+      <template #activator="{ props }">
+          <v-icon
+            v-bind="props"
+            icon="mdi-file"
+            :color="accentColor"
+            @click="() => saveLocal()"
+          />
+        </template>
+      </v-tooltip>
+      <v-tooltip
+        location="top"
+        text="Coming soon!"
+      >
+        <template #activator="{ props }">
+          <span v-bind="props">
+            <v-icon
+              icon="mdi-google-drive"
+              :color="accentColor"
+              disabled
+            />
+          </span>
+        </template>
+      </v-tooltip>
     </div>
-    <h3>Open saved state:</h3>
     <div class="icon-row">
-      <v-icon
-        icon="mdi-file"
-        :color="accentColor"
-        @click="() => loadLocal()"
-      />
-      <v-icon
-        icon="mdi-google-drive"
-        :color="accentColor"
-        disabled
-      />
+      <h3>Open saved state:</h3>
+      <v-tooltip
+        location="top"
+        text="Load from local file"
+      >
+        <template #activator="{ props }">
+          <v-icon
+            v-bind="props"
+            icon="mdi-file"
+            :color="accentColor"
+            @click="() => loadLocal()"
+          />
+        </template>
+      </v-tooltip>
+      <v-tooltip
+        location="top"
+        text="Coming soon!"
+      >
+        <template #activator="{ props }">
+          <span v-bind="props">
+            <v-icon
+              icon="mdi-google-drive"
+              :color="accentColor"
+              disabled
+            />
+          </span>
+        </template>
+      </v-tooltip>
     </div>
   </v-card>
 </template>
@@ -178,3 +217,19 @@ async function loadLocal() {
   }
 }
 </script>
+
+<style scoped>
+.save-state {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.icon-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+}
+</style>
