@@ -417,7 +417,7 @@
                       :drag-predicate="plotlyDragPredicate"
                     >
                     
-                    <template v-if="dataset.timeRange.type === 'folded' && dataset.plotlyDatasets">
+                    <template v-if="(dataset.timeRange.type === 'folded' && dataset.plotlyDatasets) || (dataset.timeRange.type === 'single')">
                         <user-dataset-plot
                           :dataset="dataset"
                           :show-errors="showErrorBands"
