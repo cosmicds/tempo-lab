@@ -36,7 +36,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
 
   const maps = ref<Map[]>([]);
 
-  const datasetControlsOpen = ref(true);
+  const datasetControlsOpen = ref(false);
   const layerControlsOpen = ref(true);
 
   const selectionActive = ref<SelectionType>(null);
