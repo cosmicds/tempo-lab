@@ -516,6 +516,5 @@ watch(() => props.showZero, renderPlot);
 <style scoped>
 .js-plotly-plot  {
   min-width: 30px;
-  width: fit-content;
 }
 </style>

@@ -67,7 +67,6 @@ import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/de
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
   datasets: UserDataset[];
-  hideLegend?: boolean;
 }
 const props = defineProps<DatasetPlotProps>();
 const emit = defineEmits<{
@@ -92,7 +91,7 @@ const dconfigOptions: Partial<Config> = {
 };
 
 const ddataOptions = computed(() => {
-  const defaultOpt = {showlegend: props.hideLegend ?? true};
+  const defaultOpt = {showlegend: true};
   if (props.dataOptions && props.dataOptions.length > 0) {
     return props.dataOptions.map((opt) => ({...opt, ...defaultOpt}));
   } else {
@@ -145,7 +144,6 @@ details.dataset-plot__plot {
   border-radius: 6px;
   background-color: rgba(0 0 0 / .25);
   font-size: 0.8em;
-  width: fit-content;
 }
 
 details.dataset-plot-details:hover {
