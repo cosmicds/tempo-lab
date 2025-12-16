@@ -111,9 +111,7 @@ async function saveLocalFileSystemAPI(store: TempoStore): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore window *might* have this, and if we're here it should
   return window.showSaveFilePicker(options)
-    .then((handle: FileSystemFileHandle) => {
-      handle.createWritable();
-    })
+    .then((handle: FileSystemFileHandle) => handle.createWritable())
     .then((stream: FileSystemWritableFileStream) => {
       stream.write(content);
       stream.close();
