@@ -49,7 +49,7 @@ const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 const commonLayoutOptions=  {
   autosize: false,
   height: 250,
-  width: 700,
+  width: Math.floor(700 * 250 / 400),
   xaxis: {
     automargin: false,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
