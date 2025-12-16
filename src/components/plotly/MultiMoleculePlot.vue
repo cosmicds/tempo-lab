@@ -5,7 +5,6 @@
           :dataset="datasets[0]"
           :show-errors="true"
           :data-options="[{mode: 'markers'}]"
-          hide-legend
           :layout-options="commonLayoutOptions"
           :config-options="commonConfigOptions"
           @plot-click="(value) => emit('plot-click', value)"
@@ -17,7 +16,6 @@
           :datasets="group[1]"
           :show-errors="true"
           :data-options="[{mode: 'markers'}]"
-          hide-legend
           :layout-options="commonLayoutOptions"
           :config-options="commonConfigOptions"
           @plot-click="(value) => emit('plot-click', value)"

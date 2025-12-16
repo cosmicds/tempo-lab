@@ -51,9 +51,10 @@ import { moleculeDescriptor } from '@/esri/utils';
 
 interface UserDatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
   dataset: UserDataset;
-  hideLegend?: boolean;
 }
-const props = defineProps<UserDatasetPlotProps>();
+const props = withDefaults(defineProps<UserDatasetPlotProps>(), {
+  showErrors: false,
+});
 
 const emit = defineEmits<{
   (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
@@ -75,7 +76,7 @@ const dconfigOptions: Partial<Config> = {
 };
 
 const ddataOptions = computed(() => {
-  const defaultOpt = {showlegend: props.hideLegend ?? false};
+  const defaultOpt = {showlegend: false};
   if (props.dataOptions && props.dataOptions.length > 0) {
     return props.dataOptions.map((opt) => ({...opt, ...defaultOpt}));
   } else {
