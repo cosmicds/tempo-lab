@@ -67,7 +67,7 @@
                     {'thickness': 1, 'width': 0}, // original data error bar style
                     { 'thickness': 3, 'width': 0 } // folded data error bar style
                   ]"
-                  :config-options="{responsive: false, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'select2d' ]}"
+                  :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                   @plot-click="handlePointClick"
                   :layout-options="{
                     margin: {t: 10, r: 20, b: 80, l: 90,}, 

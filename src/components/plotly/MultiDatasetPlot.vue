@@ -85,7 +85,8 @@ const dlayoutOptions = {
 // Common config options for all plots
 const dconfigOptions: Partial<Config> = {
   responsive: true,
-  modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
+  modeBarButtonsToRemove: ['autoscale2d', 'sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
+  displaylogo: false,
   ...(props.configOptions ?? {}),
 };
 
