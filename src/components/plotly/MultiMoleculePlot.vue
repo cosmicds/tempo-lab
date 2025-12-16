@@ -114,6 +114,7 @@ div.multi-plot-container__plot {
   width: 100%;
   display: flex;
   flex-direction: column;
+  min-width: 438px;
 }
 
 div.multi-plot-container.isSingle div.multi-plot-container__plot {
