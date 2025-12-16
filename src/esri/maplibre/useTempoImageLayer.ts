@@ -8,7 +8,7 @@ import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
 
 
-export interface UseEsriLayer {
+export interface UseEsriTempoLayer {
   esriImageSource: Ref<maplibregl.RasterTileSource | null>;
   opacity: Ref<number>;
   noEsriData: Ref<boolean>;
@@ -22,13 +22,13 @@ export interface UseEsriLayer {
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
-export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
+export function useTempoLayer(initialMolecule: MaybeRef<MoleculeType>,
   timestamp: Ref<number | null>,
   opacity: MaybeRef<number>,
   fetchOnMount=true,
   layerName?: string,
   initVisible?: boolean,
-): UseEsriLayer {
+): UseEsriTempoLayer {
 
   const esriLayerId = layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
@@ -97,14 +97,14 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
   const dynamicMapService = ref<ImageService | null>(null);
   
   function onSourceLoad(e: MapSourceDataEvent) {
-    // console.log('Source data event: ', e.sourceId, e.isSourceLoaded);
+    // console.log(`sourcedate event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
       console.log(`[${esriLayerId}] ESRI source loaded with time`, new Date(timestamp.value ?? 0 ));
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
       updateEsriOpacity();
       updateEsriTimeRange();
       map.value?.off('sourcedata', onSourceLoad);
-    }
+    } 
   }
   
   function setVisibility(visible: boolean) {
@@ -140,6 +140,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
 
     addLayer(mMap);
     // this event will run until the source is loaded
+    console.log(`[${esriLayerId}] Adding ESRI source to map`);
     mMap.on('sourcedata', onSourceLoad);
   }
   
@@ -258,7 +259,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     removeEsriSource,
     renderOptions,
     setVisibility,
-  } as UseEsriLayer;
+  } as UseEsriTempoLayer;
 }
 
 

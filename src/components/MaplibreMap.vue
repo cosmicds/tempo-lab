@@ -34,7 +34,7 @@ const props = defineProps({
     }
   },
   initial: {
-    type: Object as PropType<InitMapOptions>,
+    type: Object as PropType<InitMapOptions | null>,
     required: false,
     default: null
   },

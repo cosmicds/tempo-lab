@@ -1,5 +1,5 @@
 <template>
-  <v-list>
+  <v-list density="compact">
     <v-hover
       v-slot="{ isHovering, props }"
       v-for="dataset in datesetsWithNotFoldedFisrt"
@@ -13,7 +13,6 @@
         class="selection-item my-2 rounded-lg"
         :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000' }"
         :ripple="touchscreen"
-        lines="two"
       >
         <template v-slot:prepend v-if="turnOnSelection">
           <v-checkbox
@@ -27,43 +26,43 @@
         <template #default>
           <div>
             <v-chip
+              class="dataset-name-chip my-2"
               size="small" 
               variant="flat"
+              elevation="1"
               :color="dataset.customColor ?? dataset.region.color"
+              @click="emit('editRegion', dataset)"
               >
               {{ dataset.name ?? dataset.region.name }}
             </v-chip>
-            <div class="d-flex flex-wrap align-center ga-2 my-2">
-              <v-chip 
-                label
-                size="small" 
-                variant="flat"  
-                :color="dataset.region.color"
-                >
-                Region: {{ dataset.region.name }}
-              </v-chip>
-              
-              <v-chip label size="small" >
-                Mol: {{ moleculeName(dataset.molecule) }}
-              </v-chip>
-              
-              <div class="d-inline-block text-caption dataset-patttern-chip"
-                v-if="dataset.timeRange" 
-                >
-              <span>{{ dataset.timeRange.description }}</span>
-            </div>
-          </div>
-            
-            <!-- <v-chip 
-              v-if="dataset.timeRange" 
-              size="small" 
-              class="text-caption"
-              >
-              {{ dataset.timeRange?.type ?? 'no type' }}
-            </v-chip> -->
+            <v-expand-transition>
+              <div class="d-flex flex-wrap align-center ga-2 mb-2">
+                <v-chip 
+                  label
+                  size="small" 
+                  variant="flat"  
+                  :color="dataset.region.color"
+                  >
+                  Region: {{ dataset.region.name }}
+                </v-chip>
+                
+                <v-chip label size="small" >
+                  <span class="molecule-label">
+                    <span :class="`mol-label ${dataset.molecule}-mono-svg`"></span>
+                    {{ moleculeName(dataset.molecule) }}
+                  </span>
+                </v-chip>
+                
+                <div class="d-inline-block text-caption dataset-patttern-chip"
+                  v-if="dataset.timeRange" 
+                  >
+                  <span>{{ dataset.timeRange.description }}</span>
+                </div>
+              </div>
+            </v-expand-transition>
           </div>
           <!-- this is where the actions will go -->
-          <slot name="action-row" :isHovering="isHovering" :dataset="dataset">
+          <slot name="action-row" :isHovering="isHovering ?? true" :dataset="dataset">
           </slot>
         </template>
       </v-list-item>
@@ -94,6 +93,10 @@ const selectedDatasets = defineModel<string[]>('selectedDatasets', {
   type: Array as () => string[],
   default: () => [],
 });
+
+const emit = defineEmits<{
+  (event: 'editRegion', value: UserDataset): void;
+}>();
 
 const touchscreen = supportsTouchscreen();
 
@@ -139,4 +142,20 @@ function _removeDataset(dataset: UserDataset) {
   opacity: 1;
   color: black;
 }
+
+.dataset-name-chip {
+  cursor:text;
+}
+
+.v-list-item--density-compact.v-list-item--one-line {
+  min-height: unset;
+}
+
+.mol-label {
+  --size: 3em;
+  width: var(--size);
+  height: var(--size);
+}
+
+
 </style>

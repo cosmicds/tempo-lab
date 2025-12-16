@@ -1,7 +1,7 @@
 import type { 
   Prettify,
   UserDataset, 
-  PlotltGraphDataSet, 
+  PlotlyGraphDataSet, 
   AggValue, 
   DataPointError, 
   RectangleSelection, 
@@ -70,7 +70,7 @@ class PlotlyDatasetBuilder {
     }
   }
   
-  build(name: string, errorType: 'band' | 'bar' = 'bar'): PlotltGraphDataSet {
+  build(name: string, errorType: 'band' | 'bar' = 'bar'): PlotlyGraphDataSet {
     if (this._length !== (this._size - this._skippedPoints)) {
       throw new Error(`Data length mismatch: expected ${this._size}, got only ${this._length}`);
     }
@@ -105,7 +105,7 @@ function regionCenter(region: RectangleSelection | PointSelection): { lat: numbe
   }
 }
 
-export function userDatasetToPlotly(selection: Prettify<UserDataset>, useLocalTime: boolean = false): PlotltGraphDataSet {
+export function userDatasetToPlotly(selection: Prettify<UserDataset>, useLocalTime: boolean = false): PlotlyGraphDataSet {
   if (!selection.samples) {
     return { x: [], y: [], name: '' };
   }

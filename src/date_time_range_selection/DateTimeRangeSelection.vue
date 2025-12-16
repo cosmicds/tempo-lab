@@ -438,13 +438,11 @@ const timeRangeSelectedYears = computed<number[] | undefined>(() => {
 
 const timeRangeConfig = computed<TimeRangeConfig>(() => {
   if (timeSelectionRadio.value === 'single' || timeSelectionRadio.value === 'tracked') {
-    console.log('Single date config:');
     return {
       type: 'single',
       singleDate: timeSelectionRadio.value === 'tracked'? currentDateRef.value : singleDateObj.value,
     } as TimeRangeConfigSingle;
   } else {
-    console.log('Multiple date config:');
     const patternConfig: TimeRangeConfigMultiple = {
       type: 'multiple',
       dateRange: {
@@ -486,9 +484,6 @@ const invalidConfig = computed<boolean>(() => {
   return false;
 });
 
-watch(timeRangeConfig, (newConfig) => {
-  console.log('Time Range Config changed:', newConfig);
-});
 
 import { isRingConsecutive } from '@/utils/array_operations/cyclic';
 function asRangeOrList<T extends string>(arr: T[], order: T[]): string {

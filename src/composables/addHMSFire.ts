@@ -121,7 +121,6 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
     if (!_date) {
       return 2025001; // Jan 1, 2025
     }
-    console.log("HMS: Computing YearDay for date", _date, getYearDay(_date));
     return getYearDay(_date);
   });
 
@@ -157,7 +156,6 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
       }
       
       const vis = map.getLayoutProperty(layerId, 'visibility');
-      console.log(`HMS: Layer ${layerId} visibility is`, vis);
       return vis === 'visible';
     },
     set(val: boolean) {
@@ -297,8 +295,6 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
     // Remove existing layer and source if they exist
     cleanupMapLayers();
     
-    console.log("=================", postProcessGeoJson(geoJsonData.value));
-    // }
     const images: Record<string, string> = {};
     geoJsonData.value.features.forEach((feature) => {
       const props = feature.properties || {};
@@ -408,7 +404,6 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
         
         // Add popup/handlers if it hasn't been added yet
         if (showPopup && popupRef.value === null) {
-          console.log('HMS: Setting up popups for layer', layerId);
           setupLayerPopup(map, layerId);
         }
         
@@ -417,7 +412,6 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
           setupVisibilitySync(map);
         }
         
-        console.log('HMS: Successfully added KML layer to map');
       })
       .catch((err) => {
         console.error('HMS: Error adding KML layer to map:', err);
@@ -441,7 +435,7 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
 
   // Change URL and refresh layer
   const setUrl = async (newUrl: string): Promise<void> => {
-    console.log('HMS: Setting new KML URL:', newUrl);
+    // console.log('HMS: Setting new KML URL:', newUrl);
     cleanupMapLayers();
     internalSetUrl(newUrl) // will automatically load new and abort prior
       .then(() => {

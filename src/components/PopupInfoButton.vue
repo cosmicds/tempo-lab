@@ -21,11 +21,12 @@
 
 <script setup lang="ts">
 interface Props {
-  infoText: string;
+  infoText?: string;
   size?: string | number;
 }
 
 withDefaults(defineProps<Props>(), {
+  infoText: "No information provided.",
   size: "small",
 });
 </script>

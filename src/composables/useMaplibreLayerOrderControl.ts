@@ -87,7 +87,6 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   constructor(map: M.Map, initialOrder: string[], options: Options = {}) {
     super();
     this.desiredLayerOrder = initialOrder;
-    console.log('Creating MaplibreLayerOrderControl with initial order', initialOrder, 'and options', options);
     this.map = map;
     this.keepAtTop = options.keepAtTop ?? false;
     if (options.linkedLayers) {
@@ -256,7 +255,6 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   private watchForChanges() {
     const onStyleData = () => this.maintainOrder();
     this.map.on('styledata', () => {
-      console.log('watchForChanges styledata event');
       onStyleData();
     });
     this.eventHandlers.push(['styledata', onStyleData]);
@@ -483,14 +481,10 @@ export function useMaplibreLayerOrderControl(
   
   // Initialize the controller when the map is ready
   function init(mapValue: M.Map | null) {
-    console.log("running init", mapValue, controller);
     if (mapValue && !controller && !initialized) {
-      console.log("Creating controller with desired order", desiredOrder.value);
       controller = new MaplibreLayerOrderControl(mapValue, desiredOrder.value, {keepAtTop: moveToTop, linkedLayers: linkedLayers});
       controller.on('layer-order-changed', () => {
-        console.log('Layer order changed event received',currentOrder.value, controller?.currentlyManagedLayerOrder);
         if (controller && !checkArrayEquality(currentOrder.value, controller.currentlyManagedLayerOrder ?? [])) {
-          console.log('Updating current order to', controller.currentlyManagedLayerOrder);
           currentOrder.value = controller?.currentlyManagedLayerOrder ?? [];
         }
       });
@@ -512,13 +506,13 @@ export function useMaplibreLayerOrderControl(
     }
   });
   
-  watch(desiredOrder, (newOrder) => {
-    console.log('Desired order changed to', newOrder);
-  }, {deep: true});
+  // watch(desiredOrder, (newOrder) => {
+  //   console.log('Desired order changed to', newOrder);
+  // }, {deep: true});
   
-  watch(currentOrder, (newOrder) => {
-    console.log('Current order changed to', newOrder);
-  }, {deep: true});
+  // watch(currentOrder, (newOrder) => {
+  //   console.log('Current order changed to', newOrder);
+  // }, {deep: true});
   
   
   onBeforeUnmount(() => {

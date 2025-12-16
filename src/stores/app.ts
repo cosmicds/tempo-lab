@@ -20,7 +20,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const datasets = ref<UserDataset[]>([]);
   const timestamps = ref<number[]>([]);
   const timestampsLoaded = ref(false);
-  const tempoDataServices: Record<MoleculeType, TempoDataService> = {};
+  const tempoDataServices: Record<MoleculeType, TempoDataService> | object = {};
   const backendRef = ref<MappingBackends>(backend);
   const maxSampleCount = ref(50);
   const sampleErrors = ref<Record<string, string | null>>({});
@@ -72,7 +72,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     setNearestDate,
     moveBackwardOneDay,
     moveForwardOneDay,
-    nearestDateIndex
+    nearestDateIndex,
+    setNearestTime,
   } = useUniqueTimeSelection(timestamps);
 
 
@@ -422,6 +423,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     moveBackwardOneDay,
     moveForwardOneDay,
     nearestDateIndex,
+    setNearestTime,
 
     reset,
   };
