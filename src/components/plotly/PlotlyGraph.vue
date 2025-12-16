@@ -250,13 +250,13 @@ const layout = computed<Partial<Plotly.Layout>>(() => {
     ...(props.layoutOptions || {}),
     xaxis: {
       ...(props.layoutOptions?.xaxis || {}),
-      ...(props.xaxisTitle ? {title: { text: props.xaxisTitle }} : {}),
+      ...(props.xaxisTitle ? {title: { text: props.xaxisTitle, ...props.layoutOptions?.xaxis?.title }} : {}),
     },
     yaxis: {
       range: [axisMin, axisMax],
       autorange: false,
       ...(props.layoutOptions?.yaxis || {}),
-      ...(props.yaxisTitle ? {title: { text: props.yaxisTitle }} : {}),
+      ...(props.yaxisTitle ? {title: { text: props.yaxisTitle, ...props.layoutOptions?.yaxis?.title }} : {}),
     },
   };
 });
@@ -510,5 +510,6 @@ watch(() => props.showZero, renderPlot);
 <style scoped>
 .js-plotly-plot  {
   min-width: 30px;
+  width: fit-content;
 }
 </style>

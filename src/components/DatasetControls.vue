@@ -597,10 +597,10 @@
     <cds-dialog
       title="Timeseries Graphs"
       title-color="var(--info-background)"
-      :width="selectedDatasets.length > 1 ? 'min(90vw,600px)' : '600px'"
       v-model="showMultiPlot"
       persistent
       max-height="90vh"
+      max-width="90vw"
       :scrim="true"
     >
       <multi-plot

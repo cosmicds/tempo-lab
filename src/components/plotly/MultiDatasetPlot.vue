@@ -125,14 +125,12 @@ const normalDatasets = computed(() => {
 
 <style>
 div.dataset-plot-container {
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
 div.dataset-plot {
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -145,7 +143,7 @@ details.dataset-plot__plot {
   border-radius: 6px;
   background-color: rgba(0 0 0 / .25);
   font-size: 0.8em;
-  width: 100%;
+  width: fit-content;
 }
 
 details.dataset-plot-details:hover {

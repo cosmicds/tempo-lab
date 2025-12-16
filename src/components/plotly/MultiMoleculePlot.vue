@@ -49,25 +49,34 @@ const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 
 // Common layout options for all plots
 const commonLayoutOptions=  {
-  margin: { t: 30, r: 30, b: 60, l: 80, autoexpand: true, },
-  autosize: true,
+  autosize: false,
   height: 250,
-  width: isSingle.value ? 650 :  undefined,
+  width: 700,
   xaxis: {
+    automargin: false,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
+    title: {
+      standoff: 10,
+    },
   },
   yaxis: {
+    automargin: false,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
+    title: {
+      standoff: 10,
+    },
   },
   legend: {
-    y: 1.3, 
+    yanchor: 'top',
+    yref: 'paper',
+    y: 1.3,
     orientation:'h' as |'h' | 'v',
     bordercolor: '#ccc', 
     borderwidth:1,
-    entrywidthmode: 'fraction',
-    entrywidth: 0.3, 
+    entrywidthmode: 'pixels',
+    entrywidth: 0, // fit the text
   }
-};
+} as Partial<Plotly.Layout>;
 
 // Common config options for all plots
 const commonConfigOptions: Partial<Config> = {
@@ -104,7 +113,7 @@ div.multi-plot-container {
 }
 
 div.multi-plot-container__plot {
-  width: 90%;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }

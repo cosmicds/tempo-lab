@@ -71,7 +71,6 @@ for (let h = 0; h < 48; h += 0.1) {
 
 const _defaultyAxisStyle: Partial<Layout> = {
   'yaxis': {
-    title: { text: "Molecules / cm<sup>2</sup>" }
   }
 };
 

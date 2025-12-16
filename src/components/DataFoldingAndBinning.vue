@@ -6,7 +6,7 @@
     persistent
     scrollable
   > -->
-        <v-row>
+        <v-row class="df__panel-container">
           <!-- Left Panel: Folding Options with collapsible drawer -->
           <div class="df__left-pane">
             <CollapsableSidePanel 
@@ -47,7 +47,7 @@
           </div>
           
           <!-- Right Panel: Timeseries Graph -->
-          <div class="df__right-pane" style="flex-grow:1; flex-shrink: 0; flex-basis: 0">
+          <div class="df__right-pane">
             <v-card style="height: auto;">
               <v-card-title>
                 <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
@@ -67,9 +67,38 @@
                     {'thickness': 1, 'width': 0}, // original data error bar style
                     { 'thickness': 3, 'width': 0 } // folded data error bar style
                   ]"
-                  :config-options="{responsive: true, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'select2d' ]}"
+                  :config-options="{responsive: false, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'select2d' ]}"
                   @plot-click="handlePointClick"
-                  :layout-options="{legend: {y:1.25, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
+                  :layout-options="{
+                    margin: {t: 10, r: 20, b: 80, l: 90,}, 
+                    autosize: false, width: 700, height: 400,
+                    xaxis: {
+                      automargin: false,
+                      gridcolor: 'rgba(128, 128, 128, 0.3)',
+                      title: {
+                        standoff: 10,
+                      },
+                    },
+                    yaxis: {
+                      automargin: false,
+                      gridcolor: 'rgba(128, 128, 128, 0.3)',
+                      title: {
+                        standoff: 10,
+                        text: selection?.molecule === 'o3' ? 'Dalton Units' : 'Molecules / cm<sup>2</sup>',
+                      },
+                    },
+                    legend: {
+                      yanchor: 'top',
+                      yref: 'container',
+                      y: .99,
+                      orientation:'h' as |'h' | 'v',
+                      bordercolor: '#ccc', 
+                      borderwidth:1,
+                      // @ts-ignore
+                      entrywidthmode: 'pixels',
+                      entrywidth: 0, // fit the text
+                    }
+                    }"
                 />
               </div>
             <div v-if="showAggControls" id="below-graph-stuff" class="mt-2 explainer-text">
@@ -729,6 +758,11 @@ watch(() => props.selection, () => {
   color: red;
   font-weight: bold;
   margin-bottom: 0.5em;
+}
+
+.df__panel-container {
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .df__left-pane {

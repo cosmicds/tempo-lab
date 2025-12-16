@@ -4,7 +4,7 @@
     title="Time Graph"
     density="compact"
     title-color="var(--info-background)"
-    :width="aggControlsVisible ? '90vw' : '600px'"
+    max-width="90vw"
     max-height="90vh"
     height="fit-content"
     persistent
