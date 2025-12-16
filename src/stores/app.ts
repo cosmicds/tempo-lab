@@ -51,6 +51,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const showAdvancedLayers = ref(false);
   const showRGBMode = ref(false);
 
+  const showAggregationControls = ref(false);
+
   const selectedTimezone = ref<Timezone>("US/Eastern");
   const { isDST, timezoneOptions: tzOptions } = useTimezone(selectedTimezone);
 
@@ -365,6 +367,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     showSamplingPreviewMarkers,
     showAdvancedLayers,
     showRGBMode,
+
+    showAggregationControls,
 
     datasetControlsOpen,
     layerControlsOpen,
