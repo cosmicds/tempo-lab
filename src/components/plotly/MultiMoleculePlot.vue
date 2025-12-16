@@ -103,7 +103,7 @@ const datasetsGroupedByMolecule = computed(() => {
 div.multi-plot-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5px;
   overflow-y: auto;
   max-height: calc(90vh - 100px);
   align-items: center;
