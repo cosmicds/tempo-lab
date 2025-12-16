@@ -233,7 +233,7 @@
             :backend="backend"
             :time-ranges="timeRanges"
             :regions="regions"
-            :disabled="{ region: selectionActive === 'rectangle', point: selectionActive === 'point', timeRange: createTimeRangeActive }"
+            :disabled="{ region: regions.length === 0, point: selectionActive === 'point', timeRange: timeRanges.length === 0 }"
             @create="handleDatasetCreated"
           >
           </selection-composer>

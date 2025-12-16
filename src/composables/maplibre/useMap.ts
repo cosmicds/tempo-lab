@@ -56,6 +56,7 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
           'id': 'coastline-custom',
           'type': 'line',
           'source': 'coastline-custom',
+          'maxzoom': 5,
           'paint': {
             'line-color': 'black',
             'line-width': 1,
