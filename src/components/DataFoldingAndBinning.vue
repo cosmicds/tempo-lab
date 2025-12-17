@@ -105,11 +105,7 @@
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
-              If you don't see any data, please press the "Autoscale" 
-              <v-icon size="1.2em" style="margin-top:-0.1em;">mdi-arrow-expand-all</v-icon> 
-              button on the graph menu (visible when you hover over the graph), or try clicking the 
-              legend items to show/hide overlapping data. 
-            </div>
+                          </div>
             <!-- Save button visible when aggregation controls panel is collapsed -->
             <div v-if="!showAggControls && canSave" class="d-flex justify-end mt-3">
               <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
