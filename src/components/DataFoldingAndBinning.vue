@@ -768,10 +768,15 @@ watch(() => props.selection, () => {
 }
 
 .df__right-pane {
-  flex-grow: 1;
-  flex-shrink: 0;
-  flex-basis: 0;
-  margin-inline: 1em;
+    margin-inline: 1em;
+width: min-content;
 }
+
+.df__right-pane-card {
+}
+.df__graph-container {
+  height: calc(100% - 40px);
+}
+
 
 </style>
