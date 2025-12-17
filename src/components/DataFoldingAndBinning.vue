@@ -48,11 +48,11 @@
           
           <!-- Right Panel: Timeseries Graph -->
           <div class="df__right-pane">
-            <v-card style="height: auto;">
+            <v-card class="df__right-pane-card" style="height: auto;">
               <v-card-title>
                 <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
-              <div style="height: calc(100% - 40px);">
+              <div  class="df__graph-container">
                 <folded-plotly-graph
                   :datasets="graphData"
                   :show-errors="showErrors" 
