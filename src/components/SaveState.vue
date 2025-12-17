@@ -146,7 +146,6 @@ async function saveLocal() {
   if ('showSaveFilePicker' in window) {
     result = await saveLocalFileSystemAPI(store);
   } else {
-    console.log("HERE");
     result = saveLocalLink(store);
   }
   if (result) {
