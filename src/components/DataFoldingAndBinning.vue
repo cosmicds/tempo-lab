@@ -48,11 +48,11 @@
           
           <!-- Right Panel: Timeseries Graph -->
           <div class="df__right-pane">
-            <v-card style="height: auto;">
+            <v-card class="df__right-pane-card" style="height: auto;">
               <v-card-title>
                 <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
-              <div style="height: calc(100% - 40px);">
+              <div  class="df__graph-container">
                 <folded-plotly-graph
                   :datasets="graphData"
                   :show-errors="showErrors" 
@@ -105,10 +105,6 @@
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
-              If you don't see any data, please press the "Autoscale" 
-              <v-icon size="1.2em" style="margin-top:-0.1em;">mdi-arrow-expand-all</v-icon> 
-              button on the graph menu (visible when you hover over the graph), or try clicking the 
-              legend items to show/hide overlapping data. 
             </div>
             <!-- Save button visible when aggregation controls panel is collapsed -->
             <div v-if="!showAggControls && canSave" class="d-flex justify-end mt-3">
@@ -768,14 +764,18 @@ watch(() => props.selection, () => {
 .df__left-pane {
   min-width: min-content;
   max-width: fit-content;
-  width: 30%;
 }
 
 .df__right-pane {
-  flex-grow: 1;
-  flex-shrink: 0;
-  flex-basis: 0;
   margin-inline: 1em;
+  width: min-content;
 }
+
+.df__right-pane-card {
+}
+.df__graph-container {
+  height: calc(100% - 40px);
+}
+
 
 </style>
