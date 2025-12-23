@@ -128,19 +128,16 @@ const normalDatasets = computed(() => {
 div.dataset-plot-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5px;
 }
 
 div.dataset-plot {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 
 details.dataset-plot__plot {
-  margin-block: 4px;
-  padding-inline: 5px;
   border-radius: 6px;
   background-color: rgba(0 0 0 / .25);
   font-size: 0.8em;

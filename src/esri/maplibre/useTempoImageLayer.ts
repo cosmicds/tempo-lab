@@ -1,5 +1,5 @@
 import { ref, watch, Ref, MaybeRef, toRef, nextTick, computed } from 'vue';
-import { renderingRule, stretches, colorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
+import { renderingRule, stretches, colorramps, rgbcolorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
 import { type Map, type MapSourceDataEvent } from 'maplibre-gl';
 import { validate as uuidValidate } from "uuid";
 
@@ -22,27 +22,35 @@ export interface UseEsriTempoLayer {
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
-export function useTempoLayer(initialMolecule: MaybeRef<MoleculeType>,
-  timestamp: Ref<number | null>,
-  opacity: MaybeRef<number>,
-  fetchOnMount=true,
-  layerName?: string,
-  initVisible?: boolean,
-): UseEsriTempoLayer {
+export interface UseEsriTempoLayerOptions {
+  initialMolecule: MaybeRef<MoleculeType>;
+  timestamp: Ref<number | null>;
+  opacity: MaybeRef<number>;
+  fetchOnMount?: boolean;
+  layerName?: string;
+  initVisible?: boolean;
+  initRGB?: boolean;
+}
 
-  const esriLayerId = layerName ?? 'esri-source';
+export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEsriTempoLayer {
+
+  const esriLayerId = esriLayerOptions.layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
   const map = ref<Map | null>(null);
-  const molecule = toRef(initialMolecule);
+  const molecule = toRef(esriLayerOptions.initialMolecule);
 
-  const { url, variable, esriTimesteps } = useEsriTimesteps(molecule, fetchOnMount);
+  const { url, variable, esriTimesteps } = useEsriTimesteps(molecule, esriLayerOptions.fetchOnMount);
 
-  const opacityRef = toRef(opacity);
+  const timestamp = esriLayerOptions.timestamp;
+
+  const opacityRef = toRef(esriLayerOptions.opacity);
   const noEsriData = ref(false);
   const loadingEsriTimeSteps = ref(false);
+  const initRGB = esriLayerOptions.initRGB ?? false;
+  const ramps = initRGB ? rgbcolorramps : colorramps;
   const renderOptions = ref<RenderingRuleOptions>({
     range: stretches[variable.value],
-    colormap: colorramps[variable.value],
+    colormap: ramps[variable.value],
   });
 
   
@@ -69,7 +77,7 @@ export function useTempoLayer(initialMolecule: MaybeRef<MoleculeType>,
         type: 'raster',
         source: esriLayerId,
         layout: {
-          visibility: initVisible === false ? 'none' : 'visible',
+          visibility: esriLayerOptions.initVisible === false ? 'none' : 'visible',
         },
         paint: {
           'raster-resampling': 'nearest',

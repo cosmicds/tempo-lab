@@ -51,7 +51,7 @@ const commonLayoutOptions = {
   ...DEFAULT_PLOT_LAYOUT,
   autosize: false,
   height: 250,
-  width: 700,
+  width: Math.floor(700 * 250 / 400),
   xaxis: {
     automargin: false,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
@@ -105,7 +105,7 @@ const datasetsGroupedByMolecule = computed(() => {
 div.multi-plot-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5px;
   overflow-y: auto;
   max-height: calc(90vh - 100px);
   align-items: center;
@@ -116,6 +116,7 @@ div.multi-plot-container__plot {
   width: 100%;
   display: flex;
   flex-direction: column;
+  min-width: 438px;
 }
 
 div.multi-plot-container.isSingle div.multi-plot-container__plot {
