@@ -10,7 +10,7 @@
           <!-- Left Panel: Folding Options with collapsible drawer -->
           <div class="df__left-pane">
             <CollapsableSidePanel 
-              v-model="showAggControls"
+              v-model="showAggregationControls"
               :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
               >
               <AggregationControls
@@ -67,7 +67,7 @@
                     {'thickness': 1, 'width': 0}, // original data error bar style
                     { 'thickness': 3, 'width': 0 } // folded data error bar style
                   ]"
-                  :config-options="{responsive: false, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'select2d' ]}"
+                  :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                   @plot-click="handlePointClick"
                   :layout-options="{
                     margin: {t: 10, r: 20, b: 80, l: 90,}, 
@@ -101,13 +101,13 @@
                     }"
                 />
               </div>
-            <div v-if="showAggControls" id="below-graph-stuff" class="mt-2 explainer-text">
+            <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
             </div>
             <!-- Save button visible when aggregation controls panel is collapsed -->
-            <div v-if="!showAggControls && canSave" class="d-flex justify-end mt-3">
+            <div v-if="!showAggregationControls && canSave" class="d-flex justify-end mt-3">
               <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
                 Save Folded Data
               </v-btn>
@@ -137,6 +137,7 @@ import CollapsableSidePanel from './CollapsableSidePanel.vue';
 const store = useTempoStore();
 const {
   debugMode,
+  showAggregationControls,
 } = storeToRefs(store);
 
 import {
@@ -152,9 +153,6 @@ interface DataFoldingProps {
 
 const props = defineProps<DataFoldingProps>();
   
-
-
-const showAggControls = defineModel('showControls', { type: Boolean, required: false, default: false });
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
@@ -776,6 +774,5 @@ watch(() => props.selection, () => {
 .df__graph-container {
   height: calc(100% - 40px);
 }
-
 
 </style>

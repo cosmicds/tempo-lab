@@ -51,7 +51,7 @@
         @esri-timesteps-loaded="onEsriTimestepsLoaded"
         ref="maplibreMap"
         width="100%"
-        height="450px"
+        height="100%"
         maplibre-layer-name="tempo-no2"
       />
 
