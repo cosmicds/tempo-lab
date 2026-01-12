@@ -84,7 +84,7 @@
                       gridcolor: 'rgba(128, 128, 128, 0.3)',
                       title: {
                         standoff: 10,
-                        text: selection?.molecule === 'o3' ? 'Dalton Units' : 'Molecules / cm<sup>2</sup>',
+                        text: selection?.molecule === 'o3' ? 'Dobson Units' : 'Molecules / cm<sup>2</sup>',
                       },
                     },
                     legend: {
