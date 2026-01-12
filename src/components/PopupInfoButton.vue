@@ -3,6 +3,7 @@
     <template #activator="{ props }">
       <v-btn
         icon
+        class="info-button"
         v-bind="props"
         density="compact"
         flat

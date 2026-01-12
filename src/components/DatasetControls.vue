@@ -1315,7 +1315,11 @@ watch(tableSelection, (newVal) => {
   width: fit-content;
 }
 
+:deep(.info-button) {
+  padding-left: 5px;
+}
+
 :deep(.show-sample-points-toggle .v-input__append) {
-  margin: 5px;
+  margin: 0;
 }
 </style>
