@@ -415,7 +415,7 @@ const canSave = computed(() => {
 });
 
 const foldedDatasetName = computed(() => {
-  if (!props.selection?.name) return 'Folded Data';
+  if (!props.selection?.name) return 'Stacked Data';
   return `Aggregated ${props.selection.name ?? props.selection.region.name}`;// (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}, ${selectedMethod.value})`;
 });
 
@@ -599,8 +599,8 @@ function createFoldedTimeRange() {
   
   return {
     id: v4(),
-    name: `Folded (${selectedTimeBin.value} of ${selectedFoldingPeriod.value})`,
-    description: `Folded data (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}) ${selectedMethod.value}`,
+    name: `Stacked (${selectedTimeBin.value} of ${selectedFoldingPeriod.value})`,
+    description: `Stacked data (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}) ${selectedMethod.value}`,
     range: ranges,
     type: 'folded' as TimeRangeSelectionType,
   };
