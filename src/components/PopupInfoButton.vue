@@ -11,7 +11,10 @@
         <v-icon>mdi-information-variant-circle-outline</v-icon>
       </v-btn>
     </template>
-    <v-card class="info-card">
+    <v-card
+      class="info-card"
+      v-bind="cardProps"
+    >
       <slot name="info">
         <v-card-text>{{ infoText }}</v-card-text>
       </slot>
@@ -23,11 +26,17 @@
 interface Props {
   infoText: string;
   size?: string | number;
+  width?: string | number;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   size: "small",
 });
+
+const cardProps: Record<string, string | number> = {};
+if (props.width != undefined) {
+  cardProps.width = props.width;
+}
 </script>
 
 <style scoped>
