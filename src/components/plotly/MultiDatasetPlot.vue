@@ -59,14 +59,14 @@ import type {FoldedPlotlyGraphProps} from '../FoldedPlotlyGraph.vue';
 import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
-import type { Config, ModeBarDefaultButtons } from 'plotly.js-dist-min';
+import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
 import { pascalToSnake } from '@/utils/text';
+import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
   datasets: UserDataset[];
-  hideLegend?: boolean;
 }
 const props = defineProps<DatasetPlotProps>();
 const emit = defineEmits<{
@@ -77,6 +77,7 @@ const emit = defineEmits<{
 
 // Common layout options for all plots
 const dlayoutOptions = {
+  ...DEFAULT_PLOT_LAYOUT,
   margin: { t: 20, r: 30, b: 60, l: 80 },
   autosize: true,
   ...(props.layoutOptions ?? {}),
@@ -84,13 +85,13 @@ const dlayoutOptions = {
 
 // Common config options for all plots
 const dconfigOptions: Partial<Config> = {
+  ...DEFAULT_PLOT_CONFIG,
   responsive: true,
-  modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d'] as ModeBarDefaultButtons[],
   ...(props.configOptions ?? {}),
 };
 
 const ddataOptions = computed(() => {
-  const defaultOpt = {showlegend: props.hideLegend ?? true};
+  const defaultOpt = {showlegend: true};
   if (props.dataOptions && props.dataOptions.length > 0) {
     return props.dataOptions.map((opt) => ({...opt, ...defaultOpt}));
   } else {
@@ -127,23 +128,19 @@ const normalDatasets = computed(() => {
 div.dataset-plot-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 5px;
 }
 
 div.dataset-plot {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 
 details.dataset-plot__plot {
-  margin-block: 4px;
-  padding-inline: 5px;
   border-radius: 6px;
   background-color: rgba(0 0 0 / .25);
   font-size: 0.8em;
-  width: fit-content;
 }
 
 details.dataset-plot-details:hover {

@@ -417,7 +417,7 @@
                       :drag-predicate="plotlyDragPredicate"
                     >
                     
-                    <template v-if="dataset.timeRange.type === 'folded' && dataset.plotlyDatasets">
+                    <template v-if="(dataset.timeRange.type === 'folded' && dataset.plotlyDatasets) || (dataset.timeRange.type === 'single')">
                         <user-dataset-plot
                           :dataset="dataset"
                           :show-errors="showErrorBands"
@@ -440,7 +440,29 @@
                   </template>
                 </dataset-card>
               </div>
-              
+              <div v-if="allDatasetSelection" class="dataset-select-all-none">
+                <v-btn
+                  variant="outlined"
+                  size="small"
+                  @click="selectedDatasets = datasets.map(d => d.id)"
+                >
+                  <template #prepend>
+                    <v-icon icon="mdi-check-circle" color="success"/>
+                  </template>
+                  All
+                </v-btn>
+                <v-btn
+                  variant="outlined"
+                  size="small"
+                  class="ml-2"
+                  @click="selectedDatasets = []"
+                >
+                  <template #prepend>
+                    <v-icon icon="mdi-close-circle" color="error"/>
+                  </template>
+                  Clear
+                </v-btn>
+              </div>
               <div class="d-flex flex-column align-items-center justify-space-between ga-2">
                 <v-btn 
                 v-if="datasets.length > 1"
@@ -449,6 +471,7 @@
                 {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
               </v-btn>
               <v-btn 
+              v-if="datasets.length > 1"
               :color="accentColor2"
               :disabled="selectedDatasets.length == 0"
               :variant="selectedDatasets.length > 0 ? 'flat' : 'outlined'"
@@ -930,5 +953,15 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 :deep(.v-list-item-title)
 {
   font-size: 10pt;
+}
+
+.dataset-select-all-none {
+  display: flex;
+  margin-bottom: 1em;
+  flex-direction: row;
+}
+
+.dataset-select-all-none > button {
+  flex-grow: 1;
 }
 </style>
