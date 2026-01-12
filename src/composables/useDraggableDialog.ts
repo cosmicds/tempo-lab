@@ -43,6 +43,7 @@ export function useDraggableDialog(options: UseDraggableDialogOptions) {
     mousedown = async (event: MouseEvent) => {
       if (options.dragPredicate && !options.dragPredicate(event.target as HTMLElement)) {
         element.style.cursor = "";
+        dragging = false;
         return;
       }
       dragging = true;
@@ -120,6 +121,7 @@ export function useDraggableDialog(options: UseDraggableDialogOptions) {
     mouseup = (event: MouseEvent) => {
       if (options.dragPredicate && !options.dragPredicate(event.target as HTMLElement)) {
         element.style.cursor = "";
+        dragging = false;
         return;
       }
 

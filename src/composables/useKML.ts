@@ -40,15 +40,6 @@ export function useKML(url: string): KMLResource {
     }
     // Convert using local togeojson library
     const geoJson = toGeoJSON.kml(kmlDoc, { styles: true }) as GeoJSON.FeatureCollection;
-    
-    // Debug: Log the parsed GeoJSON structure
-    console.log('=== KML PARSING DEBUG ===');
-    console.log('URL:', kmlUrl.value);
-    console.log('Total features:', geoJson.features.length);
-    console.log('First few features with properties:', geoJson.features.slice(0, 3).map(f => ({
-      geometry: f.geometry,
-      properties: f.properties
-    })));
 
     
     return geoJson;
@@ -60,16 +51,13 @@ export function useKML(url: string): KMLResource {
   async function loadKML() {
     
     const requestedUrl = kmlUrl.value;
-    console.log('Starting KML load for URL:', requestedUrl);
 
     // Abort any in-flight request
     if (abortController.value) {
-      console.log('useKML: Aborting previous fetch due to new request', abortController.value);
       abort('Aborting previous KML fetch due to new request');
     }
     
 
-    console.log('Loading KML from:', requestedUrl);
     return abortableFetch(requestedUrl).then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -79,7 +67,6 @@ export function useKML(url: string): KMLResource {
     })
       .then((response) => response.text())
       .then((kmlContent) => {
-        console.log('KML fetched successfully, size:', kmlContent.length);
         
         // short-circuit lengthy processing if URL changed
         if (requestedUrl !== kmlUrl.value) {
@@ -95,7 +82,6 @@ export function useKML(url: string): KMLResource {
         }
         if (geoJson) {
           geoJsonData.value = geoJson;
-          console.log('KML loaded successfully:', geoJson.features.length, 'features');
         }
         
         return kmlContent;
@@ -117,17 +103,14 @@ export function useKML(url: string): KMLResource {
     const next = (newUrl || '').trim();
     // right now lets avoid loops.
     if (next !== kmlUrl.value) {
-      console.log('KML URL changing from', kmlUrl.value, 'to', next);
       kmlUrl.value = next;
     } // avoid loops
 
     // Abort any in-flight fetch before switching
     if (abortController.value) {
-      console.log('useKML: Aborting previous fetch due to URL change');
       abort('Aborting previous KML fetch due to URL change');
     }
     
-    console.log('useKML: reset data and error state');
     geoJsonData.value = null;
     error.value = null;
   }

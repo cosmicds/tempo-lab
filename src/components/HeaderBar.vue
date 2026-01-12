@@ -25,20 +25,6 @@
       <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
       <v-icon>mdi-layers</v-icon>
     </v-btn>
-    <v-btn
-      @click="datasetControlsOpen = !datasetControlsOpen"
-      class="layers-button"
-      aria-label="Toggle dataset controls"
-      variant="outlined"
-      rounded="lg"
-      density="default"
-      :color="accentColor2"
-      elevation="0"
-      size="lg"
-    >
-      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
-      <v-icon>mdi-tune</v-icon>
-    </v-btn>
 
     <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
     <!-- <cds-dialog
@@ -85,17 +71,27 @@
         <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="What's new"></v-tooltip>
         <v-icon>mdi-creation</v-icon>
       </v-btn>
-      <share-button
-        :source="currentUrl"
-        buttonColor="black"
-        :iconColor="accentColor2"
+
+      <v-btn
+        @click="datasetControlsOpen = !datasetControlsOpen"
+        class="layers-button"
+        aria-label="Toggle dataset controls"
+        variant="outlined"
+        rounded="lg"
+        density="default"
+        :color="accentColor2"
         elevation="0"
-        size="small"
-        rounded="1"
-        :tooltip-disabled="mobile"
-        @click="shareButtonClickedCount += 1"
-        alert
+        size="lg"
+      >
+        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle dataset controls"></v-tooltip>
+        <v-icon>mdi-chart-line</v-icon>
+      </v-btn>
+
+      <v-divider
+        vertical
+        thickness="3"
       />
+
       <v-btn aria-role="menu" aria-label="Show menu" class="menu-button" variant="outlined" rounded="lg" :color="accentColor2" elevation="5">
         <v-icon size="x-large">mdi-menu</v-icon>
         <v-menu
@@ -183,14 +179,12 @@ const emit = defineEmits<{
 const store = useTempoStore();
 const {
   accentColor2,
-  shareButtonClickedCount,
   datasetControlsOpen,
   layerControlsOpen,
 } = storeToRefs(store);
 
 const display = useDisplay();
 
-const currentUrl = ref(window.location.href);
 const showChanges = ref(false);
 const showAboutData = ref(false);
 const showCredits = ref(false);

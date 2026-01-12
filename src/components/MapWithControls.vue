@@ -51,7 +51,7 @@
         @esri-timesteps-loaded="onEsriTimestepsLoaded"
         ref="maplibreMap"
         width="100%"
-        height="450px"
+        height="100%"
         maplibre-layer-name="tempo-no2"
       />
 
@@ -254,11 +254,27 @@ const hmsFire = addHMSFire(singleDateSelected, {
   showLabel: false,
 });
 
-import { type UseEsriLayer, useEsriLayer } from "@/esri/maplibre/useEsriImageLayer";
+import { type UseEsriTempoLayer, useTempoLayer } from "@/esri/maplibre/useTempoImageLayer";
 // just use the hcho layer for now
-const hchoLayer = useEsriLayer('hcho', timestamp, 1, true, 'tempo-hcho', false);
-const ozoneLayer = useEsriLayer('o3', timestamp, 1, true, 'tempo-o3', false);
-const no2Layer = ref<UseEsriLayer | null>(null);
+const hchoLayer = useTempoLayer({
+  initialMolecule: "hcho",
+  timestamp,
+  opacity: 1,
+  fetchOnMount: true,
+  layerName: "tempo-hcho",
+  initVisible: false,
+  initRGB: showRGBMode.value,
+});
+const ozoneLayer = useTempoLayer({
+  initialMolecule: "o3",
+  timestamp,
+  opacity: 1,
+  fetchOnMount: true,
+  layerName: "tempo-o3",
+  initVisible: false,
+  initRGB: showRGBMode.value,
+});
+const no2Layer = ref<UseEsriTempoLayer | null>(null);
 
 function addAdvancedLayers(m: Map | null) {
   if (m === null) return;
@@ -295,7 +311,6 @@ function removeAdvancedLayers(m: Map | null) {
 }
 
 const onMapReady = (m: Map) => {
-  console.log('Map ready event received');
   map.value = m; // ESRI source already added by EsriMap
   if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
@@ -467,6 +482,7 @@ function updateURL() {
 // ESRI timesteps arrive from EsriMap component; store directly in timestamps
 function onEsriTimestepsLoaded(steps: number[]) {
   if (!Array.isArray(steps) || steps.length === 0) return;
+  console.log(`%c[EsriMap] onEsriTimestepsLoaded: received ${steps.length} steps`, 'color: purple');
   const sorted = steps.slice().sort();
   timestamps.value = sorted;
   if (timeIndex.value >= sorted.length) {

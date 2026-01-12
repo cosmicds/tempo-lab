@@ -12,7 +12,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { onMounted, computed, ref, watch, nextTick } from "vue";
 import { v4 } from "uuid";
-import { PlotlyHTMLElement, newPlot, restyle, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
+import { PlotlyHTMLElement, newPlot, restyle, type Layout, type Config, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 
 import { AggValue, UserDataset } from "../types";
 
@@ -149,7 +149,7 @@ function renderPlot() {
 
   const paddingFactor = 1.1;
   const axisMax = Math.max(1, paddingFactor * max);
-  const layout = {
+  const layout: Partial<Layout> = {
     width: 600,
     height: 400,
     yaxis: {
@@ -158,7 +158,12 @@ function renderPlot() {
     }
   };
 
-  newPlot(graph.value ?? id, plotlyData, layout).then((el: PlotlyHTMLElement) => {
+  const config: Partial<Config> = {
+    modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud', 'lasso2d', 'select2d'],
+    displaylogo: false,
+  };
+
+  newPlot(graph.value ?? id, plotlyData, layout, config).then((el: PlotlyHTMLElement) => {
     plot.value = el;
     el.on("plotly_click", (data: PlotMouseEvent) => {
       data.points.forEach(point => {
@@ -192,7 +197,7 @@ function renderPlot() {
       }
       const currentlyVisible = traceVisible.value.get(dataId);
       traceVisible.value.set(dataId, !currentlyVisible);
-      // if currently visible and errors are visible set stlye the error traces too
+      // if currently visible, and errors are visible, set style the error traces too
       nextTick(() => { // next tick so that updated traceVisible is available
         if (currentlyVisible && props.showErrors) {
           updateErrorDisplay(true);

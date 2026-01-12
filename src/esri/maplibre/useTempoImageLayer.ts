@@ -1,5 +1,5 @@
 import { ref, watch, Ref, MaybeRef, toRef, nextTick, computed } from 'vue';
-import { renderingRule, stretches, colorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
+import { renderingRule, stretches, colorramps, rgbcolorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
 import { type Map, type MapSourceDataEvent } from 'maplibre-gl';
 import { validate as uuidValidate } from "uuid";
 
@@ -8,7 +8,7 @@ import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
 
 
-export interface UseEsriLayer {
+export interface UseEsriTempoLayer {
   esriImageSource: Ref<maplibregl.RasterTileSource | null>;
   opacity: Ref<number>;
   noEsriData: Ref<boolean>;
@@ -22,27 +22,35 @@ export interface UseEsriLayer {
   renderOptions: Ref<RenderingRuleOptions>;
 }
 
-export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
-  timestamp: Ref<number | null>,
-  opacity: MaybeRef<number>,
-  fetchOnMount=true,
-  layerName?: string,
-  initVisible?: boolean,
-): UseEsriLayer {
+export interface UseEsriTempoLayerOptions {
+  initialMolecule: MaybeRef<MoleculeType>;
+  timestamp: Ref<number | null>;
+  opacity: MaybeRef<number>;
+  fetchOnMount?: boolean;
+  layerName?: string;
+  initVisible?: boolean;
+  initRGB?: boolean;
+}
 
-  const esriLayerId = layerName ?? 'esri-source';
+export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEsriTempoLayer {
+
+  const esriLayerId = esriLayerOptions.layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
   const map = ref<Map | null>(null);
-  const molecule = toRef(initialMolecule);
+  const molecule = toRef(esriLayerOptions.initialMolecule);
 
-  const { url, variable, esriTimesteps } = useEsriTimesteps(molecule, fetchOnMount);
+  const { url, variable, esriTimesteps } = useEsriTimesteps(molecule, esriLayerOptions.fetchOnMount);
 
-  const opacityRef = toRef(opacity);
+  const timestamp = esriLayerOptions.timestamp;
+
+  const opacityRef = toRef(esriLayerOptions.opacity);
   const noEsriData = ref(false);
   const loadingEsriTimeSteps = ref(false);
+  const initRGB = esriLayerOptions.initRGB ?? false;
+  const ramps = initRGB ? rgbcolorramps : colorramps;
   const renderOptions = ref<RenderingRuleOptions>({
     range: stretches[variable.value],
-    colormap: colorramps[variable.value],
+    colormap: ramps[variable.value],
   });
 
   
@@ -69,7 +77,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
         type: 'raster',
         source: esriLayerId,
         layout: {
-          visibility: initVisible === false ? 'none' : 'visible',
+          visibility: esriLayerOptions.initVisible === false ? 'none' : 'visible',
         },
         paint: {
           'raster-resampling': 'nearest',
@@ -97,14 +105,14 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
   const dynamicMapService = ref<ImageService | null>(null);
   
   function onSourceLoad(e: MapSourceDataEvent) {
-    // console.log('Source data event: ', e.sourceId, e.isSourceLoaded);
+    // console.log(`sourcedate event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
       console.log(`[${esriLayerId}] ESRI source loaded with time`, new Date(timestamp.value ?? 0 ));
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
       updateEsriOpacity();
       updateEsriTimeRange();
       map.value?.off('sourcedata', onSourceLoad);
-    }
+    } 
   }
   
   function setVisibility(visible: boolean) {
@@ -140,6 +148,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
 
     addLayer(mMap);
     // this event will run until the source is loaded
+    console.log(`[${esriLayerId}] Adding ESRI source to map`);
     mMap.on('sourcedata', onSourceLoad);
   }
   
@@ -258,7 +267,7 @@ export function useEsriLayer(initialMolecule: MaybeRef<MoleculeType>,
     removeEsriSource,
     renderOptions,
     setVisibility,
-  } as UseEsriLayer;
+  } as UseEsriTempoLayer;
 }
 
 

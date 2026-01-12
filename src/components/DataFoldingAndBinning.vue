@@ -6,29 +6,13 @@
     persistent
     scrollable
   > -->
-    <v-card id="data-aggregation-card">
-      <v-toolbar
-        density="compact"
-        color="var(--info-background)"
-      >
-        <v-toolbar-title>Data Aggregation</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn
-          icon="mdi-close"
-          @click="closeDialog"
-        ></v-btn>
-      </v-toolbar>
-      
-      <v-card-text class="pa-4">
-        <v-row>
-          <v-btn v-show="!showAggControls" @click="showAggControls = !showAggControls" class="mb-4">
-            <v-icon>{{ showAggControls ? 'mdi-chevron-left' : 'mdi-menu-open' }}</v-icon>
-          </v-btn>
-          <!-- Left Panel: Folding Options -->
-          
-          <v-scroll-x-transition>
-            <v-sheet v-show="showAggControls" class="pa-0 flex-1-0-0" width="fit-content">
-              <v-col  md="4" style="max-width: fit-content;">
+        <v-row class="df__panel-container">
+          <!-- Left Panel: Folding Options with collapsible drawer -->
+          <div class="df__left-pane">
+            <CollapsableSidePanel 
+              v-model="showAggregationControls"
+              :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
+              >
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
                 v-model:validFoldingForData="validFoldingForData"
@@ -58,23 +42,22 @@
                 v-model:selectedTimeBin="selectedTimeBin"
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
-              />     
-            </v-col>       
-            </v-sheet>
-          </v-scroll-x-transition>
+              />
+            </CollapsableSidePanel>
+          </div>
           
           <!-- Right Panel: Timeseries Graph -->
-          <v-col :md="showAggControls ? 8 : 'auto'" sm="12">
-            <v-card variant="outlined" class="pa-3" style="height: auto;">
+          <div class="df__right-pane">
+            <v-card class="df__right-pane-card" style="height: auto;">
               <v-card-title>
-                Time Series Comparison
+                <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
               </v-card-title>
-              <div style="height: calc(100% - 40px);">
+              <div  class="df__graph-container">
                 <folded-plotly-graph
                   :datasets="graphData"
-                  :show-errors="showErrors"
+                  :show-errors="showErrors" 
                   :fold-type="selectedFoldType"
-                  :colors="[theColor, '#333']"
+                  :colors="[theColor, '#333']" 
                   :timezones="selectedTimezone"
                   :data-options="[
                     {mode: 'markers'}, // options for the original data
@@ -84,25 +67,54 @@
                     {'thickness': 1, 'width': 0}, // original data error bar style
                     { 'thickness': 3, 'width': 0 } // folded data error bar style
                   ]"
-                  :config-options="{responsive: true, modeBarButtonsToRemove: ['sendDataToCloud','lasso2d', 'resetScale2d', ]}"
-                  @click="handlePointClick"
-                  :layout-options="{legend: {y:1.15, orientation:'h',bordercolor: '#ccc', borderwidth:1}}"
+                  :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
+                  @plot-click="handlePointClick"
+                  :layout-options="{
+                    margin: {t: 10, r: 20, b: 80, l: 90,}, 
+                    autosize: false, width: 700, height: 400,
+                    xaxis: {
+                      automargin: false,
+                      gridcolor: 'rgba(128, 128, 128, 0.3)',
+                      title: {
+                        standoff: 10,
+                      },
+                    },
+                    yaxis: {
+                      automargin: false,
+                      gridcolor: 'rgba(128, 128, 128, 0.3)',
+                      title: {
+                        standoff: 10,
+                        text: selection?.molecule === 'o3' ? 'Dalton Units' : 'Molecules / cm<sup>2</sup>',
+                      },
+                    },
+                    legend: {
+                      yanchor: 'top',
+                      yref: 'container',
+                      y: .99,
+                      orientation:'h' as |'h' | 'v',
+                      bordercolor: '#ccc', 
+                      borderwidth:1,
+                      // @ts-ignore
+                      entrywidthmode: 'pixels',
+                      entrywidth: 0, // fit the text
+                    }
+                    }"
                 />
               </div>
-            <div id="below-graph-stuff" class="mt-2 explainer-text">
+            <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
               <div v-if="aggregationWarning" id="aggregation-warning">
                 {{ aggregationWarning }}
               </div>
-              If you don't see any data, please press the "Autoscale" 
-              <v-icon size="1.2em" style="margin-top:-0.1em;">mdi-arrow-expand-all</v-icon> 
-              button on the graph menu (visible when you hover over the graph), or try clicking the 
-              legend items to show/hide overlapping data. 
+            </div>
+            <!-- Save button visible when aggregation controls panel is collapsed -->
+            <div v-if="!showAggregationControls && canSave" class="d-flex justify-end mt-3">
+              <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
+                Save Folded Data
+              </v-btn>
             </div>
             </v-card>
-          </v-col>
+          </div>
         </v-row>
-      </v-card-text>
-    </v-card>
   <!-- </v-dialog> -->
 </template>
 
@@ -113,16 +125,19 @@ import { storeToRefs } from "pinia";
 import { v4 } from 'uuid';
 import { TimeSeriesFolder, sortfoldBinContent } from '../esri/services/aggregation';
 import FoldedPlotlyGraph from './FoldedPlotlyGraph.vue';
-import type { Prettify, UserDataset, PlotltGraphDataSet, UnifiedRegion } from '../types';
+import type { Prettify, UserDataset, PlotlyGraphDataSet, UnifiedRegion, MoleculeType } from '../types';
 import type { TimeRangeSelectionType } from '@/types/datetime';
 import type { AggregationMethod, TimeSeriesData, FoldedTimeSeriesData , FoldType, FoldBinContent} from '../esri/services/aggregation';
 import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
+import { moleculeDescriptor } from '@/esri/utils';
+import CollapsableSidePanel from './CollapsableSidePanel.vue';
 const store = useTempoStore();
 const {
   debugMode,
+  showAggregationControls,
 } = storeToRefs(store);
 
 import {
@@ -137,12 +152,14 @@ interface DataFoldingProps {
 }
 
 const props = defineProps<DataFoldingProps>();
-
-const showAggControls = ref(false);
+  
 
 const emit = defineEmits<{
   (event: 'save', foldedSelection: UserDataset): void;
+  (event: 'controls-toggle', isOpen: boolean): void;
+  (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown, molecule: MoleculeType, region: UnifiedRegion}): void;
 }>();
+
 
 // Dialog state
 const dialogOpen = defineModel<boolean>('modelValue', { type: Boolean, required: true });
@@ -406,7 +423,7 @@ const foldedDatasetName = computed(() => {
 const foldedData = ref<FoldedTimeSeriesData | null>(null);
 const foldedSelection = ref<null>(null);
 // Graph data for display - now a ref that gets manually updated
-const graphData = ref<PlotltGraphDataSet[]>([]);
+const graphData = ref<PlotlyGraphDataSet[]>([]);
 
 watch(foldedData, (newvValue) => {
   // if there is only one bin present the user with an aggregation warning
@@ -421,11 +438,11 @@ watch(foldedData, (newvValue) => {
 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
-  const x: PlotltGraphDataSet['x'] = [];
-  const y: PlotltGraphDataSet['y'] = [];
-  const lower: PlotltGraphDataSet['lower'] = [];
-  const upper: PlotltGraphDataSet['upper'] = [];
+function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
+  const x: PlotlyGraphDataSet['x'] = [];
+  const y: PlotlyGraphDataSet['y'] = [];
+  const lower: PlotlyGraphDataSet['lower'] = [];
+  const upper: PlotlyGraphDataSet['upper'] = [];
 
   // tsa, tsb are the timestamps as strings
   const sortedEntries = Object.entries(timeseries.values).sort(([tsa, _a], [tsb, _b]) => parseInt(tsa) - parseInt(tsb));
@@ -438,10 +455,10 @@ function timeseriesToDataSet(timeseries: TimeSeriesData): Omit<PlotltGraphDataSe
     upper.push(error?.upper ?? null);
   });
 
-  return { x, y, lower, upper };
+  return { x, y, lower, upper, errorType: 'bar' };
 }
 
-function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
+function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
   const x: (number | Date | null)[] = [];
   const y: (number | null)[] = [];
   const lower: (number | null)[] = [];
@@ -498,7 +515,7 @@ function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omi
   return { x, y, lower, upper, errorType: useErrorBars.value ? 'bar' : 'band' };
 }
   
-function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotltGraphDataSet, 'name'> {
+function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omit<PlotlyGraphDataSet, 'name'> {
   const x: (number | Date | null)[] = [];
   const y: (number | null)[] = [];
   const lower: (number | null)[] = [];
@@ -548,22 +565,23 @@ function updateGraphData() {
   }
   
   // const data = [timeseriesToDataSet(selectionToTimeseries(props.selection))]; // Original data
-  const data: PlotltGraphDataSet[] = [];
+  const data: PlotlyGraphDataSet[] = [];
   
   if (foldedData.value) {
     const t = foldedTimeSeriesRawToDataSet(foldedData.value); // Raw folded data
-    (t as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
-    data.push(t as PlotltGraphDataSet); // Raw folded data
+    (t as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
+    (t as PlotlyGraphDataSet).errorType = 'bar';
+    data.push(t as PlotlyGraphDataSet); // Raw folded data
     if (!isFoldWithNoBin.value) {
       const f = foldedTimesSeriesToDataSet(foldedData.value); // Summary folded data
-      (f as PlotltGraphDataSet).name = foldedDatasetName.value;
-      data.push(f as PlotltGraphDataSet); // Summary folded data
+      (f as PlotlyGraphDataSet).name = foldedDatasetName.value;
+      data.push(f as PlotlyGraphDataSet); // Summary folded data
     }
   } else {
     // No folded data, just show original
     const original = timeseriesToDataSet(selectionToTimeseries(props.selection));
-    (original as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
-    data.push(original as PlotltGraphDataSet);
+    (original as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
+    data.push(original as PlotlyGraphDataSet);
   }
   console.log("Prepared graph data:", data);
   graphData.value = data;
@@ -646,6 +664,13 @@ function handlePointClick(value: {x: Plotly.Datum, y: number, customdata: unknow
   console.log("Custom data Date:", value.customdata ? value.customdata as Date: value.customdata);
   // the from timezoned time is what we want to to send work with if we go back to esri stuff
   console.log("fromZonedTime", value.customdata ? fromZonedTime(value.customdata as Date, selectedTimezone.value) : value.customdata);
+  emit('plot-click', {
+    x: value.x,
+    y: value.y,
+    customdata: value.customdata,
+    molecule: props.selection?.molecule as MoleculeType,
+    region: props.selection?.region as UnifiedRegion
+  });
   return;
 }
 
@@ -655,9 +680,9 @@ function saveFolding() {
   if (!canSave.value || !props.selection || !foldedData.value) return;
   
   // const rawDataset = foldedTimeSeriesRawToDataSet(foldedData.value);
-  // (rawDataset as PlotltGraphDataSet).name = props.selection.name || 'Original Data';
+  // (rawDataset as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
   // const summaryDataset = foldedTimesSeriesToDataSet(foldedData.value);
-  // (summaryDataset as PlotltGraphDataSet).name = foldedDatasetName.value;
+  // (summaryDataset as PlotlyGraphDataSet).name = foldedDatasetName.value;
 
   const foldedSelection: UserDataset = {
     id: v4(),
@@ -689,13 +714,13 @@ function saveFolding() {
           mode: 'markers',
           // hovertemplate: '%{customdata|%Y-%m-%d %H:%M}<br>%{y:0.2e}±%{error_y.array:0.2e}<extra></extra>'
         }
-      } as PlotltGraphDataSet,
+      } as PlotlyGraphDataSet,
       {
         ...graphData.value[1],
         datasetOptions: {
           mode: 'markers'
         }
-      } as PlotltGraphDataSet
+      } as PlotlyGraphDataSet
     ].slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
   };
   console.log(foldedSelection);
@@ -729,6 +754,25 @@ watch(() => props.selection, () => {
   margin-bottom: 0.5em;
 }
 
+.df__panel-container {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
 
+.df__left-pane {
+  min-width: min-content;
+  max-width: fit-content;
+}
+
+.df__right-pane {
+  margin-inline: 1em;
+  width: min-content;
+}
+
+.df__right-pane-card {
+}
+.df__graph-container {
+  height: calc(100% - 40px);
+}
 
 </style>

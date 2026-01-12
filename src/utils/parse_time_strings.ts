@@ -56,16 +56,12 @@ export function normalizeTimeRange(timeRangeStr: string, formatter: HMFormatterF
     1. hours are equal, swap -> just swap them
     2. start <= 12 and end < 12 -> end is pm
     */
-    console.log(`%c End time earlier than start time detected in range "${timeRangeStr}"`, 'color: orange;');
     if (startParsed.hour === endParsed.hour) {
-      console.log('%c Swapping times with equal hours', 'color: orange;');
       // swap
       [startParsed, endParsed] = [endParsed, startParsed];
     } else if (startParsed.hour <= 12 && endParsed.hour < 12) {
-      console.log('%c Adjusting end time to PM', 'color: orange;');
       endParsed.hour += 12;
     } else if (startParsed.hour > 12 && endParsed.hour <= 12) {
-      console.log('%c Adjusting start time to AM', 'color: orange;');
       [startParsed, endParsed] = [endParsed, startParsed];
     } else {
       throw new Error(`Cannot parse time range: ${timeRangeStr} with start ${startParsed} and end ${endParsed}`);

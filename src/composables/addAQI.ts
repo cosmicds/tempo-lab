@@ -109,7 +109,6 @@ export function addQUI(url: string, options: UseKMLOptions = {}): AQILayer {
       }
       
       const vis = map.getLayoutProperty(layerId, 'visibility');
-      console.log(`AQI: Layer ${layerId} visibility is`, vis);
       return vis === 'visible';
     },
     set(val: boolean) {
@@ -322,8 +321,6 @@ export function addQUI(url: string, options: UseKMLOptions = {}): AQILayer {
     // if (map.getLayer(labelLayerId)) {
     //   map.setLayoutProperty(labelLayerId, 'visibility', vis);
     // }
-
-    console.log('AQI: Successfully added KML layer to map');
       
     
   };
@@ -342,7 +339,6 @@ export function addQUI(url: string, options: UseKMLOptions = {}): AQILayer {
 
   // Change URL and refresh layer
   const setUrl = async (newUrl: string): Promise<void> => {
-    console.log('AQI: Setting new KML URL:', newUrl);
     internalSetUrl(newUrl) // will automatically load new and abort prior
       .then(() => {
         const map = mapRef.value;

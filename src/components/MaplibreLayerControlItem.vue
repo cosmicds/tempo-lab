@@ -49,19 +49,38 @@ import { computed, useSlots, watch } from "vue";
 import type { Map } from "maplibre-gl";
 import { useMaplibreLayerOpacity } from "@/composables/useMaplibreLayerOpacity";
 import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
+import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
 
 interface Props {
   layerId: string;
   map: Map;
   displayName?: string;
+  syncedItems?: string[];
 }
 
 const props = defineProps<Props>();
 let { opacity } = useMaplibreLayerOpacity(props.map, props.layerId);
 let { visible } = useMaplibreLayerVisibility(props.map, props.layerId);
 
+// sync opacity and visibility to other layers if specified 
+// the opacity should be the layers opacity * the opacity of the main layer (layerId)
+const { layerId, syncedItems } = props;
+function syncOpacityAndVisibility() {
+  if (syncedItems && syncedItems.length > 0) {
+    syncedItems.forEach((syncedLayerId) => {
+      setLayerOpacity(props.map, syncedLayerId, opacity.value);
+      setLayerVisibility(props.map, syncedLayerId, visible.value);
+    });
+  }
+}
+
 const slots = useSlots();
 const showInfo = computed(() => !!slots.info);
+
+// Watch for changes to opacity and visibility and sync if needed
+watch(() => [opacity.value, visible.value], () => {
+  syncOpacityAndVisibility();
+});
 
 // NB: If the props update, we need to make sure that the refs that we're using are still tracking the same layer
 // In particular, if the layer ID changes, without this the component can end up manipulating the wrong layer!
@@ -69,6 +88,7 @@ watch(() => [props.map, props.layerId],
   ([map, layerId]: [Map, string]) => {
     opacity = useMaplibreLayerOpacity(map, layerId).opacity;
     visible = useMaplibreLayerVisibility(map, layerId).visible;
+    syncOpacityAndVisibility();
   }
 );
 </script>

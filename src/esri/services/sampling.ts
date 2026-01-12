@@ -108,9 +108,7 @@ export class EsriSampler {
     let sampleDistance = this.getSampleDistance(initialSampleCount);
     
     if (sampleDistance < this.pixelSize) {
-      console.log(`Requested sample distance (${sampleDistance}) is smaller than pixel size, adjusting to pixel size`);
       sampleDistance = this.pixelSize;
-      console.log('Adjusted sample distance:', sampleDistance);
     }
 
     const nx = Math.round(Math.abs(this.geometryXsize) / sampleDistance);
@@ -135,9 +133,7 @@ export class EsriSampler {
     let sampleDistance = this.getSampleDistance(initialSampleCount);
     
     if ((sampleDistance < this.pixelSize) && !permitOversampling) {
-      console.log(`Requested sample distance (${sampleDistance}) is smaller than pixel size, adjusting to pixel size`);
       const adjustedSampleCount = this.getSamplingSpecificationFromSamplingDistance(this.pixelSize).count;
-      console.log('Adjusted sample count:', adjustedSampleCount);
       sampleDistance = this.getSampleDistance(adjustedSampleCount);
     }
 
@@ -158,7 +154,6 @@ export class EsriSampler {
     }
 
     const spec = this.getSamplingSpecificationFromSampleCount(sampleCount);
-    console.log('Sampling spec:', spec);
     const lats: number[] = [];
     const lons: number[] = [];
     const _ysign = Math.sign(this.geometryXsize);
@@ -179,7 +174,6 @@ export class EsriSampler {
   
   getSampleLocationsGrid(sampleCount: number) {
     const locations = this.getSampleLocations(sampleCount);
-    console.log(this.getSamplingSpecificationFromSampleCount(locations.spec.count));
     const points: {x: number, y: number}[] = [];
     for (let i = 0; i < locations.x.length; i++) {
       for (let j = 0; j < locations.y.length; j++) {

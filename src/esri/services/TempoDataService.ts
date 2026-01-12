@@ -146,7 +146,6 @@ class ImageServiceServiceMetadata {
     this._loadingMetadata = true;
     this.metadataCache = await this._getServiceMetadata();
     this._loadingMetadata = false;
-    console.log('Service metadata updated:', this.metadataCache);
     return this.metadataCache;
   }
   

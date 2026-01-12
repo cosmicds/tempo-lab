@@ -40,11 +40,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, toRef, computed, defineExpose, type Ref, useTemplateRef, onMounted, defineModel } from 'vue';
+import { ref, watch, toRef, computed, type Ref, useTemplateRef, onMounted } from 'vue';
 import type { PropType } from 'vue';
+import { storeToRefs } from "pinia";
 import type { Map } from 'maplibre-gl';
 import MaplibreMap from './MaplibreMap.vue';
-import { useEsriLayer } from '@/esri/maplibre/useEsriImageLayer';
+import { useTempoLayer } from '@/esri/maplibre/useTempoImageLayer';
 import { useFieldOfRegard } from '@/composables/maplibre/useFieldOfRegard';
 import { type MoleculeType } from '@/esri/utils';
 import type { InitMapOptions, LatLngPair } from '@/types';
@@ -54,6 +55,8 @@ import type { AvailableColorMaps } from "@/colormaps";
 import { useTempoStore } from "@/stores/app";
 
 const store = useTempoStore();
+
+const { showRGBMode } = storeToRefs(store);
 
 const props = defineProps({
   mapID: { type: String, required: true },
@@ -130,7 +133,7 @@ const emit = defineEmits<{
   (e: 'colormap', colormap: AvailableColorMaps): void;
   // Timesteps loaded (can fire multiple times e.g., molecule switch)
   (e:'esri-timesteps-loaded', steps: number[]): void;
-  (e: 'esri-layer', esriLayer: ReturnType<typeof useEsriLayer>)
+  (e: 'esri-layer', esriLayer: ReturnType<typeof useTempoLayer>)
 }>();
 
 // Reference to inner MaplibreMap exposed API
@@ -160,16 +163,17 @@ const timestampRef = toRef(props, 'timestamp');
 const opacityRef = toRef(props, 'opacity');
 
 // ESRI layer composable
-const theEsriLayer = useEsriLayer(
-  molecule,
-  timestampRef,
-  opacityRef,
-  true,
-  props.maplibreLayerName
-);
+const theEsriLayer = useTempoLayer({
+  initialMolecule: molecule,
+  timestamp: timestampRef,
+  opacity: opacityRef,
+  fetchOnMount: true,
+  layerName: props.maplibreLayerName,
+  initVisible: true,
+  initRGB: showRGBMode.value,
+});
 
 const { loadingEsriTimeSteps, addEsriSource, esriTimesteps, renderOptions } = theEsriLayer;
-console.log(theEsriLayer);
 
 watch(esriTimesteps, (newSteps, old) => {
   if (newSteps.length > 0 && newSteps !== old) {
@@ -181,10 +185,10 @@ watch(() => renderOptions.value.colormap, cmap => emit("colormap", cmap));
 
 watch(map, (newMap, oldMap) => {
   if (oldMap) {
-    store.deregisterMap(oldMap);
+    store.deregisterMap(oldMap as unknown as Map);
   }
   if (newMap) {
-    store.registerMap(newMap);
+    store.registerMap(newMap as unknown as Map);
   }
 });
 
@@ -212,14 +216,11 @@ function onInnerMapReady(m: Map) {
   // Resolve base map readiness immediately
   mapReady.value = true;
   promiseResolve(m);
-  console.log('onReady promise on ref exposed API resolved');
   map.value = m;
   // Attach ESRI source right after base readiness (microtask keeps UI snappy)
   addEsriSource(m);
   emit('esri-layer', theEsriLayer);
-  console.log('ESRI source added to map');
   emit('ready', m);
-  console.log('map ready event emitted');
   console.log(m);
 }
 

@@ -1,4 +1,4 @@
-import { ref, computed, watch, Ref } from 'vue';
+import { ref, computed, watch, Ref, nextTick } from 'vue';
 import { getTimezoneOffset } from 'date-fns-tz';
 
 const ONEDAYMS = 1000 * 60 * 60 * 24;
@@ -123,6 +123,41 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     }
     return index;
   }
+  
+    
+  /**
+   * setNearestTime function will set the timeIndex to the nearest timestamp for the given date
+   * it will also setup the minIndex and maxIndex for the day, and singleDateSelected to the date
+   */
+  function setNearestTime(date: Date | null) {
+    if (isBad(date)) {
+      return;
+    }
+    // check if same day as singleDateSelected
+    let selectedDate = singleDateSelected.value;
+    const sameDay = (selectedDate.getFullYear() === date.getFullYear() &&
+        selectedDate.getMonth() === date.getMonth() &&
+        selectedDate.getDate() === date.getDate());
+    if (!sameDay) {
+      selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      // check that it is in uniqueDays
+      const uniqueDayIndex = getUniqueDayIndex(selectedDate);
+      if (uniqueDayIndex >= 0) {
+        singleDateSelected.value = uniqueDays.value[uniqueDayIndex];
+      } else {
+        throw new Error("Date not found in unique days");
+      }
+    }
+    // want to set timeIndex to nearest timestamp for that day
+    nextTick(() => {
+      const index = nearestDateIndex(date);
+      timeIndex.value = index;
+      console.log("setNearestTime: set timeIndex to ", index, selectedDate);
+    });
+    
+  }
+  
+
 
   watch(singleDateSelected, (value) => {
     if (value) { 
@@ -147,7 +182,6 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
       singleDateSelected.value = new Date(newTimestamps[0]);
     } else {
       setNearestDate(singleDateSelected.value.getTime());
-      console.log(minIndex.value, maxIndex.value);
     }
   }, { immediate: true });
 
@@ -167,6 +201,7 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     moveBackwardOneDay,
     moveForwardOneDay,
     nearestDate,
-    nearestDateIndex
+    nearestDateIndex,
+    setNearestTime,
   };
 };
