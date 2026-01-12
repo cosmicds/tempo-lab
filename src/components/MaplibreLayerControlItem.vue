@@ -14,14 +14,20 @@
         hide-details
         color="primary"
         :label="displayName ?? layerId"
-      ></v-checkbox>
-      <popup-info-button
-        v-if="showInfo"
       >
-        <template #info>
-          <slot name="info"></slot>
+        <template #label>
+        >
+          {{ displayName ?? layerId }}
+          <popup-info-button
+            v-if="showInfo"
+          >
+            <template #info>
+              <slot name="info"></slot>
+            </template>
+          </popup-info-button>
         </template>
-      </popup-info-button>
+      </v-checkbox>
+
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
@@ -86,6 +92,10 @@ watch(() => [props.map, props.layerId],
   justify-content: space-between;
 }
 
+:deep(.info-button) {
+  padding-left: 5px;
+}
+
 .mlc-layer-item-checkbox-opacity-container {
   width: 100%;
   padding: 0;
@@ -93,6 +103,8 @@ watch(() => [props.map, props.layerId],
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+
+
 
   .v-slider {
     width: 70px;
