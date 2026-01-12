@@ -18,6 +18,8 @@
         <template #label>
         >
           {{ displayName ?? layerId }}
+        </template>
+        <template #append>
           <popup-info-button
             v-if="showInfo"
           >
@@ -92,10 +94,6 @@ watch(() => [props.map, props.layerId],
   justify-content: space-between;
 }
 
-:deep(.info-button) {
-  padding-left: 5px;
-}
-
 .mlc-layer-item-checkbox-opacity-container {
   width: 100%;
   padding: 0;
@@ -104,7 +102,9 @@ watch(() => [props.map, props.layerId],
   justify-content: space-between;
   align-items: center;
 
-
+  :deep(.v-input__append) {
+    margin-left: 5px;
+  }
 
   .v-slider {
     width: 70px;
