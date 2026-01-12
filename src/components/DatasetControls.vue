@@ -60,6 +60,10 @@
                 </template>
                 {{ selectionActive === 'rectangle' ? "Cancel" : "New Region" }}
               </v-btn>
+              <popup-info-button
+                info-text="To select a region, click and drag a rectangle across the map. When a large region is selected, we sample an evenly-spaced subset of approximately 30 pixels to shorten the data loading time. For each available time step, all the sampled data across the region will be averaged together."
+              >
+              </popup-info-button>
             </div>
             <v-checkbox
               v-model="showSamplingPreviewMarkers"
