@@ -995,8 +995,4 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 .dataset-select-all-none > button {
   flex-grow: 1;
 }
-
-:deep(.show-sample-points-toggle .v-input__append) {
-  margin: 5px;
-}
 </style>
