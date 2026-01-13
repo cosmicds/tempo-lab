@@ -750,9 +750,13 @@ function handleAggregationSaved(aggregatedSelection: UserDataset) {
   aggregationDataset.value = null;
 }
 
+import { RequestStats, FetchOptions } from "@/esri/services/TempoDataService";
 function handleDatasetCreated(dataset: UserDataset) {
   dataset.name = `Dataset ${datasets.value.length + 1}`; // give it a default name
-  store.addDataset(dataset);
+  const onProgress: FetchOptions["onProgress"] = (_stats: RequestStats, completed: number, total: number) => {
+    console.log(`Dataset ${dataset.name} loading progress: ${completed}/${total} requests completed.`, _stats);
+  };
+  store.addDataset(dataset, true, onProgress);
   createDatasetActive.value = false;
 }
 

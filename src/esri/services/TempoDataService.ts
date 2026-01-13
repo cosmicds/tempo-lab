@@ -13,13 +13,48 @@ import type {
 import type { AggValue, DataPointError, MillisecondRange } from "../../types";
 import {nanmean, diff} from '../../utils/array_operations/array_math';
 import { EsriSampler } from './sampling';
+import { parcelRanges } from '@/date_time_range_selection/date_time_range_generators';
 
 import { TimeRangeOffsetter } from './TimeRangeOffsetter';
 import tz_lookup from '@photostructure/tz-lookup';
 
+
+function _isRectBounds(geometry: RectBounds | PointBounds): geometry is RectBounds {
+  return 'xmin' in geometry && 'xmax' in geometry && 'ymin' in geometry && 'ymax' in geometry;
+}
+  
 // ============================================================================
 // TYPES
 // ============================================================================
+
+export type ParcelingMode = 'none' | 'default' | 'smart';
+
+export interface RequestSummary {
+  totalRequests: number;
+  successCount: number;
+  failedCount: number;
+  retrievedSamples?: number;
+  timeseriesLength?: number;
+}
+
+export interface RequestStats {
+  // HTTP status
+  httpStatus: 'success' | 'error';
+  httpStatusCode: number;
+  httpErrorMessage?: string; // HTTP error message if applicable
+  // ESRI status
+  status: 'success' | 'error';
+  statusCode: number | null;
+  errorMessage?: string; // Error message for debugging
+  // Request details
+  sampleCount: number; // number of samples returned
+  
+  retried: boolean; // Was this retried
+  succeedAfter503?: boolean | null; // Track if this was a retried 503 that succeeded
+  timestamp: number;
+  timeRange: MillisecondRange;
+  url: string;
+}
 
 export interface FetchOptions {
   sampleCount?: number;
@@ -27,6 +62,10 @@ export interface FetchOptions {
   returnFirstValueOnly?: boolean;
   outFields?: string | string[];
   sliceID?: string | number;
+  onProgress?: (stats: RequestStats, completed: number, total: number) => void;
+  dryRun?: boolean; // Skip actual requests, just generate URLs
+  numRetries?: number; // Override number of retries for this request
+  wasRetried503?: boolean; // Track if this is a retry from a 503
 }
 
 
@@ -42,12 +81,54 @@ export interface RawSampleData {
   };
 }
 
+export interface RawSampleDataWithStats extends RawSampleData {
+  stats?: RequestStats; // Added for individual request tracking
+  requestSummary?: RequestSummary; // Summary across multiple requests
+  expectedTotalSamples?: number; // Added for smart parceling
+  actualTotalSamples?: number; // Added for smart parceling
+}
+
+function emptyRawSampleData(
+  geometry: RectBounds | PointBounds, 
+  timeRange: MillisecondRange,
+  url: string,
+): RawSampleDataWithStats {
+  return {
+    samples: [],
+    metadata: {
+      totalSamples: 0,
+      timeRange: timeRange,
+      geometry,
+      geometryType: _isRectBounds(geometry) ? 'rectangle' : 'point'
+    },
+    stats: {
+      httpStatus: 'success',
+      httpStatusCode: 200,
+      status: 'success',
+      statusCode: null,
+      sampleCount: 0,
+      retried: false,
+      timestamp: Date.now(),
+      timeRange: timeRange,
+      url: url
+    }
+  };
+}
+  
+
 export interface TimeSeriesData {
   values: Record<number, AggValue>;
   errors: Record<number, DataPointError>;
   locations: Array<{ x: number; y: number }>;
   geometryType: 'rectangle' | 'point';
 }
+
+export interface TimeSeriesDataWithStats extends TimeSeriesData {
+  summary?: RequestSummary; // Simplified summary for production
+  expectedTotalSamples?: number; // Expected total samples (for smart parceling)
+  actualTotalSamples?: number; // Actual total samples fetched
+}
+  
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -60,7 +141,6 @@ function safeParseNumber(value: string | null | undefined): number | null {
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const RATE_LIMIT_MS = 50; // Delay between requests in milliseconds
 
 function stringifyEsriGetSamplesParameters(params: {
   geometry: ReturnType<typeof rectangleToGeometry> | ReturnType<typeof pointToGeometry>;
@@ -232,18 +312,25 @@ class ImageServiceServiceMetadata {
 
 export class TempoDataService extends ImageServiceServiceMetadata {
   private _baseUrls: string | string[] = [];
-  private requestUrl: string = '';
   private variable: Variables | string;
   private metas = new Map<string, ImageServiceServiceMetadata>();
+  private rateLimitMs: number = 50; // Delay between requests in milliseconds
+  private maxRetries503: number = 1; // Maximum number of retries for 503 errors
   
-  constructor(baseUrl: string | string[], variable: Variables | string = "NO2_Troposphere") {
+  // Smart parceling configuration
+  private maxSamplesPerRequest: number = 5000; // ESRI service limit
+  private safetyMargin: number = 0.9; // Use 90% of limit to avoid edge cases
+  private parcelingMode: ParcelingMode = 'smart'; // Parceling mode: 'none', 'default', or 'smart'
+  private defaultParcelSize: number = 7 * 24 * 60 * 60 * 1000; // Default parcel size (1 week in ms)
+  private availableTimestamps: number[] = []; // Cached timestamps from service
+  
+  private dryRun: boolean = false; //  run mode
+  
+  constructor(baseUrl: string | string[], variable: Variables | string = "NO2_Troposphere", rateLimitMs: number = 50, maxRetries503: number = 1) {
     super(Array.isArray(baseUrl) ? baseUrl[0] : baseUrl);
     this._baseUrls = baseUrl;
-    if (!Array.isArray(this._baseUrls)) {
-      this.requestUrl = this._baseUrls;
-    } else {
-      this.requestUrl = this._baseUrls[this._baseUrls.length - 1];
-    }
+    this.rateLimitMs = rateLimitMs;
+    this.maxRetries503 = maxRetries503;
     this.baseUrlArray.forEach((url) => {
       this.metas.set(url, new ImageServiceServiceMetadata(url));
     });
@@ -257,13 +344,13 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     return Array.isArray(this._baseUrls) ? this._baseUrls : [this._baseUrls];
   }
   
-  // updateMetadataCache(): void {
-  //   this.baseUrlArray.forEach((url) => {
-  //     if (!this.metas.has(url)) {
-  //       this.metas.set(url, new ImageServiceServiceMetadata(url));
-  //     }
-  //   });
-  // }
+  // Override to also update timestamps when metadata is refreshed
+  async updateMetadataCache(): Promise<EsriImageServiceSpec> {
+    const result = await super.updateMetadataCache();
+    // Note: Timestamps should be set explicitly via setAvailableTimestamps()
+    // rather than extracted from metadata for better control
+    return result;
+  }
 
   // ============================================================================
   // CONFIGURATION
@@ -276,6 +363,53 @@ export class TempoDataService extends ImageServiceServiceMetadata {
   getVariable(): Variables | string {
     return this.variable;
   }
+
+  setRateLimit(ms: number): void {
+    this.rateLimitMs = Math.max(0, ms);
+  }
+
+  setRetryLimit(retries: number): void {
+    this.maxRetries503 = Math.max(0, Math.floor(retries));
+  }
+
+  setMaxSamplesPerRequest(max: number): void {
+    this.maxSamplesPerRequest = Math.max(1, Math.floor(max));
+  }
+
+  setSafetyMargin(margin: number): void {
+    this.safetyMargin = Math.max(0.1, Math.min(1.0, margin));
+  }
+
+  setParcelingMode(mode: ParcelingMode): void {
+    this.parcelingMode = mode;
+  }
+
+  getParcelingMode(): ParcelingMode {
+    return this.parcelingMode;
+  }
+
+  setDefaultParcelSize(sizeMs: number): void {
+    if (sizeMs <= 0) {
+      console.warn('Default parcel size must be positive. Reverting to smart parceling mode.');
+      this.setParcelingMode('smart');
+    }
+    this.defaultParcelSize = Math.max(1000, sizeMs); // Minimum 1 second
+  }
+
+  setAvailableTimestamps(timestamps: number[]): void {
+    this.availableTimestamps = [...timestamps].sort((a, b) => a - b);
+  }
+
+  setDryRun(enabled: boolean): void {
+    this.dryRun = enabled;
+  }
+  
+
+  getDryRun(): boolean {
+    return this.dryRun;
+  }
+
+
 
   setBaseUrl(baseUrl: string): void {
     if (this.baseUrl === baseUrl) return;
@@ -309,8 +443,9 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     geometry: RectBounds | PointBounds,
     timeRange: MillisecondRange,
     options: FetchOptions = {},
-    skipRetry: boolean = false,
-  ): Promise<RawSampleData> {
+  ): Promise<RawSampleDataWithStats> {
+    const numRetries = options.numRetries ?? 0;
+    const skipRetry = numRetries >= this.maxRetries503;
     const esriGeometry = this.isRectBounds(geometry) 
       ? rectangleToGeometry(geometry as RectBounds)
       : pointToGeometry(geometry as PointBounds);
@@ -336,21 +471,51 @@ export class TempoDataService extends ImageServiceServiceMetadata {
 
     const urlWithParams = `${this.baseUrl}/getSamples/?${stringifyEsriGetSamplesParameters(params).toString()}`;
     
+    
+    // If dry run mode, return empty data immediately
+    const isDryRun = this.dryRun || options.dryRun;
+    if (isDryRun) {
+      return emptyRawSampleData(geometry, timeRange, urlWithParams);
+    }
+    
+    const stats: RequestStats = {
+      httpStatus: 'success', // needs to be updated
+      httpStatusCode: 0, // needs to be updated
+      status: 'success', // needs to be updated
+      statusCode: null, // needs to be updated
+      sampleCount: 0,
+      retried: numRetries > 0,
+      succeedAfter503: false,
+      timestamp: Date.now(),
+      timeRange: timeRange,
+      url: urlWithParams
+    };
+    
     try {
       const response = await fetch(urlWithParams);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      stats.httpStatusCode = response.status;
+      stats.httpStatus = response.ok ? 'success' : 'error';
+      
+      // Handle HTTP errors
+      if (!response.ok) {
+        stats.httpErrorMessage = await response.text();
+        throw new Error(stats.httpErrorMessage || `HTTP error! status: ${response.status}`);
+      }
       
       const data: EsriGetSamplesReturn | EsriGetSamplesReturnError = await response.json();
       
       if ('error' in data) {
-      // Retry once if we get a 503 error and haven't already retried
-        if (data.error.code === 503 && !skipRetry) {
-          console.warn(`Received 503 error, retrying after delay...`);
-          await delay(1000); // Wait 1 second before retrying
-          return this.fetchSample(geometry, timeRange, options, true);
-        }
+        stats.status = 'error';
+        stats.statusCode = data.error.code;
+        stats.errorMessage = `ESRI error: code: ${data.error.code} msg: ${data.error.message} details: ${data.error.details || ''}`.trim();
         
-        throw new Error(`Error fetching samples (${data.error.code}): ${data.error.message} ${data.error.details}`);
+        if (data.error.code === 503 && !skipRetry) {
+          console.warn(`Received 503 error for ${urlWithParams.replace('pjson', 'html')}, retrying after delay...`);
+          await delay(1000); // Wait 1 second before retrying
+          return this.fetchSample(geometry, timeRange, {...options, numRetries: (options.numRetries ?? 0) + 1, wasRetried503: true}); // Increment retry count
+        }
+        // if it is not a 503, then we are currently assuming the error is terminal
+        throw new Error(stats.errorMessage);
       }
 
       const processedSamples = data.samples.map((sample: EsriGetSamplesSample) => {
@@ -379,6 +544,18 @@ export class TempoDataService extends ImageServiceServiceMetadata {
             geometryType: this.isRectBounds(geometry) ? 'rectangle' : 'point' as 'rectangle' | 'point'
           };
         }}); // this is a CEsriTimeseries[]
+      
+      // Update stats for successful request
+      stats.status = 'success';
+      // ESRI statusCode is only used when ESRI returns an error payload.
+      stats.statusCode = null;
+      stats.sampleCount = processedSamples.length;
+      // if this was a retried request, note if it succeeded after 503
+      if (options.wasRetried503) {
+        stats.succeedAfter503 = true;
+      } else {
+        stats.succeedAfter503 = null;
+      }
       return {
         samples: processedSamples,
         metadata: {
@@ -386,11 +563,27 @@ export class TempoDataService extends ImageServiceServiceMetadata {
           timeRange: timeRange,
           geometry,
           geometryType: this.isRectBounds(geometry) ? 'rectangle' : 'point'
-        }
+        },
+        stats: stats
       };
     } catch (error) {
-      console.error('Error in TempoDataService.fetchSamples:', params);
-      throw error;
+      // For network / unexpected failures, capture a generic error message.
+      // Avoid duplicating HTTP error bodies into both httpErrorMessage and errorMessage.
+      if (!stats.errorMessage && !stats.httpErrorMessage && error instanceof Error) {
+        stats.status = 'error';
+        stats.errorMessage = error.message;
+      }
+
+      // If fetch() threw before we had an HTTP response, mark HTTP status as error.
+      if (stats.httpStatusCode === 0 && stats.httpStatus === 'success') {
+        stats.httpStatus = 'error';
+      }
+
+      console.error('Error in TempoDataService.fetchSample:', params, error);
+      // Still return the stats even on error, wrapped in the error
+      const enhancedError = error as Error & { stats?: RequestStats };
+      enhancedError.stats = stats;
+      throw enhancedError;
     }
   }
   
@@ -401,37 +594,126 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     geometry: RectBounds | PointBounds,
     timeRanges: TimeRanges,
     options: FetchOptions = {}
-  ): Promise<RawSampleData> {
+  ): Promise<RawSampleDataWithStats> {
     
     if (!Array.isArray(timeRanges)) {
       return this.fetchSample(geometry, timeRanges, options);
     }
     
-    console.log(`Fetching samples for ${timeRanges.length} time ranges...`);
-    const promises = timeRanges.map(async (tr, index) => {
-      try {
-        return await delay(100 + RATE_LIMIT_MS * index).then(() => {
-          return this.fetchSample(geometry, tr, options);
-        });
-      } catch (error) {
-        console.error(`Error fetching sample for time range ${tr.start}-${tr.end}:`, error);
-        return null;
-      }
+    // Apply parceling based on mode
+    const sampleCount = options.sampleCount || 30;
+    let parceledRanges: MillisecondRange[];
+    let expectedTotalSamples: number | undefined;
+    
+    switch (this.parcelingMode) {
+    case 'none':
+      parceledRanges = timeRanges;
+      break;
+      
+    case 'default':
+      parceledRanges = parcelRanges(timeRanges, this.defaultParcelSize);
+      break;
+      
+    case 'smart': {
+      const smartResult = this.smartParcelTimeRanges(timeRanges, sampleCount);
+      parceledRanges = smartResult.ranges;
+      expectedTotalSamples = smartResult.expectedTotalSamples;
+      break;
+    }
+    }
+    
+    const totalRanges = parceledRanges.length;
+    let completedRanges = 0;
+
+    
+    // Skip rate limiting in dry run mode
+    const isDryRun = this.dryRun || options.dryRun;
+    
+    const promises = parceledRanges.map((tr, index) => {
+      const requestPromise = isDryRun
+        ? this.fetchSample(geometry, tr, options)
+        : delay(this.rateLimitMs * index).then(() => this.fetchSample(geometry, tr, options));
+
+      return requestPromise
+        .then((result) => {
+        // Track progress
+          completedRanges++;
+          if (result.stats) {
+            if (options.onProgress) {
+              options.onProgress(result.stats, completedRanges, totalRanges);
+            }
+          }
+          return result;
+        })
+        .catch((error) => {
+          console.error(`Error fetching sample for time range ${tr.start}-${tr.end}:`, error);
+        
+          // Track progress even on error
+          completedRanges++;
+        
+          // Collect stats from errors too
+          const enhancedError = error as Error & { stats?: RequestStats };
+          if (enhancedError.stats) {
+            if (options.onProgress) {
+              options.onProgress(enhancedError.stats, completedRanges, totalRanges);
+            }
+
+            // Return a structured empty result so we can compute summaries from stats
+            // without maintaining an allStats array.
+            return {
+              samples: [],
+              metadata: {
+                totalSamples: 0,
+                timeRange: tr,
+                geometry: geometry,
+                geometryType: this.isRectBounds(geometry) ? 'rectangle' : 'point',
+              },
+              stats: enhancedError.stats,
+            };
+          }
+
+          return null;
+        }
+        );
     });
 
     return Promise.all(promises).then((results) => {
-      const validResults = results.filter((result): result is RawSampleData => result !== null);
+      const validResults = results.filter((result): result is RawSampleDataWithStats => result !== null);
       const samples = validResults.map((result) => result.samples).flat();
       console.log(`Total samples fetched across all time ranges: ${samples.length}`);
-      return {
+
+      const requestStats = validResults.map((r) => r.stats).filter((s): s is RequestStats => s !== undefined);
+
+      const successCount = requestStats.filter((s) => s.status === 'success').length;
+      const errorCountFromStats = requestStats.filter((s) => s.status === 'error').length;
+      const missingStatsCount = Math.max(0, totalRanges - requestStats.length);
+      const failedCount = errorCountFromStats + missingStatsCount;
+
+      // Create a combined result with all stats
+      const result: RawSampleDataWithStats = {
         samples,
         metadata: {
           totalSamples: samples.length,
-          timeRange: timeRanges,
+          timeRange: parceledRanges,
           geometry: geometry,
           geometryType: this.isRectBounds(geometry) ? 'rectangle' : 'point',
-        }
-      } as RawSampleData;
+        },
+      };
+
+      result.requestSummary = {
+        totalRequests: totalRanges,
+        successCount,
+        failedCount,
+        retrievedSamples: samples.length,
+      };
+      
+      // Add expected total samples if available (from smart parceling)
+      if (expectedTotalSamples !== undefined) {
+        result.expectedTotalSamples = expectedTotalSamples;
+      }
+      result.actualTotalSamples = samples.length;
+      
+      return result;
     });
   }
 
@@ -472,45 +754,18 @@ export class TempoDataService extends ImageServiceServiceMetadata {
         locations.push({ x: sample.x, y: sample.y });
       }
     }
-
-    return { values, errors, locations, geometryType: samples[0].geometryType };
+    
+    return { 
+      values, 
+      errors, 
+      locations, 
+      geometryType: samples[0]?.geometryType || 'rectangle',
+    };
   }
 
   /**
    * Get single point data (for center points or individual points)
    */
-  // aggregatePoint(samples: CEsriTimeseries[]): TimeSeriesData | null {
-  //   if (samples.length === 0) return null;
-    
-  //   // For point data, we typically expect one sample per time
-  //   // Group by time and aggregate
-  //   const grouped = new Map<number, CEsriTimeseries[]>();
-  //   samples.forEach((sample) => {
-  //     if (!grouped.has(sample.time)) {
-  //       grouped.set(sample.time, []);
-  //     }
-  //     grouped.get(sample.time)?.push(sample);
-  //   });
-
-  //   // Calculate aggregated values
-  //   const values: Record<number, AggValue> = {};
-  //   const errors: Record<number, DataPointError> = {};
-    
-  //   grouped.forEach((samples, time) => {
-  //     const sampleValues = samples.map(s => s.value);
-  //     values[time] = this.calculateMean(sampleValues, time);
-  //     errors[time] = this.calculateError(sampleValues);
-  //   });
-
-  //   // For point data, we expect only one location
-  //   const locations: Array<{ x: number; y: number }> = [];
-  //   if (samples.length > 0) {
-  //     const sample = samples[0];
-  //     locations.push({ x: sample.x, y: sample.y });
-  //   }
-
-  //   return { values, errors, locations };
-  // }
 
   // ============================================================================
   // CONVENIENCE METHODS
@@ -575,7 +830,7 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     geometry: RectBounds | PointBounds,
     timeRanges: TimeRanges,
     options: FetchOptions = {}
-  ): Promise<TimeSeriesData> {
+  ): Promise<TimeSeriesDataWithStats> {
     
     const { lat: centerLat, lon: centerLon } = this.getRegionCenter(geometry);
     const timezone = tz_lookup(centerLat, centerLon);
@@ -590,36 +845,31 @@ export class TempoDataService extends ImageServiceServiceMetadata {
       const sampler = new EsriSampler(this.meta, geometry);
       const sampleCount = options.sampleCount || 30;
       options.sampleCount = sampler.getSamplingSpecificationFromSampleCount(sampleCount).count;
-      console.log(`Taking ${options.sampleCount} samples`);
+      console.log(`This region is covered by ${options.sampleCount} samples`);
     }
     const rawData = await this.fetchSamples(geometry, localTimeRanges, options);
     // const stats = this.getTimeSeriesStatistics(rawData);
-    return this.aggregateByTime(rawData.samples);
+    
+    const result: TimeSeriesDataWithStats = this.aggregateByTime(rawData.samples);
+
+    if (rawData.requestSummary) {
+      result.summary = {
+        ...rawData.requestSummary,
+        timeseriesLength: Object.keys(result.values).length,
+      };
+    }
+
+    // Pass through expected total samples if available
+    if (rawData.expectedTotalSamples !== undefined) {
+      result.expectedTotalSamples = rawData.expectedTotalSamples;
+    }
+    if (rawData.actualTotalSamples !== undefined) {
+      result.actualTotalSamples = rawData.actualTotalSamples;
+    }
+    console.log(`Summary of fetched time series data:`, result.summary);
+    return result;
   }
   
-  /**
-   * Fetch and aggregate rectangle data (current fetchRectangleSamples equivalent)
-   */
-  // async fetchRectangleTimeseries(
-  //   rectangle: RectBounds,
-  //   timeRanges: TimeRanges,
-  //   options: FetchOptions = {}
-  // ): Promise<TimeSeriesData> {
-  //   const rawData = await this.fetchSamples(rectangle, timeRanges, options);
-  //   return this.aggregateByTime(rawData.samples);
-  // }
-
-  /**
-   * Fetch and aggregate point data (current fetchCenterPointSample equivalent)
-   */
-  // async fetchPointTimeseries(
-  //   point: PointBounds,
-  //   timeRanges: TimeRanges,
-  //   options: FetchOptions = {}
-  // ): Promise<TimeSeriesData | null> {
-  //   const rawData = await this.fetchSamples(point, timeRanges, options);
-  //   return this.aggregatePoint(rawData.samples);
-  // }
 
   /**
    * Get center point of rectangle and fetch data for it
@@ -642,21 +892,21 @@ export class TempoDataService extends ImageServiceServiceMetadata {
   // ============================================================================
 
   private isRectBounds(geometry: RectBounds | PointBounds): geometry is RectBounds {
-    return 'xmin' in geometry && 'xmax' in geometry && 'ymin' in geometry && 'ymax' in geometry;
+    return _isRectBounds(geometry);
   }
 
   private calculateMean(samples: (number | null)[], time: number): AggValue {
     const validSamples = samples.filter((sample) => sample !== null);
     if (validSamples.length === 0) return { value: null, date: new Date(time) };
-    const sum = validSamples.reduce((acc, val) => acc + (val ?? 0), 0);
-    return { value: sum / validSamples.length, date: new Date(time) };
+    const sum = validSamples.reduce((acc, val) => acc! + (val ?? 0), 0);
+    return { value: sum! / validSamples.length, date: new Date(time) };
   }
 
   private calculateError(samples: (number | null)[]): DataPointError {
     const validSamples = samples.filter((sample) => sample !== null);
     if (validSamples.length === 0) return { lower: null, upper: null };
     
-    const mean = validSamples.reduce((acc, val) => acc + (val ?? 0), 0) / validSamples.length;
+    const mean = validSamples.reduce((acc, val) => acc! + (val ?? 0), 0)! / validSamples.length;
     const squaredDiffs = validSamples.map((sample) => {
       if (sample === null) return 0;
       return Math.pow(sample - mean, 2);
@@ -665,5 +915,183 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     const squaredSEM = squaredDiffs.reduce((acc, val) => acc + val, 0) / Math.pow(validSamples.length, 2);
     
     return { lower: Math.sqrt(squaredSEM), upper: Math.sqrt(squaredSEM) };
+  }
+
+  // ============================================================================
+  // SMART PARCELING HELPERS
+  // ============================================================================
+
+  /**
+   * Efficiently count timestamps in each range using a two-pointer algorithm.
+   * Both timestamps and ranges must be sorted in ascending order.
+   * Time complexity: O(T + R) where T = number of timestamps, R = number of ranges
+   * 
+   * @param ranges - Array of time ranges (must be sorted by start time)
+   * @returns Array of counts, one per range
+   */
+  private countTimestampsInRanges(ranges: MillisecondRange[]): number[] {
+    if (this.availableTimestamps.length === 0 || ranges.length === 0) {
+      return ranges.map(() => 0);
+    }
+
+    const counts: number[] = [];
+    let timestampIndex = 0; // Pointer into availableTimestamps array
+    
+    for (const range of ranges) {
+      let count = 0;
+      
+      // Skip timestamps before the current range
+      while (timestampIndex < this.availableTimestamps.length && 
+             this.availableTimestamps[timestampIndex] < range.start) {
+        timestampIndex++;
+      }
+      
+      // Save the starting position for this range
+      // const rangeStartIndex = timestampIndex;
+      
+      // Count timestamps within the range
+      while (timestampIndex < this.availableTimestamps.length && 
+             this.availableTimestamps[timestampIndex] <= range.end) {
+        count++;
+        timestampIndex++;
+      }
+      
+      counts.push(count);
+      
+      // Reset to the start position for the next range
+      // This handles overlapping or out-of-order ranges
+      // timestampIndex = rangeStartIndex;
+      
+      // Optimization: if ranges are guaranteed non-overlapping and sorted,
+      // we don't need to reset. THIS ASSUMPTION IS TRUE FOR OUR USE CASE.
+      // timestampIndex = 0;
+    }
+    
+    return counts;
+  }
+
+  /**
+   * Binary search to find the first timestamp >= target
+   */
+  private binarySearchStart(target: number): number {
+    let left = 0;
+    let right = this.availableTimestamps.length - 1;
+    let result = this.availableTimestamps.length;
+    
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (this.availableTimestamps[mid] >= target) {
+        result = mid;
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Binary search to find the last timestamp <= target
+   */
+  private binarySearchEnd(target: number, startIdx: number): number {
+    let left = startIdx;
+    let right = this.availableTimestamps.length - 1;
+    let result = -1;
+    
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (this.availableTimestamps[mid] <= target) {
+        result = mid;
+        left = mid + 1;
+      } else {
+        right = mid - 1;
+      }
+    }
+    
+    return result;
+  }
+  
+  /**
+ * Get timestamps that fall within a given time range (for splitting)
+ */
+  private getTimestampsInRange(range: MillisecondRange): number[] {
+    // Binary search for efficiency
+    const startIdx = this.binarySearchStart(range.start);
+    const endIdx = this.binarySearchEnd(range.end, startIdx);
+    
+    return this.availableTimestamps.slice(startIdx, endIdx + 1);
+  }
+
+  /**
+   * Intelligently parcel time ranges based on sample count and timestamp availability
+   * to avoid exceeding the ESRI service limit while maximizing request size
+   */
+  private smartParcelTimeRanges(
+    timeRanges: MillisecondRange[],
+    sampleCount: number
+  ): { ranges: MillisecondRange[]; expectedTotalSamples: number } {
+    // If no timestamps are available, can't do smart parceling
+    if (this.availableTimestamps.length === 0) {
+      console.warn('No timestamps available for smart parceling, using ranges as provided');
+      return { ranges: timeRanges, expectedTotalSamples: 0 };
+    }
+    console.log(`Smart parceling ${timeRanges.length} time ranges with sample count ${sampleCount}`);
+
+    const effectiveLimit = Math.floor(this.maxSamplesPerRequest * this.safetyMargin);
+    const maxTimestampsPerRequest = Math.floor(effectiveLimit / sampleCount);
+    
+    if (maxTimestampsPerRequest < 1) {
+      console.warn(`Sample count (${sampleCount}) exceeds effective limit (${effectiveLimit}). Cannot parcel safely.`);
+      return { ranges: timeRanges, expectedTotalSamples: 0 };
+    }
+
+    // Count timestamps in all ranges efficiently with one pass
+    const timestampCounts = this.countTimestampsInRanges(timeRanges);
+    
+    const parceledRanges: MillisecondRange[] = [];
+    let totalTimestampsAcrossAllRanges = 0;
+
+    for (let i = 0; i < timeRanges.length; i++) {
+      const range = timeRanges[i];
+      const timestampCount = timestampCounts[i];
+      const totalSamples = timestampCount * sampleCount;
+      
+      totalTimestampsAcrossAllRanges += timestampCount;
+
+      // Skip ranges with no timestamps
+      if (timestampCount === 0) {
+        continue;
+      }
+
+      // If this range fits within the limit, keep it as-is
+      if (totalSamples <= effectiveLimit) {
+        parceledRanges.push(range);
+        continue;
+      }
+
+      // Need to split this range - get actual timestamps and chunk them
+      const timestampsInRange = this.getTimestampsInRange(range);
+      
+      for (let j = 0; j < timestampsInRange.length; j += maxTimestampsPerRequest) {
+        // if j + maxTimestampsPerRequest exceeds length, slice will just take to end
+        const chunkTimestamps = timestampsInRange.slice(j, j + maxTimestampsPerRequest);
+        
+        if (chunkTimestamps.length === 0) continue;
+
+        // Create a new range from first to last timestamp in this chunk
+        const newRange: MillisecondRange = {
+          start: chunkTimestamps[0],
+          end: chunkTimestamps[chunkTimestamps.length - 1]
+        };
+
+        parceledRanges.push(newRange);
+      }
+    }
+    
+    // Calculate expected total samples: total timestamps × sample count
+    const expectedTotalSamples = totalTimestampsAcrossAllRanges * sampleCount;
+    
+    return { ranges: parceledRanges, expectedTotalSamples };
   }
 } 
