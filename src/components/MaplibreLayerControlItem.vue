@@ -21,6 +21,7 @@
         <template #append>
           <popup-info-button
             v-if="showInfo"
+            width="500px"
           >
             <template #info>
               <slot name="info"></slot>
