@@ -7,7 +7,7 @@
         height="1.5em"
         min-height="1.5em"
         >
-        <slot name="summary">Show Legend</slot>
+        <slot name="summary">{{ label ?? 'Show Legend' }}</slot>
       </v-expansion-panel-title>
       <v-expansion-panel-text class="lcil-legend-content">
         <slot></slot>
@@ -23,6 +23,7 @@ import {  ref, watch } from 'vue';
 
 interface Props {
   item: string
+  label?: string
 }
 
 const _props = defineProps<Props>();
