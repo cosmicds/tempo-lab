@@ -405,7 +405,7 @@
                     </v-expand-transition>
                     
                     <cds-dialog
-                      title="Timeseries Graph"
+                      title="Graph of Quantity vs. Time"
                       v-model="openGraphs[dataset.id]"
                       title-color="var(--info-background)"
                       draggable
@@ -414,7 +414,7 @@
                       :modal="false"
                       max-height="fit-content"
                       height="fit-content"
-                      :drag-predicate="plotlyDragPredicate"
+                      :drag-predicate="titleBarPredicate"
                     >
                     
                     <template v-if="(dataset.timeRange.type === 'folded' && dataset.plotlyDatasets) || (dataset.timeRange.type === 'single')">
@@ -617,19 +617,27 @@
       </v-card>
     </v-dialog>
     
-    <cds-dialog
-      title="Timeseries Graphs"
-      title-color="var(--info-background)"
-      v-model="showMultiPlot"
-      persistent
-      max-height="90vh"
-      max-width="90vw"
-      :scrim="true"
+    <local-scope
+      :datasets="datasets.filter(d => (d.samples || d.plotlyDatasets) && selectedDatasets.includes(d.id) )"
     >
-      <multi-plot
-        :datasets="datasets.filter(d => (d.samples || d.plotlyDatasets) && selectedDatasets.includes(d.id) )"
-      />
-    </cds-dialog>
+      <template #default="{ datasets }">
+        <cds-dialog
+          :title="`Graph${new Set(datasets.map(ds => ds.molecule)).size > 1 ? 's' : ''} of Quantity vs Time`"
+          title-color="var(--info-background)"
+          v-model="showMultiPlot"
+          persistent
+          draggable
+          max-height="90vh"
+          max-width="90vw"
+          :scrim="true"
+          :drag-predicate="titleBarPredicate"
+        >
+          <multi-plot
+            :datasets="datasets"
+          />
+        </cds-dialog>
+      </template>
+    </local-scope>
 
   </div>
 
@@ -647,6 +655,7 @@ import { serializeTempoStore, useTempoStore } from "../stores/app";
 import { MOLECULE_OPTIONS } from "../esri/utils";
 import { areEquivalentTimeRanges, formatTimeRange } from "../utils/timeRange";
 import { atleast1d } from "../utils/atleast1d";
+import { titleBarPredicate } from "../utils/draggable";
 
 import DateTimeRangeSelection from "../date_time_range_selection/DateTimeRangeSelection.vue";
 import AdvancedOperations from "./AdvancedOperations.vue";
@@ -688,10 +697,6 @@ const cssVars = computed(() => {
     '--accent-color-2': accentColor2.value,
   };
 });
-
-function plotlyDragPredicate(element: HTMLElement): boolean {
-  return element.closest(".plotly") === null;
-}
 
 const touchscreen = supportsTouchscreen();
 
