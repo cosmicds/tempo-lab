@@ -22,9 +22,9 @@
             <div v-html="layerInfo[element]"></div>
           </template>
           <template #extras="{ visible }"
-            v-if="element.startsWith(tempoPrefix)"
           >
             <local-scope
+              v-if="element.startsWith(tempoPrefix)"
               :cbar="colorbarOptions[element.slice(tempoPrefix.length)]"
             >
               <template #default="{ cbar }">
@@ -46,6 +46,14 @@
                 </colorbar-horizontal>
               </template>
             </local-scope>
+            <!-- Legend -->
+
+            <NarrowExpansionPanel v-show="visible" :item="element" v-if="hasLegend.includes(element)">
+              <land-use-legend  v-if="element === 'land-use'"  />
+              <AQILegend v-if="element === 'aqi-layer-aqi'" />
+              <power-plants-filter-control :map="mapRef" v-if="element === 'power-plants-layer'"/>
+            </NarrowExpansionPanel>
+
           </template>
         </layer-control-item>
       </div>
@@ -65,6 +73,10 @@ import { capitalizeWords } from "@/utils/names";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
 import { colormapFunction } from "@/colormaps/utils";
 import { useTempoStore } from "@/stores/app";
+import NarrowExpansionPanel from './NarrowExpansionPanel.vue';
+import LandUseLegend from './LandUseLegend.vue';
+import AQILegend from './AQILegend.vue';
+
 
 const store = useTempoStore();
 const { showRGBMode } = storeToRefs(store);
@@ -170,6 +182,8 @@ const layerInfo: Record<string, string | undefined> = {
 
 };
 
+const hasLegend = ['land-use', 'aqi-layer-aqi', 'power-plants-layer'];
+
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
 }
@@ -230,5 +244,9 @@ li {
 .mlc-layer-item {
   border-left: 1px solid white;
   padding: 2px;
+}
+
+#power-plant-filter-controls {
+  box-sizing: border-box;
 }
 </style>

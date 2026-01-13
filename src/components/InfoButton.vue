@@ -3,15 +3,17 @@
     <template v-slot:activator="{ props: activatorProps }">
       <v-tooltip :text="tooltipTextValue" :disabled="!showTooltip">
         <template v-slot:activator=" { props} ">
-        <v-icon 
-          v-bind="{...activatorProps, ...props}" 
-          class="info-button-icon"
-          elevation="1"
-          @click="dialogVisible = true"
-          @keydown="handleKeydown"
+        <slot name="activator" v-bind="{...activatorProps, ...props, show: dialogVisible}">
+          <v-icon 
+            v-bind="{...activatorProps, ...props}" 
+            class="info-button-icon"
+            elevation="1"
+            @click="dialogVisible = true"
+            @keydown="handleKeydown"
           >
-          mdi-information-variant-circle-outline
-        </v-icon>
+            mdi-information-variant-circle-outline
+          </v-icon>
+        </slot>
         </template>
       </v-tooltip>
     </template>
@@ -90,7 +92,8 @@ export default defineComponent({
 }
 
 .info-button-close-icon {
-  position: relative;
+  position: fixed;
+  right: 0.5em;
   height: 1em;
 }
 

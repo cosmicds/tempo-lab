@@ -57,6 +57,11 @@ import type { Map } from "maplibre-gl";
 import { useMaplibreLayerOpacity } from "@/composables/useMaplibreLayerOpacity";
 import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
 import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
+import { storeToRefs } from "pinia";
+import { useTempoStore } from "@/stores/app";
+
+const store = useTempoStore();
+const { shownLayers } = storeToRefs(store);
 
 interface Props {
   layerId: string;
@@ -87,6 +92,14 @@ const showInfo = computed(() => !!slots.info);
 // Watch for changes to opacity and visibility and sync if needed
 watch(() => [opacity.value, visible.value], () => {
   syncOpacityAndVisibility();
+  // so just having this update here will miss the initial layers. but it's ok for now
+  // since it only applies to legend layers. when we reload the state
+  // we don't display the previously visible datasets anyway. 
+  if (visible.value) {
+    if (!shownLayers.value.includes(props.layerId)) {
+      shownLayers.value.push(props.layerId);
+    }
+  }
 });
 
 // NB: If the props update, we need to make sure that the refs that we're using are still tracking the same layer

@@ -58,7 +58,9 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
 
   const dateIsDST = computed(() => isDST(singleDateSelected.value));
   const timezoneOptions = computed(() => tzOptions(singleDateSelected.value));
-     
+  
+  const shownLayers = ref<string[]>([]);
+  
   // This part is still assuming that multiple maps will be temporally linked
   // If/when we want to make that not the case, we'll need to rethink this
   // and some of the consuming components
@@ -428,6 +430,8 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     moveForwardOneDay,
     nearestDateIndex,
     setNearestTime,
+    
+    shownLayers,
 
     reset,
   };
