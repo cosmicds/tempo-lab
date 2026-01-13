@@ -6,6 +6,7 @@ import { validate as uuidValidate } from "uuid";
 import { ImageService } from '@/esri/ImageServiceLayer/ImageService';
 import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
+import { useTempoStore } from '@/stores/app';
 
 
 export interface UseEsriTempoLayer {
@@ -38,8 +39,11 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
   const map = ref<Map | null>(null);
   const molecule = toRef(esriLayerOptions.initialMolecule);
+  const store = useTempoStore();
 
-  const { url, variable, esriTimesteps } = useEsriTimesteps(molecule, esriLayerOptions.fetchOnMount);
+  const { esriTimesteps } = useEsriTimesteps(molecule, esriLayerOptions.fetchOnMount);
+  const tds = computed(() => store.getTempoDataService(molecule.value));
+  const variable = computed(() => tds.value.getVariable());
 
   const timestamp = esriLayerOptions.timestamp;
 
@@ -143,8 +147,13 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   function addEsriSource(mMap: Map) {
     if (!mMap) return;
     map.value = mMap;
-    
-    dynamicMapService.value = createImageService(mMap, url.value, options.value);
+
+    const svc = tds.value;
+    const url = timestamp.value 
+      ? svc.selectBaseUrlForTimestamp(timestamp.value)
+      : svc.baseUrlArray[svc.baseUrlArray.length - 1];
+
+    dynamicMapService.value = createImageService(mMap, url, options.value);
 
     addLayer(mMap);
     // this event will run until the source is loaded
@@ -167,6 +176,24 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     return map.value?.getSource(esriLayerId) !== undefined;
   }
 
+  function setDynamicMapServiceDate(nearest: number) {
+    if (!dynamicMapService.value) {
+      console.error(`[${esriLayerId}] Dynamic Map Service is not initialized`);
+      return;
+    }
+
+    const svc = tds.value;
+    const url = svc.selectBaseUrlForRange({ start: nearest, end: nearest });
+
+    const currentUrl = dynamicMapService.value.esriServiceOptions.url;
+    if (currentUrl !== url) {
+      console.log(`[${esriLayerId}] Switching TEMPO ESRI version to ${url}`);
+      dynamicMapService.value.esriServiceOptions.url = url;
+      dynamicMapService.value.setRenderingRule(renderingRule(renderOptions.value.range, renderOptions.value.colormap));
+    }
+
+    dynamicMapService.value.setDate(new Date(nearest), new Date(nearest * 2));
+  }
   
   function updateEsriTimeRange() {
     if (!map.value) return;
@@ -179,15 +206,15 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     noEsriData.value = Math.abs((nearest - time) / (1000 * 60)) > 60;
     // noEsriData.value = nearest > 1752595200000; // Example condition (July 15, 2025 12pm ET for testing)
     if (noEsriData.value) {
-      console.error(`[${esriLayerId}] No ESRI data available for the selected time`, url);
+      console.error(`[${esriLayerId}] No ESRI data available for the selected time`);
     }
 
-    if (dynamicMapService.value && !noEsriData.value) {
-      dynamicMapService.value.setDate(new Date(nearest), new Date(nearest * 2));
-    } else if (!noEsriData.value) {
-      // if there is esri coverage, then this is the issue
+    if (!dynamicMapService.value) {
       console.error(`[${esriLayerId}] Dynamic Map Service is not initialized`);
+      return;
     }
+
+    setDynamicMapServiceDate(nearest);
   }
 
   watch(esriTimesteps, _timesteps => {
@@ -212,8 +239,16 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   }
 
   watch(molecule, (_newMol: MoleculeType) => {
-    dynamicMapService.value.esriServiceOptions.url = url.value;
-    dynamicMapService.value.setRenderingRule(renderingRule(renderOptions.value.range, renderOptions.value.colormap));
+    // refresh() already handled by useEsriTimesteps watch
+    const svc = tds.value;
+    const url = timestamp.value
+      ? svc.selectBaseUrlForTimestamp(timestamp.value)
+      : svc.baseUrlArray[svc.baseUrlArray.length - 1];
+    
+    if (dynamicMapService.value) {
+      dynamicMapService.value.esriServiceOptions.url = url;
+      dynamicMapService.value.setRenderingRule(renderingRule(renderOptions.value.range, renderOptions.value.colormap));
+    }
   });
   
   function updateStretch(vmin: number, vmax: number) {
