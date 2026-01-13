@@ -16,7 +16,6 @@
         :label="displayName ?? layerId"
       >
         <template #label>
-        >
           {{ displayName ?? layerId }}
         </template>
         <template #append>

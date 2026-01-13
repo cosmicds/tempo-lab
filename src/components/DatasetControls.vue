@@ -60,15 +60,36 @@
                 </template>
                 {{ selectionActive === 'rectangle' ? "Cancel" : "New Region" }}
               </v-btn>
+              <popup-info-button
+                info-text="To select a region, click and drag a rectangle across the map. When a large region is selected, we sample an evenly-spaced subset of approximately 30 pixels to shorten the data loading time. For each available time step, all the sampled data across the region will be averaged together."
+                :width="popupCardWidth"
+              >
+              </popup-info-button>
             </div>
             <v-checkbox
               v-model="showSamplingPreviewMarkers"
+              class="show-sample-points-toggle"
               label="Show sample points"
               density="compact"
               hide-details
-            ></v-checkbox>
+            >
+              <template #append>
+                <popup-info-button
+                  info-text="Checking this box will display the pixels of your selected region where data will be requested from the server."
+                  :width="popupCardWidth"
+                >
+                </popup-info-button>
+              </template>
+            </v-checkbox>
             <div class="my-selections" v-if="regions.length>0" style="margin-top: 1em;">
-            <h4>My Regions</h4>                   
+            <h4>
+              My Regions
+              <popup-info-button
+                info-text="Click the region card to go to that region on the map. Click the pen to rename a region. Click the trash can to delete a region. If an existing dataset is using a region, it cannot be deleted."
+                :width="popupCardWidth"
+              >
+              </popup-info-button>
+            </h4>                   
               <v-slider
                 v-model="regionOpacity"
                 :min="0"
@@ -714,6 +735,8 @@ const regionBeingEdited = ref<UnifiedRegionType | null>(null);
 const showEditTimeRangeNameDialog = ref(false);
 const timeRangeBeingEdited = ref<TimeRange | null>(null);
 
+const popupCardWidth = 300;
+
 const aggregationDataset = ref<UserDataset | null>(null);
 const showAggregationDialog = ref(false);
 function openAggregationDialog(selection: UserDataset) {
@@ -949,6 +972,18 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 :deep(.v-list-item-title)
 {
   font-size: 10pt;
+}
+
+.show-sample-points-toggle {
+  width: fit-content;
+}
+
+:deep(.info-button) {
+  padding-left: 5px;
+}
+
+:deep(.show-sample-points-toggle .v-input__append) {
+  margin: 0;
 }
 
 .dataset-select-all-none {
