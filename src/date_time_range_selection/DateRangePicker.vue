@@ -5,19 +5,17 @@
       <label class="text-subtitle-2 mb-2 d-block">Start Date</label>
       <date-picker
         class="cds__date-picker"
-        uid="start-picker"
         ref="startDateCalendar"
         :model-value="startDateObj"
         @internal-model-change="handleStartDateChange"
         :allowed-dates="allowedDates"
-        :format="format"
-        :preview-format="format"
-        :clearable="clearable"
+        :formats="{'input': format, 'preview': format }"
+        :input-atters="{ clearable }"
         :text-input="textInput"
         :teleport="true"
         :dark="dark"
         :year-range="yearRange"
-        :enable-time-picker="false"
+        :time-config="{ enableTimePicker: false }"
         :max-date="endDateObj ?? new Date()"
         :week-start="0"
         prevent-min-max-navigation
@@ -29,19 +27,16 @@
       <label class="text-subtitle-2 mb-2 d-block">End Date</label>
       <date-picker
         class="cds__date-picker"
-        uid="end-picker"
         ref="endDateCalendar"
         :model-value="endDateObj"
         @internal-model-change="handleEndDateChange"
         :allowed-dates="allowedDates"
-        :format="format"
-        :preview-format="format"
-        :clearable="clearable"
-        :text-input="textInput"
+        :formats="{input: format, preview: format}"
+        :input-atters="{ clearable }"
         :teleport="true"
         :dark="dark"
         :year-range="yearRange"
-        :enable-time-picker="false"
+        :time-config="{ enableTimePicker: false }"
         :min-date="startDateObj ?? new Date(0)"
         :week-start="0"
         prevent-min-max-navigation
@@ -54,7 +49,6 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import DatePicker from '@vuepic/vue-datepicker';
 
 
 const props = defineProps<{
@@ -69,7 +63,10 @@ const props = defineProps<{
   yearRange?: [number, number];
 }>();
 
-const format = (date: Date) => {
+const format = (date: Date | null) => {
+  if (date === null) {
+    throw new Error('Date is null' );
+  }
   if (props.formatFunction) {
     return props.formatFunction(date);
   }

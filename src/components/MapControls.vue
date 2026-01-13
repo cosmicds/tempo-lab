@@ -18,12 +18,11 @@
                 }
               }"
               :allowed-dates="uniqueDays"
-              :clearable="false"
-              :enable-time-picker="false"
+              :input-atters="{clearable: false}"
+              :time-config="{ enableTimePicker: false }"
               :multi-dates="false"
               :transitions="false"
-              :format="(date: Date | null) => date?.toDateString()"
-              :preview-format="(date: Date | null) => date?.toDateString()"
+              :formats="{'input': (date: Date | null) => date?.toDateString(), 'preview': (date: Date | null) => date?.toDateString()}"
               :week-start="0"
               no-today
               dark
@@ -126,7 +125,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { DatePickerInstance } from "@vuepic/vue-datepicker";
+import { VueDatePicker } from "@vuepic/vue-datepicker";
 import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 
 import { type MoleculeType } from "@/esri/utils";
@@ -152,7 +151,7 @@ const molecule = ref<MoleculeType>('no2');
 const radio = ref<number | null>(null);
 const touchscreen = supportsTouchscreen();
 
-const calendar = ref<DatePickerInstance | null>(null);
+const calendar = ref<typeof VueDatePicker | null>(null);
 
 
 watch(molecule, (newMol: MoleculeType) => {
