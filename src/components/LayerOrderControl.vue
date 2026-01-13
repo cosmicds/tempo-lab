@@ -130,6 +130,14 @@ const layerNames: Record<string, string | undefined> = {
 
 const layerInfo: Record<string, string | undefined> = {
   "aqi-layer-aqi": 'From <a href="https://www.airnow.gov/aqi/aqi-basics/">EPA</a>; taken once per day',
+  "tempo-no2": "TEMPO NO2 info",
+  "power-plants-layer": "Power Plants info",
+  "stamen-toner-lines": "Roads info",
+  "pop-dens": "Population Density info",
+  "land-use": "Land Use info",
+  "hms-fire": "Fire Detections info",
+  'tempo-hcho': "TEMPO HCHO info",
+  'tempo-o3': "TEMPO Ozone info",
 };
 
 function displayNameTransform(layerId: string): string {
