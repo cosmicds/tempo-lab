@@ -130,6 +130,8 @@ const layerNames: Record<string, string | undefined> = {
 
 const layerInfo: Record<string, string | undefined> = {
   "aqi-layer-aqi": 'From <a href="https://www.airnow.gov/aqi/aqi-basics/">EPA</a>; taken once per day',
+  "tempo-no2": `<h3>TEMPO Nitrogen Dioxide (NO<sub>2</sub>) Data Layer</h3><br/>This data layer shows the amount of nitrogen dioxide (NO<sub>2</sub>) in the lower part of the Earth’s atmosphere, called the troposphere. This measurement represents the total number of nitrogen dioxide molecules in a column of air above one square centimeter on the Earth’s surface (molecules/cm2). NO<sub>2</sub> is an air pollutant that can affect both air quality and human health. It is produced by burning fossil fuels (ie. vehicles and power plants), fires, and even lightning.
+                TEMPO’s sensor captures this data at about 2 km by 4.75 km at the center of the field of regard (FOR). The data is processed into a Level 3 product with a resolution of 0.02 by 0.02 degrees, and the imagery you see is displayed at about 2 km resolution. To ensure accuracy, the layer is filtered, and only includes high-quality data points, based on key quality checks and sunlight conditions (solar zenith angle).`
 };
 
 function displayNameTransform(layerId: string): string {
