@@ -14,6 +14,7 @@ import type { AggValue, DataPointError, MillisecondRange } from "../../types";
 import {nanmean, diff} from '../../utils/array_operations/array_math';
 import { EsriSampler } from './sampling';
 import { parcelRanges } from '@/date_time_range_selection/date_time_range_generators';
+import { getEsriTimesteps } from '../utils';
 
 import { TimeRangeOffsetter } from './TimeRangeOffsetter';
 import tz_lookup from '@photostructure/tz-lookup';
@@ -35,6 +36,7 @@ export interface RequestSummary {
   failedCount: number;
   retrievedSamples?: number;
   timeseriesLength?: number;
+  urlList?: string[];
 }
 
 export interface RequestStats {
@@ -310,7 +312,7 @@ class ImageServiceServiceMetadata {
 // TEMPO DATA SERVICE
 // ============================================================================
 
-export class TempoDataService extends ImageServiceServiceMetadata {
+export class TempoDataService {
   private _baseUrls: string | string[] = [];
   private variable: Variables | string;
   private metas = new Map<string, ImageServiceServiceMetadata>();
@@ -325,15 +327,14 @@ export class TempoDataService extends ImageServiceServiceMetadata {
   private availableTimestamps: number[] = []; // Cached timestamps from service
   
   private dryRun: boolean = false; //  run mode
+  private timestepsCache = new Map<string, number[]>();
+  private _boundaries: Array<{ url: string; start: number; end: number }> | null = null; // Cached version boundaries
   
   constructor(baseUrl: string | string[], variable: Variables | string = "NO2_Troposphere", rateLimitMs: number = 50, maxRetries503: number = 1) {
-    super(Array.isArray(baseUrl) ? baseUrl[0] : baseUrl);
+    // console.error(`TemoiDataService constructor called with variable: ${variable} and baseUrl: ${baseUrl}`);
     this._baseUrls = baseUrl;
     this.rateLimitMs = rateLimitMs;
     this.maxRetries503 = maxRetries503;
-    this.baseUrlArray.forEach((url) => {
-      this.metas.set(url, new ImageServiceServiceMetadata(url));
-    });
     
     this.variable = variable;
     this.updateMetadataCache();
@@ -344,12 +345,136 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     return Array.isArray(this._baseUrls) ? this._baseUrls : [this._baseUrls];
   }
   
-  // Override to also update timestamps when metadata is refreshed
-  async updateMetadataCache(): Promise<EsriImageServiceSpec> {
-    const result = await super.updateMetadataCache();
-    // Note: Timestamps should be set explicitly via setAvailableTimestamps()
-    // rather than extracted from metadata for better control
-    return result;
+  async updateMetadataCache(): Promise<void> {
+    // Load metadata for all URLs in parallel
+    const metadataPromises = this.baseUrlArray.map(url => 
+      this.metaForUrl(url).catch(err => {
+        console.warn(`Failed to load metadata for ${url}:`, err);
+        return null;
+      })
+    );
+    
+    await Promise.all(metadataPromises);
+    
+    if (this.baseUrlArray.length > 1) {
+      console.log(`Loaded metadata for ${this.baseUrlArray.length} TEMPO service URL(s)`);
+    }
+  }
+
+  /**
+   * Get cached version boundaries from all base URLs.
+   * Boundaries are sorted by start time.
+   */
+  private async timeBoundaries(): Promise<Array<{ url: string; start: number; end: number }>> {
+    if (this._boundaries !== null) {
+      return this._boundaries;
+    }
+
+    const boundaries: Array<{ url: string; start: number; end: number }> = [];
+    
+    for (const url of this.baseUrlArray) {
+      const meta = await this.metaForUrl(url);
+      if (!meta || !meta.metadataCache) {
+        console.error(`Metadata not loaded for ${url}, cannot determine time boundaries`);
+        continue;
+      }
+      const timeRange = meta.timeRange;
+      if (timeRange) {
+        boundaries.push({ url, start: timeRange[0], end: timeRange[1] });
+      }
+    }
+
+    // Sort boundaries by start time for easier processing
+    boundaries.sort((a, b) => a.start - b.start);
+    this._boundaries = boundaries;
+    return boundaries;
+  }
+
+  
+  private async metaForUrl(url: string): Promise<ImageServiceServiceMetadata> {
+    if (!this.metas.has(url)) {
+      this.metas.set(url, new ImageServiceServiceMetadata(url));
+    }
+    const meta = this.metas.get(url)!;
+    await meta.withMetadataCache();
+    return meta;
+  }
+
+  private _metaForTimeRange(range: MillisecondRange): EsriImageServiceSpec | undefined {
+    const url = this.selectBaseUrlForRange(range);
+    const meta = this.metas.get(url);
+    
+    if (meta?.metadataCache) {
+      return meta.metadataCache;
+    }
+    
+    // Fallback to first available metadata
+    for (const [, m] of this.metas) {
+      if (m.metadataCache) {
+        return m.metadataCache;
+      }
+    }
+    
+    return undefined;
+  }
+
+  selectBaseUrlForRange(range: MillisecondRange): string {
+    for (const url of this.baseUrlArray) {
+      const meta = this.metas.get(url);
+      if (!meta?.metadataCache) {
+        console.error(`Metadata not loaded for ${url}, cannot select URL for range`);
+        continue;
+      }
+      const timeRange = meta.timeRange;
+      if (!timeRange) {
+        throw new Error(`Missing timeInfo for ${url}`);
+      }
+      const [start, end] = timeRange;
+      const overlaps = range.start <= end && range.end >= start;
+      if (overlaps) {
+        return url;
+      }
+    }
+    return this.baseUrlArray[this.baseUrlArray.length - 1];
+  }
+  
+  selectBaseUrlForTimestamp(timestamp: number): string {
+    return this.selectBaseUrlForRange({ start: timestamp, end: timestamp });
+  }
+  
+ 
+  private async fetchTimestepsForUrl(url: string): Promise<number[]> {
+    if (this.timestepsCache.has(url)) {
+      return this.timestepsCache.get(url)!;
+    }
+    const steps = await getEsriTimesteps(url, this.variable as Variables);
+    this.timestepsCache.set(url, steps);
+    return steps;
+  }
+      
+
+  async getMergedTimesteps(): Promise<number[]> {
+    const allTimesteps: number[][] = [];
+    for (const url of this.baseUrlArray) {
+      await this.metaForUrl(url); // Ensure metadata is loaded
+      const steps = await this.fetchTimestepsForUrl(url);
+      allTimesteps.push(steps);
+    }
+    return Array.from(new Set(allTimesteps.flat())).sort((a, b) => a - b);
+  }
+
+
+  /**
+   * Ensure metadata is loaded and return it 
+   * Really just to avoid changing with MapWithControls
+   */
+  async withMetadataCache(): Promise<EsriImageServiceSpec> {
+    await this.updateMetadataCache();
+    const meta = this.metas.get(this.baseUrlArray[0])?.meta ?? null;
+    if (!meta) {
+      throw new Error('Failed to load metadata for TEMPO service');
+    }
+    return meta;
   }
 
   // ============================================================================
@@ -409,30 +534,6 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     return this.dryRun;
   }
 
-
-
-  setBaseUrl(baseUrl: string): void {
-    if (this.baseUrl === baseUrl) return;
-    this.baseUrl = baseUrl;
-    this.updateMetadataCache();
-  }
-  
-  get baseUrl(): string {
-    return this.url;
-  }
-  
-  set baseUrl(value: string) {
-    if (this.url === value) return;
-    this.url = value;
-    this.updateMetadataCache();
-  }
-
-  getBaseUrl(): string {
-    return this.baseUrl;
-  }
-
-  
-
   // ============================================================================
   // CORE DATA FETCHING
   // ============================================================================
@@ -458,6 +559,8 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     const timeString = `${timeRange.start},${timeRange.end}`;
 
 
+    const baseUrl = this.selectBaseUrlForRange(timeRange);
+
     const params = {
       f: 'pjson' as const,
       interpolation: 'RSP_NearestNeighbor' as EsriInterpolationMethod,
@@ -469,7 +572,7 @@ export class TempoDataService extends ImageServiceServiceMetadata {
       ...options
     };
 
-    const urlWithParams = `${this.baseUrl}/getSamples/?${stringifyEsriGetSamplesParameters(params).toString()}`;
+    const urlWithParams = `${baseUrl}/getSamples/?${stringifyEsriGetSamplesParameters(params).toString()}`;
     
     
     // If dry run mode, return empty data immediately
@@ -488,7 +591,7 @@ export class TempoDataService extends ImageServiceServiceMetadata {
       succeedAfter503: false,
       timestamp: Date.now(),
       timeRange: timeRange,
-      url: urlWithParams
+      url: urlWithParams.replace('pjson', 'html'), // for easier debugging
     };
     
     try {
@@ -622,6 +725,9 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     }
     }
     
+    // Split any parcels that straddle version boundaries
+    parceledRanges = await this.splitParcelsAtVersionBoundaries(parceledRanges);
+    
     const totalRanges = parceledRanges.length;
     let completedRanges = 0;
 
@@ -705,6 +811,7 @@ export class TempoDataService extends ImageServiceServiceMetadata {
         successCount,
         failedCount,
         retrievedSamples: samples.length,
+        urlList: validResults.map((r) => r.stats?.url || 'unknown'),
       };
       
       // Add expected total samples if available (from smart parceling)
@@ -841,8 +948,9 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     const localTimeRanges = offsetter.offsetRanges(timeRangesArray);
     
     
-    if (this.isRectBounds(geometry) && this.meta) {
-      const sampler = new EsriSampler(this.meta, geometry);
+    const meta = this._metaForTimeRange(localTimeRanges[0]);
+    if (this.isRectBounds(geometry) && meta) {
+      const sampler = new EsriSampler(meta, geometry);
       const sampleCount = options.sampleCount || 30;
       options.sampleCount = sampler.getSamplingSpecificationFromSampleCount(sampleCount).count;
       console.log(`This region is covered by ${options.sampleCount} samples`);
@@ -1021,6 +1129,58 @@ export class TempoDataService extends ImageServiceServiceMetadata {
     const endIdx = this.binarySearchEnd(range.end, startIdx);
     
     return this.availableTimestamps.slice(startIdx, endIdx + 1);
+  }
+
+  /**
+   * Get boundaries that overlap with the given time range.
+   * Returns boundaries sorted by start time.
+   */
+  private _getOverlappingBoundaries(
+    range: MillisecondRange,
+    boundaries: Array<{ url: string; start: number; end: number }>
+  ): Array<{ url: string; start: number; end: number }> {
+    const overlapping = boundaries.filter(b => 
+      range.start <= b.end && range.end >= b.start
+    );
+    // Sort by start time (boundaries should already be sorted, but ensure it)
+    return overlapping.sort((a, b) => a.start - b.start);
+  }
+
+  /**
+   * Split time ranges that span multiple ESRI service version boundaries.
+   */
+  private async splitParcelsAtVersionBoundaries(ranges: MillisecondRange[]): Promise<MillisecondRange[]> {
+    // If only one base URL, no version boundaries to worry about
+    if (this.baseUrlArray.length <= 1) {
+      return ranges;
+    }
+
+    const boundaries = await this.timeBoundaries();
+    const splitRanges: MillisecondRange[] = [];
+
+    for (const range of ranges) {
+      // Find which boundaries this range overlaps with
+      const overlappingBoundaries = this._getOverlappingBoundaries(range, boundaries);
+
+      if (overlappingBoundaries.length <= 1) {
+        // Range fits within a single version, keep as-is
+        splitRanges.push(range);
+        continue;
+      }
+      console.error(`Splitting range ${range.start}-${range.end} across ${overlappingBoundaries.length} version boundaries`);
+      // Range spans multiple versions - split it
+      for (const boundary of overlappingBoundaries) {
+        // Calculate the intersection of the range with this boundary
+        const splitStart = Math.max(range.start, boundary.start);
+        const splitEnd = Math.min(range.end, boundary.end);
+        
+        if (splitStart <= splitEnd) {
+          splitRanges.push({ start: splitStart, end: splitEnd });
+        }
+      }
+    }
+
+    return splitRanges;
   }
 
   /**
