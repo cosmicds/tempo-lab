@@ -22,7 +22,7 @@
           <span class="mr-2" style="text-wrap:nowrap">Single Day</span>
           <date-picker
                 v-if="timeSelectionRadio === 'single' && glContainerSize.width > 450"
-                class="mx-2 ddrp__date-picker"
+                class="mx-2 cds__date-picker"
                 ref="singleDateCalendar"
                 :model-value="singleDateObj"
                 @internal-model-change="handleSingleDateChange"
@@ -44,7 +44,7 @@
         <div v-if="timeSelectionRadio === 'single' && glContainerSize.width <= 450" class="single-date-section">
             <div class="my-4">
               <date-picker
-                class="mx-2  ddrp__date-picker"
+                class="mx-2 cds__date-picker"
                 ref="singleDateCalendar"
                 :model-value="singleDateObj"
                 @internal-model-change="handleSingleDateChange"

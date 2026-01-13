@@ -7,7 +7,7 @@
         <div class="d-flex flex-row align-center">
           <v-radio-group v-model="radio">
             <date-picker
-              class="ddrp__date-picker tall"
+              class="cds__date-picker tall"
               ref="calendar"
               :model-value="singleDateSelected"
               @internal-model-change="(value: Date) => {
@@ -178,7 +178,7 @@ watch(molecule, (newMol: MoleculeType) => {
   min-width: 220px; /* Minimum width before parent wraps */
 }
 
-.ddrp__date-picker .tall {
+.cds__date-picker .tall {
   height: 58px;
 }
 

@@ -4,7 +4,7 @@
     <div class="ddrp__picker mb-4">
       <label class="text-subtitle-2 mb-2 d-block">Start Date</label>
       <date-picker
-        class="ddrp__date-picker"
+        class="cds__date-picker"
         uid="start-picker"
         ref="startDateCalendar"
         :model-value="startDateObj"
@@ -28,7 +28,7 @@
     <div class="ddrp__picker mb-4">
       <label class="text-subtitle-2 mb-2 d-block">End Date</label>
       <date-picker
-        class="ddrp__date-picker"
+        class="cds__date-picker"
         uid="end-picker"
         ref="endDateCalendar"
         :model-value="endDateObj"
@@ -145,7 +145,5 @@ watch(() => props.endDate, (newDate) => {
   min-width: 150px;
 }
 
-#dp-menu-start-picker.dp__menu, #dp-menu-end-picker.dp__menu {
-  border: 1px solid rgb(var(--v-theme-surface-variant), 0.3);
-}
+
 </style>
