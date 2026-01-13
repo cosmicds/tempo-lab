@@ -22,44 +22,66 @@
           <span class="mr-2" style="text-wrap:nowrap">Single Day</span>
           <date-picker
                 v-if="timeSelectionRadio === 'single' && glContainerSize.width > 450"
-                class="mx-2 ddrp__date-picker"
+                class="mx-2 cds__date-picker"
                 ref="singleDateCalendar"
                 :model-value="singleDateObj"
                 @internal-model-change="handleSingleDateChange"
                 :allowed-dates="allowedDates"
-                :format="formatDateDisplay"
-                :preview-format="formatDateDisplay"
-                :clearable="false"
-                text-input
+                :formats="{input: formatDateDisplay, preview: formatDateDisplay}"
+                :input-atters="{ clearable: false }"
                 :teleport="true"
                 dark
                 :year-range="datePickerYearRange"
                 :week-start="0"
                 six-weeks
-                :enable-time-picker="false"
-              />
+                :time-config="{ enableTimePicker: false }"
+              >
+              <template #action-buttons>
+                <button
+                  class="dp__action_button dp__action-latest"
+                  @click="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  @keyup.enter="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  :disabled="!allowedDates"
+                  elevation="0"
+                  size="sm"
+                >
+                  Latest
+                </button>
+              </template>
+          </date-picker>
         </template>
       </v-radio>
         <v-expand-transition title="Select a Single Date">
         <div v-if="timeSelectionRadio === 'single' && glContainerSize.width <= 450" class="single-date-section">
             <div class="my-4">
               <date-picker
-                class="mx-2  ddrp__date-picker"
+                class="mx-2 cds__date-picker"
                 ref="singleDateCalendar"
                 :model-value="singleDateObj"
                 @internal-model-change="handleSingleDateChange"
                 :allowed-dates="allowedDates"
-                :format="formatDateDisplay"
-                :preview-format="formatDateDisplay"
-                :clearable="false"
-                text-input
+                :formats="{input: formatDateDisplay, preview: formatDateDisplay}"
+                :input-atters="{ clearable: false }"
                 :teleport="true"
                 dark
                 :year-range="datePickerYearRange"
                 :week-start="0"
                 six-weeks
-                :enable-time-picker="false"
-              />
+                :time-config="{ enableTimePicker: false }"
+              >
+              <template #action-buttons>
+                <button
+                  class="dp__action_button dp__action-latest"
+                  @click="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  @keyup.enter="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  :disabled="!allowedDates"
+                  elevation="0"
+                  size="sm"
+                >
+                  Latest
+                </button>
+              </template>
+          </date-picker>
             </div>
           </div>
         </v-expand-transition>
@@ -126,7 +148,7 @@
                   :allowed-dates="allowedDates"
                   :format-function="formatDateDisplay"
                   :clearable="false"
-                  :text-input="true"
+                  :text-input="false"
                   :teleport="true"
                   :dark="true"
                   :year-range="datePickerYearRange"
@@ -270,7 +292,6 @@
 // no unused vars
 // === IMPORTS ===
 import { watch, computed, ref, onMounted, useTemplateRef } from 'vue';
-import DatePicker from '@vuepic/vue-datepicker';
 import type { MillisecondRange } from '../types/datetime';
 import DateRangePicker from './DateRangePicker.vue';
 import DaysPicker from './DaysPicker.vue';

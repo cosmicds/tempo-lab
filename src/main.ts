@@ -46,7 +46,7 @@ import {
   faAtom,
 } from "@fortawesome/free-solid-svg-icons";
 
-import VueDatePicker from "@vuepic/vue-datepicker";
+import { VueDatePicker } from "@vuepic/vue-datepicker";
 import '@vuepic/vue-datepicker/dist/main.css';
 import "./styles/vue3-date-picker-styles.css";
 import "./styles/molecule-svg.css";
