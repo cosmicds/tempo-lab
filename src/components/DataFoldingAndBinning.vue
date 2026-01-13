@@ -15,10 +15,10 @@
               >
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
-                v-model:validFoldingForData="validFoldingForData"
+                :validFoldingForData="validFoldingForData"
                 :timeBinOptions="timeBinOptions"
-                v-model:validTimeBinForData="validTimeBinForData"
-                v-model:isValidCombination="isValidCombination"
+                :validTimeBinForData="validTimeBinForData"
+                :isValidCombination="isValidCombination"
                 v-model:useTzCenter="useTzCenter"
                 v-model:tzCenter="tzCenter"
                 v-model:selectedTimezone="selectedTimezone"
