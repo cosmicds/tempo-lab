@@ -44,7 +44,7 @@ import { storeToRefs } from "pinia";
 import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
 import { v4 } from "uuid";
 
-import { useTempoStore, deserializeTempoStore, postDeserializeTempoStore, serializeTempoStore } from "@/stores/app";
+import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
 type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef("root");
@@ -84,9 +84,7 @@ onBeforeMount(() => {
   
   const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
   if (storedState) {
-    const state = deserializeTempoStore(storedState);
-    store.$patch(state);
-    postDeserializeTempoStore(store);
+    updateStoreFromJSON(store, storedState);
   }
 });
 
