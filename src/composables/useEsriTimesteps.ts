@@ -1,31 +1,28 @@
-import { computed, toRef, ref, watch, type MaybeRef, onMounted } from "vue";
+import { toRef, ref, watch, type MaybeRef, onMounted } from "vue";
 
-import { ESRI_URLS, getEsriTimesteps, MoleculeType } from "../esri/utils";
-
-const timestepCache: Record<MoleculeType, number[]> | object = {};
+import { MoleculeType } from "../esri/utils";
+import { useTempoStore } from "@/stores/app";
 
 export function useEsriTimesteps(initialMolecule: MaybeRef<MoleculeType>, updateOnMount=true) {
   const molecule = toRef(initialMolecule);
-  const url = computed(() => ESRI_URLS[molecule.value].url);
-  const variable = computed(() => ESRI_URLS[molecule.value].variable);
   const loadingTimesteps = ref(false);
   const esriTimesteps = ref<number[]>([]);
   const error = ref<string | null>(null);
+  const store = useTempoStore();
 
-  async function updateEsriTimeSteps(): Promise<void> {
-    if (timestepCache[molecule.value]) {
-      esriTimesteps.value = timestepCache[molecule.value];
-      return;
-    }
-
+  function updateEsriTimeSteps(): Promise<void> {
     loadingTimesteps.value = true;
-    return getEsriTimesteps(url.value, variable.value)
+    const tds = store.getTempoDataService(molecule.value);
+    return tds.getMergedTimesteps()
       .then(timesteps => {
         esriTimesteps.value = timesteps;
       })
       .catch((err: Error) => {
         console.error(`Error fetching ESRI time steps: ${err}`);
         error.value = err.message;
+      })
+      .finally(() => {
+        loadingTimesteps.value = false;
       });
   }
 
@@ -33,15 +30,15 @@ export function useEsriTimesteps(initialMolecule: MaybeRef<MoleculeType>, update
     onMounted(updateEsriTimeSteps);
   }
 
-  watch(() => [url, variable], _newValues => {
+  watch(molecule, () => {
     updateEsriTimeSteps();
   });
 
   return {
     molecule,
-    url,
-    variable,
     loadingTimesteps,
     esriTimesteps,
+    error,
+    refresh: updateEsriTimeSteps,
   };
 }

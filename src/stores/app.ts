@@ -6,7 +6,7 @@ import { isComputedRef } from "@/utils/vue";
 import { parse, stringify } from "zipson";
 
 import type { AggValue, InitMapOptions, LatLngPair, MappingBackends, SelectionType, TimeRange, UnifiedRegion, UserDataset } from "@/types";
-import { ESRI_URLS, MoleculeType } from "@/esri/utils";
+import { ESRI_URLS_V03, ESRI_URLS_V04, MoleculeType } from "@/esri/utils";
 import { TempoDataService, FetchOptions } from "@/esri/services/TempoDataService";
 import { useUniqueTimeSelection } from "@/composables/useUniqueTimeSelection";
 import { useTimezone, type Timezone } from "@/composables/useTimezone";
@@ -51,6 +51,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const showAdvancedLayers = ref(false);
   const showRGBMode = ref(false);
 
+
   const showAggregationControls = ref(false);
 
   const selectedTimezone = ref<Timezone>("US/Eastern");
@@ -90,10 +91,11 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     if (molecule in tempoDataServices) {
       return tempoDataServices[molecule];
     }
-    const url = ESRI_URLS[molecule];
-    const service = new TempoDataService(url.url, url.variable);
-    tempoDataServices[molecule] = service;
-    return service;
+    const v03 = ESRI_URLS_V03[molecule];
+    const v04 = ESRI_URLS_V04[molecule];
+    const tds = new TempoDataService([v03.url, v04.url], v03.variable);
+    tempoDataServices[molecule] = tds;
+    return tds;
   }
 
   function addTimeRange(range: TimeRange) {
@@ -273,9 +275,9 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     const timeRanges = atleast1d(dataset.timeRange.range);
     
     try {
-      const service = getTempoDataService(dataset.molecule);
-      service.setAvailableTimestamps(timestamps.value);
-      const data = await service.fetchTimeseriesData(dataset.region.geometryInfo, timeRanges, {onProgress});
+      const tds = getTempoDataService(dataset.molecule);
+      tds.setAvailableTimestamps(timestamps.value);
+      const data = await tds.fetchTimeseriesData(dataset.region.geometryInfo, timeRanges, {onProgress});
       dataset.samples = data.values;
       dataset.errors = data.errors;
       // loadingSamples.value = "finished";
@@ -293,13 +295,12 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   async function fetchCenterPointDataForDataset(dataset: UserDataset) {
     sampleErrors.value[dataset.id] = null;
 
-    const service = getTempoDataService(dataset.molecule);
+    const tds = getTempoDataService(dataset.molecule);
     const timeRanges = atleast1d(dataset.timeRange.range);
 
     
     try {
-      service.setBaseUrl(ESRI_URLS[dataset.molecule].url);
-      const data = await service.fetchCenterPointData(
+      const data = await tds.fetchCenterPointData(
         dataset.region.geometryInfo,
         timeRanges,
         { sampleCount: maxSampleCount.value },
