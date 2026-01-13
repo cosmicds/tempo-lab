@@ -143,19 +143,22 @@ export function useDraggableDialog(options: UseDraggableDialogOptions) {
     // If the window changes size, the dialog may be partially/completely out of bounds
     // We fix that here
     const resizeObserver = new ResizeObserver(async (entries) => {
+      if (dragInfo === null) {
+        return;
+      }
       for (const entry of entries) {
         const dialogs = entry.target.querySelectorAll(dialogSelector);
         for (const d of dialogs) {
           const dialog = d as HTMLElement;
           const boundingRect = await getElementRect(dialog);
-          dialog.style.left = Math.min(parseInt(dialog.style.left), window.innerWidth - boundingRect.width) + "px";
-          dialog.style.top = Math.min(parseInt(dialog.style.top), window.innerHeight - boundingRect.height) + "px";
           const parent = dialog.parentElement;
           if (parent) {
             const parentRect = await getElementRect(parent);
-            dialog.style.left = (parseInt(dialog.style.left) - parentRect.left) + "px";
             leftOffset = parentRect.left;
           }
+          const left = Math.min(boundingRect.left, window.innerWidth - boundingRect.width) - leftOffset;
+          dialog.style.top = Math.min(parseInt(dialog.style.top), window.innerHeight - boundingRect.height) + "px";
+          dialog.style.left = left + "px";
         }
       }
     });
