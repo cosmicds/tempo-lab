@@ -92,6 +92,21 @@
         thickness="3"
       />
 
+     <v-btn
+        @click="showSaveDialog = !showSaveDialog"
+        class="save-button"
+        aria-label="Export current state"
+        variant="outlined"
+        rounded="lg"
+        density="default"
+        :color="accentColor2"
+        elevation="0"
+        size="lg"
+      >
+        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Export current state"></v-tooltip>
+        <v-icon>mdi-file-arrow-up-down</v-icon>
+      </v-btn>
+
       <v-btn aria-role="menu" aria-label="Show menu" class="menu-button" variant="outlined" rounded="lg" :color="accentColor2" elevation="5">
         <v-icon size="x-large">mdi-menu</v-icon>
         <v-menu
@@ -153,6 +168,26 @@
           </v-list>
         </v-menu>
       </v-btn>
+
+      <v-dialog
+        v-model="showSaveDialog"
+        width="300px"
+      >
+        <save-state
+          @load-local="showSaveDialog = false"
+          @save-local="showSaveDialog = false"
+          @error="(type: string, message: string) => reportError(type, message)"
+        />
+      </v-dialog>
+
+      <v-snackbar
+        v-model="showErrorSnackbar"
+        timeout="2000"
+        color="error"
+      >
+         {{ ioErrorMessage }}
+      </v-snackbar>
+
     </div>
   </div>
 </template>
@@ -188,6 +223,9 @@ const display = useDisplay();
 const showChanges = ref(false);
 const showAboutData = ref(false);
 const showCredits = ref(false);
+const showSaveDialog = ref(false);
+const showErrorSnackbar = ref(false);
+const ioErrorMessage = ref("");
 
 const touchscreen = supportsTouchscreen();
 
@@ -199,6 +237,11 @@ const smallSize = computed(() => {
 const mobile = computed(() => {
   return smallSize.value && touchscreen;
 });
+
+function reportError(_error: string, message: string) {
+  showErrorSnackbar.value = true;
+  ioErrorMessage.value = message;
+}
 </script>
 
 <style scoped lang="less">
@@ -234,7 +277,7 @@ a[href="https://tempo.si.edu"]>img {
     outline: 1px solid transparent;
   }
 
-  .layers-button {
+  .layers-button, .save-button {
     padding: 8px;
   }
 
