@@ -20,7 +20,20 @@
         :week-start="0"
         prevent-min-max-navigation
         six-weeks
-      />
+      >
+        <template #action-buttons>
+          <button
+            class="dp__action_button dp__action-latest"
+            @click="() => allowedDates ? handleStartDateChange(allowedDates[allowedDates.length - 1]) : null"
+            @keyup.enter="() => allowedDates ? handleStartDateChange(allowedDates[allowedDates.length - 1]) : null"
+            :disabled="!allowedDates || !!(endDateObj && (allowedDates[allowedDates.length - 1] > endDateObj))"
+            elevation="0"
+            size="sm"
+          >
+            Latest
+          </button>
+        </template>
+      </date-picker>
     </div>
     
     <div class="ddrp__picker mb-4">
@@ -41,7 +54,20 @@
         :week-start="0"
         prevent-min-max-navigation
         six-weeks
-      />
+      >
+        <template #action-buttons>
+          <button
+            class="dp__action_button dp__action-latest"
+            @click="() => allowedDates ? handleEndDateChange(allowedDates[allowedDates.length - 1]) : null"
+            @keyup.enter="() => allowedDates ? handleEndDateChange(allowedDates[allowedDates.length - 1]) : null"
+            :disabled="!allowedDates"
+            elevation="0"
+            size="sm"
+          >
+            Latest
+          </button>
+        </template>
+      </date-picker>
     </div>
     
   </div>
@@ -90,6 +116,7 @@ function handleStartDateChange(value: Date | null) {
   if (value !== null && value.getTime() !== startDateObj.value?.getTime()) {
     if (endDateObj.value && value > endDateObj.value) {
       errMessage.value = 'Start date cannot be after end date.';
+      console.error(errMessage.value);
       return;
     }
     startDateObj.value = value;
@@ -102,6 +129,7 @@ function handleEndDateChange(value: Date | null) {
   if (value !== null && value.getTime() !== endDateObj.value?.getTime()) {
     if (startDateObj.value && value < startDateObj.value) {
       errMessage.value = 'End date cannot be before start date.';
+      console.error(errMessage.value);
       return;
     }
     

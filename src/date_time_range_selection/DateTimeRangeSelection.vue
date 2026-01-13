@@ -35,6 +35,20 @@
                 :week-start="0"
                 six-weeks
                 :time-config="{ enableTimePicker: false }"
+              >
+              <template #action-buttons>
+                <button
+                  class="dp__action_button dp__action-latest"
+                  @click="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  @keyup.enter="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  :disabled="!allowedDates"
+                  elevation="0"
+                  size="sm"
+                >
+                  Latest
+                </button>
+              </template>
+          </date-picker>
         </template>
       </v-radio>
         <v-expand-transition title="Select a Single Date">
@@ -48,13 +62,26 @@
                 :allowed-dates="allowedDates"
                 :formats="{input: formatDateDisplay, preview: formatDateDisplay}"
                 :input-atters="{ clearable: false }"
-                text-input
                 :teleport="true"
                 dark
                 :year-range="datePickerYearRange"
                 :week-start="0"
                 six-weeks
                 :time-config="{ enableTimePicker: false }"
+              >
+              <template #action-buttons>
+                <button
+                  class="dp__action_button dp__action-latest"
+                  @click="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  @keyup.enter="() => allowedDates ? handleSingleDateChange(allowedDates[allowedDates.length - 1]) : null"
+                  :disabled="!allowedDates"
+                  elevation="0"
+                  size="sm"
+                >
+                  Latest
+                </button>
+              </template>
+          </date-picker>
             </div>
           </div>
         </v-expand-transition>
