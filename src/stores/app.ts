@@ -6,7 +6,7 @@ import { isComputedRef } from "@/utils/vue";
 import { parse, stringify } from "zipson";
 
 import type { AggValue, InitMapOptions, LatLngPair, MappingBackends, SelectionType, TimeRange, UnifiedRegion, UserDataset } from "@/types";
-import { ESRI_URLS, MoleculeType } from "@/esri/utils";
+import { ESRI_URLS_V03, MoleculeType } from "@/esri/utils";
 import { TempoDataService, FetchOptions } from "@/esri/services/TempoDataService";
 import { useUniqueTimeSelection } from "@/composables/useUniqueTimeSelection";
 import { useTimezone, type Timezone } from "@/composables/useTimezone";
@@ -88,7 +88,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     if (molecule in tempoDataServices) {
       return tempoDataServices[molecule];
     }
-    const url = ESRI_URLS[molecule];
+    const url = ESRI_URLS_V03[molecule];
     const service = new TempoDataService(url.url, url.variable);
     tempoDataServices[molecule] = service;
     return service;
@@ -296,7 +296,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
 
     
     try {
-      service.setBaseUrl(ESRI_URLS[dataset.molecule].url);
+      service.setBaseUrl(ESRI_URLS_V03[dataset.molecule].url);
       const data = await service.fetchCenterPointData(
         dataset.region.geometryInfo,
         timeRanges,

@@ -3,8 +3,9 @@ import { extractTimeSteps, fetchEsriTimeSteps, VariableNames } from "./ImageLaye
 import type { MoleculeType } from "@/types";
 export type { MoleculeType } from "@/types";
 
+// The two data set versions cover different time periods (V03 is earlier than V04)
 
-export const ESRI_URLS: Record<MoleculeType, { url: string; variable: VariableNames }> = {
+export const ESRI_URLS_V03: Record<MoleculeType, { url: string; variable: VariableNames }> = {
   'no2': {
     url: "https://gis.earthdata.nasa.gov/image/rest/services/C2930763263-LARC_CLOUD/TEMPO_NO2_L3_V03_HOURLY_TROPOSPHERIC_VERTICAL_COLUMN/ImageServer",
     variable: "NO2_Troposphere",
@@ -35,6 +36,22 @@ export const ESRI_URLS: Record<MoleculeType, { url: string; variable: VariableNa
   // },
 } as const;
 
+export const ESRI_URLS_V04: Record<MoleculeType, { url: string; variable: VariableNames }> = {
+  'no2': {
+    url: "https://gis.earthdata.nasa.gov/image/rest/services/C3685896708-LARC_CLOUD/TEMPO_NO2_L3_V04_HOURLY_TROPOSPHERIC_VERTICAL_COLUMN/ImageServer",
+    variable: "NO2_Troposphere",
+  },
+  'o3': {
+    url: "https://gis.earthdata.nasa.gov/image/rest/services/C3685896625-LARC_CLOUD/TEMPO_O3TOT_L3_V04_HOURLY_OZONE_COLUMN_AMOUNT/ImageServer",
+    variable: "Ozone_Column_Amount",
+  },
+  'hcho': {
+    url: "https://gis.earthdata.nasa.gov/image/rest/services/C3685897141-LARC_CLOUD/TEMPO_HCHO_L3_V04_HOURLY_VERTICAL_COLUMN/ImageServer",
+    variable: "HCHO",
+  },
+} as const;
+
+export const ESRI_URL_LIST = [ESRI_URLS_V03, ESRI_URLS_V04]; // in chronological order
 
 export const MOLECULE_OPTIONS: {title: string, value: MoleculeType }[] = [
   { title: 'NO₂', value: 'no2' },
