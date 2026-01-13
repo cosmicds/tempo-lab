@@ -1,6 +1,6 @@
 // https://davidmathlogic.com/colorblind 
 export const paulTolMutedColorblindSafeColors = ['#CC6677', '#332288', '#117733', '#882255', '#44aa99', '#999933', '#aa4499',];
-export const wongColorblindSafeColors = ['#009E73', '#56B4E9', '#D55E00','#F0E442', '#0072B2', '#E69F00',  '#CC79A7']; 
+export const wongColorblindSafeColors = ['#009E73', '#56B4E9', '#CC79A7', '#D55E00','#F0E442', '#0072B2', '#E69F00']; 
 
 export const COLORS = [
   ...wongColorblindSafeColors,
