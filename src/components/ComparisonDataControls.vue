@@ -37,22 +37,15 @@
         hide-details
       >
       </v-checkbox>
-      <power-plants-filter-control
-        v-show="powerPlantsVisible[index].value"
-        :map="map"
-      >
-      </power-plants-filter-control>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import type { Map } from "maplibre-gl";
 
 import { useTempoStore } from "@/stores/app";
-import { useMaplibreLayerVisibility } from "@/composables/useMaplibreLayerVisibility";
+
 
 const store = useTempoStore();
 const {
@@ -63,10 +56,6 @@ const {
   accentColor2
 } = storeToRefs(store);
 
-const powerPlantsVisible = computed(() => 
-  maps.value.map(map => useMaplibreLayerVisibility(map as Map, "power-plants-layer").visible)
-);
-console.log(powerPlantsVisible.value);
 </script>
 
 <style scoped lang="less">
