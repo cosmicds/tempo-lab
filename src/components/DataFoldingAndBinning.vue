@@ -54,7 +54,7 @@
               >
               <template #default="{ descriptor }">
                 <v-card-title>
-                  <span v-html="descriptor.shortName.html"></span> Timeseries
+                  <span v-html="descriptor?.shortName.html ?? ''"></span> Timeseries
                 </v-card-title>
                 <div  class="df__graph-container">
                   <folded-plotly-graph

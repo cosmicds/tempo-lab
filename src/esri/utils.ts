@@ -71,7 +71,7 @@ export const MOLECULE_NAMES: Record<MoleculeType, MoleculeDescriptor>  = {
   },
   hcho: {
     fullName: {text: 'Formaldehyde', html: 'Formaldehyde'},
-    shortName: {text: 'HCHO',html: 'HCHO'},
+    shortName: {text: 'HCHO', html: 'HCHO'},
     unit: {text: 'molecules/cm²', html: "Molecules / cm<sup>2</sup>"},
     shortUnit: {text: 'mol./cm²', html: "mol./cm<sup>2</sup>"},
   }, 

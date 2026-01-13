@@ -3,7 +3,7 @@
   <h3 class="dataset-plot__title">{{ dataset.name }}</h3>
   <div class="dataset-plot">
     <local-scope
-      :descriptor="moleculeDescriptor(dataset.molecule).unit.html"
+      :descriptor="moleculeDescriptor(dataset.molecule)"
     >
       <template #default="{ descriptor }">
         <div v-if="datasetIsFolded" class="dataset-plot__plot dataset-plot-folded">
