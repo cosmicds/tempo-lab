@@ -37,6 +37,9 @@ watch(panel, (newVal) => {
 
 </script>
 
-<style scoped>
+<style>
+.lcil-legend-content > .v-expansion-panel-text__wrapper {
+  padding-inline: 5px;
+}
 
 </style>
