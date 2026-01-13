@@ -36,8 +36,14 @@ button.dp__action-latest[disabled] {
     /* the main div containing the calendar with the border radius */
 }
 
-.ddrp__date-picker {
+.cds__date-picker {
   --dp-border-color: rgba(255, 255,255, 0.7);
   --dp-border-color-hover: white;
  --dp-border-color-focus: white;
 }
+
+
+.dp__menu {
+  border: 1px solid rgb(var(--v-theme-surface-variant), 0.9);
+}
+
