@@ -50,8 +50,8 @@ const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 const commonLayoutOptions = {
   ...DEFAULT_PLOT_LAYOUT,
   autosize: false,
-  height: 250,
-  width: Math.floor(700 * 250 / 400),
+  height: 350,
+  width: Math.floor(700 * 350 / 400),
   xaxis: {
     automargin: false,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
@@ -60,7 +60,7 @@ const commonLayoutOptions = {
     },
   },
   yaxis: {
-    automargin: false,
+    automargin: true,
     gridcolor: 'rgba(128, 128, 128, 0.3)',
     title: {
       standoff: 10,
