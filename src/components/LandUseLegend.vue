@@ -62,7 +62,7 @@ const data = [
   <LegendBase
     class="land-use-legend"
     :data="data"
-    info-text="Learn more about Land use colors."
+    info-text="Learn more about Land Use colors."
     citation="Source: ESRI Living Atlas: Sentinel-2 10m Land Use/Land Cover Time Series by Impact Observatory"
   />
 

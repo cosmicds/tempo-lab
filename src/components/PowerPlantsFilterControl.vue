@@ -246,7 +246,6 @@ function applyPrimSourceFilter(sources: PrimSource[]) {
 
 <style scoped lang="less">
 #power-plant-filter-controls {
-  border: 1px solid white;
   border-radius: 5px;
   margin: 5px;
   width: unset;

@@ -45,7 +45,7 @@ const data = [
   <LegendBase
     class="aqi-legend"
     :data="data"
-    info-text="Learn more about Air quality colors."
+    info-text="Learn more about Air Quality colors."
     citation="Source: U.S. EPA - AirNow"
   />
 </template>
