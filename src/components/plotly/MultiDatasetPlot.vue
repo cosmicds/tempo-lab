@@ -9,7 +9,7 @@
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} ({{ pascalToSnake(foldType) }}) folded timeseries
+                {{ descriptor.fullName.text }} ({{ pascalToSnake(foldType) }}) stacked timeseries
               </div>
             </summary>
             <folded-plotly-graph
