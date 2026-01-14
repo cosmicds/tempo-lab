@@ -144,6 +144,10 @@ watch(modelValue, value => {
 }
 .cds-dialog-card {
   align-self: center;
+
+  .v-toolbar, .v-toolbar__content {
+    height: 40px !important;
+  }
 }
 
 .cds-dialog-close-icon {
