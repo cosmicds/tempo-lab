@@ -1,14 +1,15 @@
 <template>
   <cds-dialog
     v-model="dialogOpen"
-    title="Time Graph"
+    title="Graph of Quantity vs. Time"
     density="compact"
     title-color="var(--info-background)"
     max-width="90vw"
     max-height="90vh"
     height="fit-content"
     persistent
-    
+    draggable
+    :drag-predicate="titleBarPredicate"
   > 
     <new-data-generic-aggregation
       v-if="mode === 'new'"
@@ -28,6 +29,7 @@ import { ref } from 'vue';
 import type { UserDataset, UnifiedRegion, MoleculeType} from '../types';
 import NewDataGenericAggregation from './DataFoldingAndBinning.vue';
 
+import { titleBarPredicate } from "../utils/draggable";
 
 
 interface DataAggregationProps {

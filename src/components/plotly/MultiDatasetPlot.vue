@@ -1,54 +1,64 @@
 <template>
-  
   <div class="dataset-plot-container">
     <div class="dataset-plot" v-if="foldedDatasets.size > 0">
-      <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
-        <summary>
-          <!-- {molecule} folded timeseries -->
-          <div>
-            {{ moleculeDescriptor(datasets.map(d => d.molecule)[0]).fullName.text }} ({{ pascalToSnake(foldType) }}) folded timeseries
-          </div>
-        </summary>
-        <folded-plotly-graph
-          :datasets="datasets.map(d => d.plotlyDatasets![1])"
-          :show-errors="props.showErrors"
-          :colors="datasets.map(d => (d.customColor ?? d.region.color))"
-          :data-options="ddataOptions"
-          :names="datasets.map(d => d.name ?? d.id)"
-          :layout-options="dlayoutOptions"
-          :fold-type="datasets[0].folded?.foldType"
-          :timezones="datasets.map(d => d.folded.timezone ?? 'UTC')"
-          :config-options="dconfigOptions"
-          :yaxis-title="moleculeDescriptor(datasets[0].molecule).unit.html"
-          @plot-click="(value) => emit('plot-click', value)"
-        />
-      </details>
+      <local-scope
+        :descriptor="moleculeDescriptor(datasets[0].molecule)"
+      >
+        <template #default="{ descriptor }">
+          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
+            <summary>
+              <!-- {molecule} folded timeseries -->
+              <div>
+                {{ descriptor.fullName.text }} ({{ pascalToSnake(foldType) }}) folded timeseries
+              </div>
+            </summary>
+            <folded-plotly-graph
+              :datasets="datasets.map(d => d.plotlyDatasets![1])"
+              :show-errors="props.showErrors"
+              :colors="datasets.map(d => (d.customColor ?? d.region.color))"
+              :data-options="ddataOptions"
+              :names="datasets.map(d => d.name ?? d.id)"
+              :layout-options="dlayoutOptions"
+              :fold-type="datasets[0].folded?.foldType"
+              :timezones="datasets.map(d => d.folded.timezone ?? 'UTC')"
+              :config-options="dconfigOptions"
+              :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+              @plot-click="(value) => emit('plot-click', value)"
+            />
+          </details>
+        </template>
+      </local-scope>
     </div>
     <div class="dataset-plot" v-if="normalDatasets.length > 0">
-      <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
-        <summary>
-          <!-- {molecule} timeseries -->
-          <div>
-            {{ moleculeDescriptor(normalDatasets.map(d => d.molecule)[0]).fullName.text }} timeseries
-          </div>
-        </summary>
-        <plotly-graph
-          :datasets="normalDatasets.map(d => userDatasetToPlotly(d, true))"
-          :colors="normalDatasets.map(d => (d.customColor || d.region.color))"
-          :show-errors="showErrors"
-          :data-options="ddataOptions"
-          :names="normalDatasets.map(d => d.name ?? d.id)"
-          :layout-options="{
-            ...dlayoutOptions,
-            xaxis: {...(dlayoutOptions?.xaxis ?? {}), title: {text: 'Local Time for Region'}},
-          }"
-          :config-options="dconfigOptions"
-          :yaxis-title="moleculeDescriptor(normalDatasets[0].molecule).unit.html"
-          @click="(value) => emit('plot-click', value)"
-        />
-      </details>
+      <local-scope
+        :descriptor="moleculeDescriptor(normalDatasets[0].molecule)"
+      >
+        <template #default="{ descriptor }">
+          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
+            <summary>
+              <!-- {molecule} timeseries -->
+              <div>
+                {{ descriptor.fullName.text }} timeseries
+              </div>
+            </summary>
+            <plotly-graph
+              :datasets="normalDatasets.map(d => userDatasetToPlotly(d, true))"
+              :colors="normalDatasets.map(d => (d.customColor || d.region.color))"
+              :show-errors="showErrors"
+              :data-options="ddataOptions"
+              :names="normalDatasets.map(d => d.name ?? d.id)"
+              :layout-options="{
+                ...dlayoutOptions,
+                xaxis: {...(dlayoutOptions?.xaxis ?? {}), title: {text: 'Local Time for Region'}},
+              }"
+              :config-options="dconfigOptions"
+              :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+              @click="(value) => emit('plot-click', value)"
+            />
+          </details>
+        </template>
+      </local-scope>
     </div>
-      
   </div>
 </template>
 

@@ -49,69 +49,76 @@
           <!-- Right Panel: Timeseries Graph -->
           <div class="df__right-pane">
             <v-card class="df__right-pane-card" style="height: auto;">
-              <v-card-title>
-                <span v-html="selection?.molecule ? moleculeDescriptor(selection?.molecule).shortName.html : ''"></span> Timeseries
-              </v-card-title>
-              <div  class="df__graph-container">
-                <folded-plotly-graph
-                  :datasets="graphData"
-                  :show-errors="showErrors" 
-                  :fold-type="selectedFoldType"
-                  :colors="[theColor, '#333']" 
-                  :timezones="selectedTimezone"
-                  :data-options="[
-                    {mode: 'markers'}, // options for the original data
-                    {mode: 'markers'} // options for the folded data
+              <local-scope
+                :descriptor="selection?.molecule ? moleculeDescriptor(selection?.molecule) : null"
+              >
+              <template #default="{ descriptor }">
+                <v-card-title>
+                  <span v-html="descriptor?.shortName.html ?? ''"></span> Timeseries
+                </v-card-title>
+                <div  class="df__graph-container">
+                  <folded-plotly-graph
+                    :datasets="graphData"
+                    :show-errors="showErrors"
+                    :fold-type="selectedFoldType"
+                    :colors="[theColor, '#333']"
+                    :timezones="selectedTimezone"
+                    :data-options="[
+                      {mode: 'markers'}, // options for the original data
+                      {mode: 'markers'} // options for the folded data
+                      ]"
+                    :error-bar-styles="[
+                      {'thickness': 1, 'width': 0}, // original data error bar style
+                      { 'thickness': 3, 'width': 0 } // folded data error bar style
                     ]"
-                  :error-bar-styles="[
-                    {'thickness': 1, 'width': 0}, // original data error bar style
-                    { 'thickness': 3, 'width': 0 } // folded data error bar style
-                  ]"
-                  :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
-                  @plot-click="handlePointClick"
-                  :layout-options="{
-                    margin: {t: 10, r: 20, b: 80, l: 90,}, 
-                    autosize: false, width: 700, height: 400,
-                    xaxis: {
-                      automargin: false,
-                      gridcolor: 'rgba(128, 128, 128, 0.3)',
-                      title: {
-                        standoff: 10,
+                    :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
+                    @plot-click="handlePointClick"
+                    :layout-options="{
+                      margin: {t: 10, r: 20, b: 80, l: 90,}, 
+                      autosize: false, width: 700, height: 400,
+                      xaxis: {
+                        automargin: false,
+                        gridcolor: 'rgba(128, 128, 128, 0.3)',
+                        title: {
+                          standoff: 10,
+                          text: 'Time',
+                        },
                       },
-                    },
-                    yaxis: {
-                      automargin: false,
-                      gridcolor: 'rgba(128, 128, 128, 0.3)',
-                      title: {
-                        standoff: 10,
-                        text: selection?.molecule === 'o3' ? 'Dalton Units' : 'Molecules / cm<sup>2</sup>',
+                      yaxis: {
+                        automargin: false,
+                        gridcolor: 'rgba(128, 128, 128, 0.3)',
+                        title: {
+                          standoff: 10,
+                          text: `${descriptor?.shortName.html ?? ''} Quantity<br>(${descriptor?.unit.html ?? 'Molecules / cm<sup>2</sup>'})`,
+                        },
                       },
-                    },
-                    legend: {
-                      yanchor: 'top',
-                      yref: 'container',
-                      y: .99,
-                      orientation:'h' as |'h' | 'v',
-                      bordercolor: '#ccc', 
-                      borderwidth:1,
-                      // @ts-ignore
-                      entrywidthmode: 'pixels',
-                      entrywidth: 0, // fit the text
-                    }
-                    }"
-                />
-              </div>
-            <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
-              <div v-if="aggregationWarning" id="aggregation-warning">
-                {{ aggregationWarning }}
-              </div>
-            </div>
-            <!-- Save button visible when aggregation controls panel is collapsed -->
-            <div v-if="!showAggregationControls && canSave" class="d-flex justify-end mt-3">
-              <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
-                Save Folded Data
-              </v-btn>
-            </div>
+                      legend: {
+                        yanchor: 'top',
+                        yref: 'container',
+                        y: .99,
+                        orientation:'h' as |'h' | 'v',
+                        bordercolor: '#ccc', 
+                        borderwidth:1,
+                        // @ts-ignore
+                        entrywidthmode: 'pixels',
+                        entrywidth: 0, // fit the text
+                      }
+                      }"
+                  />
+                </div>
+                <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
+                  <div v-if="aggregationWarning" id="aggregation-warning">
+                    {{ aggregationWarning }}
+                  </div>
+                </div>
+                <!-- Save button visible when aggregation controls panel is collapsed -->
+                <div v-if="!showAggregationControls && canSave" class="d-flex justify-end mt-3">
+                  <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
+                    Save Folded Data
+                  </v-btn>
+                </div>
+              </template>
+            </local-scope>
             </v-card>
           </div>
         </v-row>
@@ -415,7 +422,7 @@ const canSave = computed(() => {
 });
 
 const foldedDatasetName = computed(() => {
-  if (!props.selection?.name) return 'Folded Data';
+  if (!props.selection?.name) return 'Stacked Data';
   return `Aggregated ${props.selection.name ?? props.selection.region.name}`;// (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}, ${selectedMethod.value})`;
 });
 
@@ -599,8 +606,8 @@ function createFoldedTimeRange() {
   
   return {
     id: v4(),
-    name: `Folded (${selectedTimeBin.value} of ${selectedFoldingPeriod.value})`,
-    description: `Folded data (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}) ${selectedMethod.value}`,
+    name: `Stacked (${selectedTimeBin.value} of ${selectedFoldingPeriod.value})`,
+    description: `Stacked data (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}) ${selectedMethod.value}`,
     range: ranges,
     type: 'folded' as TimeRangeSelectionType,
   };
