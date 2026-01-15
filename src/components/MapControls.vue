@@ -4,9 +4,10 @@
     <p class="my-2">Select a date and timezone to display</p>
     <div class="map-view-controls">
       <div class="date-view-controls mt-2">
-        <div class="d-flex flex-row align-center">
-          <v-radio-group v-model="radio">
+        <div class="d-flex flex-row align-center mb-8">
+          
             <date-picker
+              v-show="mode === 'single'"
               class="cds__date-picker tall"
               ref="calendar"
               :model-value="singleDateSelected"
@@ -55,13 +56,39 @@
               :format-function="(date: Date | null) => date?.toLocaleDateString() || ''"
               dark
               />
-              <v-radio-group v-model="mode">
-                <v-radio value="range">Range</v-radio>
-                <v-radio value="single">Single</v-radio>
-              </v-radio-group>
-                
+              <v-tooltip text="configure" >
+                    <template #activator="{props}">
+                      <v-btn 
+                        icon="mdi-cog-outline" 
+                        v-bind="props" 
+                        variant="flat"
+                        @click="timeConfigDialog = true"
+                        @keyup.enter="timeConfigDialog = true"
+                      />
+                    </template>
+                  </v-tooltip>
+              <cds-dialog v-model="timeConfigDialog" title="Time Slider Configuration">
+                <p>By default we only display a single day's worth of data. To view a range of days on the map, select "Range". </p>
+                <p>But caution! Selecing a large number of days can degrade app performance and experience</p>
+                <v-radio-group v-model="localMode">
+                  <v-radio value="range" label="Range"/>
+                  <v-radio value="single" label="Single"/>
+                </v-radio-group>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn 
+                    variant="outlined" 
+                    @click="cancelTimeConfig()" 
+                    @keyup.enter="cancelTimeConfig()">Cancel</v-btn>
+                  <v-btn 
+                    :color="accentColor2"
+                    variant="flat" 
+                    :disabled="localMode === mode"
+                    @click="setTimeConfig()" 
+                    @keyup.enter="setTimeConfig()">Save</v-btn>
+                </v-card-actions>
+              </cds-dialog>
               
-          </v-radio-group>
         </div>        
         <!-- add buttons to increment and decrement the singledateselected -->
         <div class="d-flex flex-row align-center my-2">
@@ -158,6 +185,7 @@ const {
   mode,
   selectedTimezone,
   timezoneOptions,
+  accentColor2,
 } = storeToRefs(store);
 
 const emit = defineEmits<{
@@ -176,6 +204,16 @@ function goToLatestAvailableData() {
   singleDateSelected.value = uniqueDays.value[uniqueDays.value.length - 1];
 }
 
+const localMode = ref(mode.value);
+const timeConfigDialog = ref(false);
+const cancelTimeConfig = () => {
+  timeConfigDialog.value = false;
+  localMode.value = mode.value; // reset to what it was
+};
+const setTimeConfig = () => {
+  timeConfigDialog.value = false;
+  mode.value = localMode.value;
+};
 
 watch(molecule, (newMol: MoleculeType) => {
   emit("molecule", newMol);
