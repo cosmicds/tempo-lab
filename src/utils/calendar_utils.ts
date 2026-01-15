@@ -2,6 +2,12 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 
 export const START_WEEK_ON_MONDAY = false;
 
+export function getDayStart(date: Date) {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0);
+}
+export function getDayEnd(date: Date) {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999);
+}
 
 export function getBeginningOfWeek(date: Date, timezone?: string): Date {
   const zonedDate = timezone ? toZonedTime(date, timezone) : new Date(date);

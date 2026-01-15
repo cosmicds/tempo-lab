@@ -1,5 +1,6 @@
 import { ref, computed, watch, Ref, nextTick } from 'vue';
 import { getTimezoneOffset } from 'date-fns-tz';
+import { getDayEnd, getDayStart } from '@/utils/calendar_utils';
 
 const ONEDAYMS = 1000 * 60 * 60 * 24;
 
@@ -12,8 +13,9 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
   const singleDateSelected = ref<Date>(new Date());
   const minIndex = ref<number>(0);
   const maxIndex = ref<number>(0);
+  const multiDateSelected = ref<{start: Date | null, end: Date | null}>({ start: null, end: null });
   
-  const mode = ref<'single' | 'all'>('single');
+  const mode = ref<'single' | 'range' | 'all'>('single');
   const initialTimeSelection = ref<'first' | 'last'>('first');
 
   function getOneDaysTimestamps(date: Date) {
@@ -29,16 +31,29 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     return mod;
   }
   
+  function getRangeTimestamps(startDate: Date | null, endDate: Date | null) {
+    if (isBad(startDate) || isBad(endDate)) {
+      return [];
+    }
+    const mod = [] as {ts:number, idx: number}[];
+    timestamps.value.forEach((ts, idx) => {
+      if ((ts >= getDayStart(startDate).getTime()) && (ts <= getDayEnd(endDate).getTime())) {
+        mod.push({ ts, idx });
+      }
+    });
+    return mod;
+  }
+  
+
+  
   function getAllDaysTimestamps(date: Date) {
     if (isBad(date)) {
       return [];
     }
-    // const mod = [] as {ts:number, idx: number}[];
-    // timestamps.value.forEach((ts, idx) => {
-    //   mod.push({ ts, idx });
-    // });
     return timestamps.value.map((ts, idx) => ({ ts, idx }));
   }
+  
+
 
   function setNearestDate(date: number | null) {
     if (date == null) {
@@ -47,6 +62,34 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
 
     const mod = mode.value === 'single' ? getOneDaysTimestamps(new Date(date)) : getAllDaysTimestamps(new Date(date));
     if (mod.length > 0) {
+      console.log("setNearestDate: ", date);
+      minIndex.value = mod[0].idx;
+      maxIndex.value = mod[mod.length - 1].idx;
+      timeIndex.value = initialTimeSelection.value === 'first' ? minIndex.value : maxIndex.value;
+    } else {
+      console.warn("No timestamps found for the given date.");
+    }
+  }
+  
+
+  function setNearestDateRange(multi: typeof multiDateSelected.value) {
+    const validStart = multi.start !== null;
+    const validEnd = multi.end !== null;
+    const same = multi.start === multi.end;
+    const multiDateValid = validStart && validEnd;
+    let mod = [] as {ts:number, idx: number}[];
+    if (mode.value === 'range' && multiDateValid ) {
+      mod = getRangeTimestamps(multi.start, multi.end);
+    } else {
+      const d = multi.start ?? multi.end ?? singleDateSelected.value;
+      console.error(`multiDateSelected is not valid. Falling back to single date ${d}`);
+      console.error(`validStart: ${validStart} validEnd: ${validEnd} !same: ${!same}`);
+      // mod = getOneDaysTimestamps(d);
+      throw new Error("multiDateSelected is not valid for range mode");
+    }
+
+    if (mod.length > 0) {
+      console.log("setNearestDateRange: ", multi);
       minIndex.value = mod[0].idx;
       maxIndex.value = mod[mod.length - 1].idx;
       timeIndex.value = initialTimeSelection.value === 'first' ? minIndex.value : maxIndex.value;
@@ -61,6 +104,14 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     }
     const val = timestamps.value[timeIndex.value];
     return val;
+  });
+  
+  watch(timeIndex, (newIndex) => {
+    if (mode.value !== 'single') {
+      // keep singleDateSelected in sync with timeIndex
+      const ts = timestamps.value[newIndex];
+      singleDateSelected.value = getDayStart(new Date(ts));
+    }
   });
 
   const date = computed(() => {
@@ -160,13 +211,27 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
 
 
   watch(singleDateSelected, (value) => {
-    if (value) { 
+    if (value && (mode.value === 'single' || mode.value === 'all')) { 
       setNearestDate(value.getTime());
     }
   });
   
-  watch(mode, () => {
-    setNearestDate(singleDateSelected.value.getTime());
+  watch(multiDateSelected, (value) => {
+    if (value && mode.value === 'range') {
+      console.log(`multiDateSelected changed to`, value);
+      setNearestDateRange(value);
+    }
+  }, { deep: true});
+  
+  watch(mode, (m) => {
+    if (m === 'single' || m === 'all') setNearestDate(singleDateSelected.value.getTime());
+    if (m === 'range') {
+      if (multiDateSelected.value.start == null && multiDateSelected.value.end == null) {
+        multiDateSelected.value.start = singleDateSelected.value;
+        multiDateSelected.value.end = singleDateSelected.value;
+      }
+      setNearestDateRange(multiDateSelected.value);
+    }
   });
 
   watch(timestamps, (newTimestamps) => {
@@ -181,7 +246,16 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
       timeIndex.value = 0;
       singleDateSelected.value = new Date(newTimestamps[0]);
     } else {
-      setNearestDate(singleDateSelected.value.getTime());
+      if (mode.value === 'range') {
+        if (multiDateSelected.value.start == null && multiDateSelected.value.end == null) {
+          multiDateSelected.value.start = singleDateSelected.value;
+          multiDateSelected.value.end = singleDateSelected.value;
+        }
+        
+        setNearestDateRange(multiDateSelected.value);
+      } else {
+        setNearestDate(singleDateSelected.value.getTime());
+      }
     }
   }, { immediate: true });
 
@@ -190,6 +264,7 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     timestamp,
     date,
     singleDateSelected,
+    multiDateSelected,
     maxIndex,
     minIndex,
     uniqueDays,
@@ -203,5 +278,6 @@ export const useUniqueTimeSelection = (timestamps: Ref<number[]>) => {
     nearestDate,
     nearestDateIndex,
     setNearestTime,
+    setNearestDateRange,
   };
 };
