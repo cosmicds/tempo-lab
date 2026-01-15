@@ -57,7 +57,7 @@
                 class="rounded-icon-wrapper"
                 @click="store.moveBackwardOneDay"
                 @keyup.enter="store.moveBackwardOneDay"
-                :disabled="singleDateSelected === uniqueDays[0]"
+                :disabled="(singleDateSelected === uniqueDays[0]) || (mode === 'range')"
                 color="#009ade"
                 variant="outlined"
                 elevation="0"
@@ -73,8 +73,8 @@
               <v-btn
                 v-bind="props"
                 style="padding-inline: 4px;"
-                @click="() => singleDateSelected = uniqueDays[uniqueDays.length - 1]"
-                @keyup.enter="() => singleDateSelected = uniqueDays[uniqueDays.length - 1]"
+                @click="goToLatestAvailableData"
+                @keyup.enter="goToLatestAvailableData"
                 :disabled="singleDateSelected === uniqueDays[uniqueDays.length - 1]"
                 color="#009ade"
                 variant="outlined"
@@ -93,7 +93,7 @@
                 class="rounded-icon-wrapper"
                 @click="store.moveForwardOneDay"
                 @keyup.enter="store.moveForwardOneDay"
-                :disabled="singleDateSelected === uniqueDays[uniqueDays.length - 1]"
+                :disabled="(singleDateSelected === uniqueDays[uniqueDays.length - 1]) || (mode === 'range')"
                 color="#009ade"
                 variant="outlined"
                 elevation="0"
@@ -138,6 +138,7 @@ const store = useTempoStore();
 const {
   singleDateSelected,
   uniqueDays,
+  mode,
   selectedTimezone,
   timezoneOptions,
 } = storeToRefs(store);
@@ -152,6 +153,11 @@ const radio = ref<number | null>(null);
 const touchscreen = supportsTouchscreen();
 
 const calendar = ref<typeof VueDatePicker | null>(null);
+  
+function goToLatestAvailableData() {
+  mode.value = 'single';
+  singleDateSelected.value = uniqueDays.value[uniqueDays.value.length - 1];
+}
 
 
 watch(molecule, (newMol: MoleculeType) => {
