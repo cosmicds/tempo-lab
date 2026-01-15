@@ -70,9 +70,11 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     timestamp,
     date,
     singleDateSelected,
+    multiDateSelected,
     maxIndex,
     minIndex,
     uniqueDays,
+    mode,
     uniqueDaysIndex,
     setNearestDate,
     moveBackwardOneDay,
@@ -423,9 +425,11 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     timestamp,
     date,
     singleDateSelected,
+    multiDateSelected,
     maxIndex,
     minIndex,
     uniqueDays,
+    mode,
     uniqueDaysIndex,
     setNearestDate,
     moveBackwardOneDay,
@@ -453,6 +457,10 @@ export function deserializeTempoStore(value: string): StateTree {
   }
   const parsed = parse(value);
   parsed.singleDateSelected = new Date(parsed.singleDateSelected);
+  parsed.multiDateSelected = {
+    start: parsed.multiDateSelected.start ? new Date(parsed.multiDateSelected.start) : null,
+    end: parsed.multiDateSelected.end ? new Date(parsed.multiDateSelected.end) : null,
+  };
   for (const dataset of parsed.datasets) {
     const samples = dataset.samples as Record<number, AggValue>;
     if (samples) {
