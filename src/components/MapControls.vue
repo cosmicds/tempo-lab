@@ -46,6 +46,21 @@
               </template> -->
             </date-picker>
             <!-- time chips to select time specifically for esri times -->
+            <!-- date range selector to overrride minIndex and maxIndex -->
+            <DateRangePicker
+              v-if="mode === 'range'"
+              :allowed-dates="uniqueDays"
+              v-model:start-date="multiDateSelected.start"
+              v-model:end-date="multiDateSelected.end"
+              :format-function="(date: Date | null) => date?.toLocaleDateString() || ''"
+              dark
+              />
+              <v-radio-group v-model="mode">
+                <v-radio value="range">Range</v-radio>
+                <v-radio value="single">Single</v-radio>
+              </v-radio-group>
+                
+              
           </v-radio-group>
         </div>        
         <!-- add buttons to increment and decrement the singledateselected -->
@@ -130,6 +145,7 @@ import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 
 import { type MoleculeType } from "@/esri/utils";
 import { useTempoStore } from "@/stores/app";
+import DateRangePicker from "@/date_time_range_selection/DateRangePicker.vue";
 // import { useEsriTimesteps } from "@/composables/useEsriTimesteps";
 
 // import TimeChips from "@/components/TimeChips.vue";
@@ -137,6 +153,7 @@ import { useTempoStore } from "@/stores/app";
 const store = useTempoStore();
 const {
   singleDateSelected,
+  multiDateSelected,
   uniqueDays,
   mode,
   selectedTimezone,

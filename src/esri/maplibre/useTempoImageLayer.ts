@@ -223,7 +223,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
 
 
   watch(timestamp, (_value) => {
-    console.log(`[${esriLayerId}] esri imageset timestamp set to `, _value ? new Date(_value) : null);
+    // console.log(`[${esriLayerId}] esri imageset timestamp set to `, _value ? new Date(_value) : null);
     if ( hasEsriSource() ) {
       updateEsriTimeRange();
     } else {

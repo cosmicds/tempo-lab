@@ -257,6 +257,7 @@ onMounted(() => {
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden" && !ignoreCache) {
       const stringified = serializeTempoStore(store); 
+      console.log("Saving app state to localStorage");
       window.localStorage.setItem(localStorageKey, stringified);
     }
   });
