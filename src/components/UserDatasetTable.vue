@@ -27,21 +27,13 @@
 import { computed } from 'vue';
 import type { Prettify, UserDataset, UnifiedRegion } from '@/types';
 import type { FoldedTimeSeriesData, } from '@/esri/services/aggregation';
-import type { TimeBinOptions, FoldingPeriodOptions } from './DataFoldingAndBinning.vue';
+import type { TimeBinOptions, FoldingPeriodOptions } from '@/utils/foldingValidation';
+import { regionCenter } from '@/utils/data_converters';
 
-
+import { samplesToCsv } from '@/utils/data_converters';
 import tz_lookup from '@photostructure/tz-lookup';
 
 
-function regionCenter(region: UnifiedRegion): { lat: number; lon: number } {
-  if (region.geometryType === 'point') {
-    return { lat: region.geometryInfo.y, lon: region.geometryInfo.x };
-  } else {
-    const lat = (region.geometryInfo.ymin + region.geometryInfo.ymax) / 2;
-    const lon = (region.geometryInfo.xmin + region.geometryInfo.xmax) / 2;
-    return { lat, lon };
-  }
-}
 
 const props = defineProps<{
   dataset: Prettify<UserDataset>;
@@ -51,7 +43,7 @@ const samples = props.dataset.samples;
 const errors = props.dataset.errors;
 const center = regionCenter(props.dataset.region);
 const tz = tz_lookup(center.lat, center.lon);
-
+console.log(samplesToCsv(props.dataset));
 const errorMessage = computed(() => {
   if (samples === undefined) {
     return 'No samples available in this dataset.';

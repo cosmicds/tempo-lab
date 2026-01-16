@@ -4,11 +4,11 @@ import type {
   PlotlyGraphDataSet, 
   AggValue, 
   DataPointError, 
-  RectangleSelection, 
-  PointSelection 
+  UnifiedRegion
 } from '@/types';
 import { toZonedTime } from 'date-fns-tz';
 import tz_lookup from '@photostructure/tz-lookup';
+import { camelToSnake } from './text';
 
 class PlotlyDatasetBuilder {
   private _x: Date[];
@@ -95,7 +95,7 @@ class PlotlyDatasetBuilder {
   }
 }
 
-function regionCenter(region: RectangleSelection | PointSelection): { lat: number; lon: number } {
+export function regionCenter(region: UnifiedRegion): { lat: number; lon: number } {
   if (region.geometryType === 'point') {
     return { lat: region.geometryInfo.y, lon: region.geometryInfo.x };
   } else {
@@ -136,4 +136,120 @@ export function userDatasetToPlotly(selection: Prettify<UserDataset>, useLocalTi
   return plotlyBuilder.build(selection.name || 'Dataset', 'bar');
 }
   
+
+interface OutputTimeSeriesFormat {
+  utcDateTime: string;
+  localDateTime: string;
+  localDate: string;
+  localTime: string;
+  columnDensity: number | null;
+  uncertainty: number | null;
+  timezone: string;
+  utcOffsetHours: number;
+}
+
+const toDate = (date: Date, tz: string) => date.toLocaleDateString(undefined, {dateStyle: 'medium', timeZone: tz}).replace(',', '');
+const toTime = (date: Date, tz: string) => date.toLocaleTimeString(undefined, {
+  hour12:true, hour:'numeric', minute: '2-digit', second:'2-digit',
+  timeZone: tz,
+});
+function dateToStrings(date: Date, tz: string) {
+  const utcDateTime = toDate(date, 'UTC') + ' ' + toTime(date, 'UTC');
+  const utcOffsetHours = -date.getTimezoneOffset() / 60;
+  const localDate = toDate(date, tz);
+  const localTime = toTime(date, tz);
+  const localDateTime = `${localDate} ${localTime}`;
+  return { 
+    utcDateTime,
+    localDateTime, 
+    localDate, 
+    localTime, 
+    utcOffsetHours, 
+  };
+}
+
+function dateToCODAPStrings(date: Date, tz: string) {
+  // CODAP wants MM/DD/YYY, HH:MM:SS AM/PM in UTC, we'll still do utc and local
+  const utcDateTime = date.toLocaleString('en-US', {
+    "dateStyle": "short",
+    "timeStyle": "medium",
+    timeZone: 'UTC',
+  }).replace(',', '');
+  const localDateTime = date.toLocaleString('en-US', {
+    "dateStyle": "short",
+    "timeStyle": "medium",
+    timeZone: tz, 
+  }).replace(',', '');
+  const [localDate, localTime] = localDateTime.split(' ');
+  const utcOffsetHours = -date.getTimezoneOffset() / 60;
+  return { 
+    utcDateTime,
+    localDateTime, 
+    localDate, 
+    localTime, 
+    utcOffsetHours, 
+  };
+}
+
+export function samplesToJson(dataset: Prettify<UserDataset>, codapFormat = true): OutputTimeSeriesFormat[] {
+  if (!dataset.samples) {
+    return [];
+  }
   
+  const samples = dataset.samples;
+  const errors = dataset.errors;
+  const center = regionCenter(dataset.region);
+  const tz = tz_lookup(center.lat, center.lon);
+  
+  if (samples === undefined) {
+    throw new Error('No samples in dataset');
+  }
+  
+  return Object.entries(samples)
+    .map( ([key, sample]) => ({  
+      columnDensity: sample.value,
+      uncertainty: errors && errors[+key] ? errors[+key]?.upper : null,
+      timezone: tz,
+      ...(codapFormat ? dateToCODAPStrings(sample.date, tz) : dateToStrings(sample.date, tz)),
+    }));
+}
+
+function _toSafeString(val: unknown): string {
+  if (val === null || val === undefined) {
+    return '';
+  }
+  return `${val}`;
+}
+
+export function samplesToCsv(dataset: Prettify<UserDataset>, codapFormat = true): string {
+  const jsonData = samplesToJson(dataset, codapFormat);
+  if (jsonData.length === 0) {
+    return '';
+  }
+  
+  const headers = [
+    'utcDateTime',
+    'localDateTime',
+    'localDate',
+    'localTime',
+    'columnDensity',
+    'uncertainty',
+    'timezone',
+    'utcOffsetHours',
+  ];
+  
+  const rows = jsonData.map(row => headers.map(h => _toSafeString(row[h])));
+  
+  const csvRows = [
+    headers.map(h => camelToSnake(h)).join(','), // header row
+    ...rows.map(r => r.join(',')) // data rows
+  ];
+  
+  return csvRows.join('\n');
+}
+
+
+
+// interface OutputFoldedSeriesFormat {
+//   [key: string] : number; // this is our folded index
+// }

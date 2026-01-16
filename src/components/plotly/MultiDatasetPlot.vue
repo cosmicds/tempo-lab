@@ -9,7 +9,7 @@
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} ({{ pascalToSnake(foldType) }}) stacked timeseries
+                {{ descriptor.fullName.text }} ({{ camelToSentance(foldType) }}) stacked timeseries
               </div>
             </summary>
             <folded-plotly-graph
@@ -71,7 +71,7 @@ import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
-import { pascalToSnake } from '@/utils/text';
+import { camelToSentance } from '@/utils/text';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 
 
