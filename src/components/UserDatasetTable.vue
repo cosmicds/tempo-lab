@@ -1,5 +1,6 @@
 <template>
   <div id="user-dataset-table-container">
+    <save-csv :csv="samplesToCsv(dataset)" />
     <div v-if="errorMessage" id="utdc--error">
       {{ errorMessage }}
     </div>
@@ -32,7 +33,7 @@ import { regionCenter } from '@/utils/data_converters';
 
 import { samplesToCsv } from '@/utils/data_converters';
 import tz_lookup from '@photostructure/tz-lookup';
-
+import SaveCsv from './SaveCSV.vue';
 
 
 const props = defineProps<{
