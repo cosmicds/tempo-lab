@@ -1,20 +1,33 @@
 <template>
-  <a
-    v-if="csv !== undefined"
-    ref="csvDownloadLink"
-    href="#"
-    :download="datasetName ?? 'download.csv'"
-  >
-    <v-icon
-      icon="mdi-file-download"
-      color="#ffcc33"
-      :disabled="csv === undefined"
-    />
-    <span style="word-wrap: nowrap">
-    Download Dataset as a .CSV (comma-specified values) file
-    </span>
-  </a>  
-    
+  <div v-if="csv !== undefined" class="save-csv">
+    <a
+      ref="csvDownloadLink"
+      href="#"
+      :download="datasetName ?? 'download.csv'"
+      class="save-csv__action"
+    >
+      <v-icon
+        icon="mdi-table-arrow-down"
+        color="#ffcc33"
+        :disabled="csv === undefined"
+      />
+      <span class="save-csv__label">
+        Download Table
+      </span>
+    </a>
+    <use-clipboard v-slot="{ copy, isSupported }" :source="csv">
+      <v-btn
+        class="save-csv__action"
+        variant="text"
+        density="compact"
+        :disabled="!isSupported || csv === undefined"
+        @click="() => copy(csv)"
+      >
+        <v-icon icon="mdi-clipboard-check-multiple" color="#ffcc33" />
+        <span class="save-csv__label">Copy CSV to clipboard</span>
+      </v-btn>
+    </use-clipboard>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -64,4 +77,20 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.save-csv {
+  display: inline;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.save-csv__action {
+  display: inline;
+  text-decoration: none;
+  text-transform: none;
+  font-size: 1em;
+}
+
+.save-csv__label {
+  white-space: nowrap;
+}
 </style>
