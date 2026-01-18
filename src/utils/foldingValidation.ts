@@ -1,7 +1,5 @@
-export type TimeBinOptions = 'none' | 'hour' | 'day' | 'week' | 'month';
-export type FoldingPeriodOptions = 'none' | 'day' | 'week' | 'month' | 'year' | 'weekdayWeekend';
-
-
+import type { TimeBinOptions, FoldingPeriodOptions } from '@/types';
+export type { TimeBinOptions, FoldingPeriodOptions } from '@/types';
 
 const validFoldingPeriodsForTimeBin: Record<TimeBinOptions, FoldingPeriodOptions[]> = {
   'hour': [ 'none', 'day', 'week', 'month', 'year', 'weekdayWeekend',],

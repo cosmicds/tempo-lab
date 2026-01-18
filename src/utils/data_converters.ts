@@ -9,6 +9,7 @@ import type {
 import { toZonedTime } from 'date-fns-tz';
 import tz_lookup from '@photostructure/tz-lookup';
 import { camelToSnake } from './text';
+import { formatFoldedBinValue } from './folded_bin_processor';
 
 class PlotlyDatasetBuilder {
   private _x: Date[];
@@ -250,6 +251,73 @@ export function samplesToCsv(dataset: Prettify<UserDataset>, codapFormat = true)
 
 
 
-// interface OutputFoldedSeriesFormat {
-//   [key: string] : number; // this is our folded index
-// }
+export function json2Csv(jsonData: object[], headers?: string[]): string {
+
+  if (jsonData.length === 0) {
+    return '';
+  }
+  
+  let _headers = headers;
+  if (!_headers) {
+    _headers = Object.keys(jsonData[0]);
+  }
+  
+  const rows = jsonData.map(row => _headers.map(h => _toSafeString(row[h])));
+  
+  const csvRows = [
+    _headers.map(h => camelToSnake(h)).join(','), // header row
+    ...rows.map(r => r.join(',')) // data rows
+  ];
+  
+  return csvRows.join('\n');
+}
+
+
+/*
+So folded data may have a time column, if it was not folded
+and only binned. so we will have to handle both cases.
+*/
+export function foldedSamplesToCsv(dataset: UserDataset, _codapFormat = true): string {
+  if (!dataset.folded || !dataset.plotlyDatasets) {
+    console.error('Dataset is not folded');
+    return '';
+  }
+  
+  const foldedDataSet = dataset.folded.raw;
+  
+
+  //   // if the data was not folded, then we will have timestamps in x, otherwise it will be indices
+  const useTimes = dataset.folded.foldingPeriod === 'none';
+  console.log('folded data set useTimes', useTimes);
+  const center = regionCenter(dataset.region);
+  const tz = tz_lookup(center.lat, center.lon);
+  //   console.log('folded properties', dataset.folded);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const jsonData: any[] = [];
+  // console.log('folded data', foldedDataSet);
+  Object.keys(foldedDataSet.values).forEach((key) => {
+    const columnDensity = foldedDataSet.values[key].value;
+    const bin = foldedDataSet.values[key].bin;
+    const error = foldedDataSet.errors[bin].upper;
+    let o = {
+      columnDensity,
+      uncertainty: error,
+      timezone: tz,
+    };
+    if (useTimes) {
+      const timestamp = bin;
+      const date = new Date(timestamp);
+      o = {
+        ...o,
+        ...( _codapFormat ? dateToCODAPStrings(date, tz) : dateToStrings(date, tz)),
+      };
+    } else {
+      o[dataset.folded.foldType + '_index'] = bin;
+      o[dataset.folded.foldType + '_value'] = formatFoldedBinValue(dataset.folded.foldType, bin);
+    }
+    jsonData.push(o);
+  });
+  
+  // console.log('folded data json', jsonData);
+  return json2Csv(jsonData);
+}
