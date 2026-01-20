@@ -127,6 +127,7 @@
               aria-label="Show introduction"
               @click="() => emit('intro-slide', 1)"
               @keyup.enter="() => emit('intro-slide', 1)"
+              disabled
               >
                 Introduction
             </v-list-item>
@@ -136,6 +137,7 @@
               aria-label="Show user guide"
               @click="() => emit('intro-slide', 4)"
               @keyup.enter="() => emit('intro-slide', 4)"
+              disabled
               >
               User Guide
             </v-list-item>
@@ -145,6 +147,7 @@
               aria-label="Show dialog telling about the data"
               @click="showAboutData = true"
               @keyup.enter="showAboutData = true"
+              disabled
               >
               About the Data
             </v-list-item>
@@ -161,6 +164,7 @@
               aria-label="Show credits"
               @click="showCredits = true"
               @keyup.enter="showCredits = true"
+              disabled
               >
                 Credits
             </v-list-item>
