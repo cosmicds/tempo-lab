@@ -8,7 +8,7 @@
       v-model="showConfirmReset"
       max-width="35%"
     >
-      <v-card>
+      <v-card class="popup-card--outline">
         <v-card-text>
           Are you sure you want to delete all of your selections? 
           This will remove all of your regions, time ranges, 
@@ -547,7 +547,7 @@
       :model-value="sampleErrorID !== null"
       max-width="50%"
     >
-      <v-card>
+      <v-card class="popup-card--outline">
         <v-toolbar
           density="compact"
         >
@@ -617,7 +617,7 @@
       max-width="800px"
       persistent
     >
-      <v-card>
+      <v-card class="popup-card--outline">
         <v-toolbar
           density="compact"
         >

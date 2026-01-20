@@ -50,6 +50,7 @@ import { VueDatePicker } from "@vuepic/vue-datepicker";
 import '@vuepic/vue-datepicker/dist/main.css';
 import "./styles/vue3-date-picker-styles.css";
 import "./styles/molecule-svg.css";
+import "./styles/styles.css";
 import { UseClipboard } from "@vueuse/components";
 
 import { createPinia } from "pinia";
