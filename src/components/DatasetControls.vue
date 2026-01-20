@@ -749,7 +749,8 @@ function openAggregationDialog(selection: UserDataset) {
   showAggregationDialog.value = true;
 }
 function handleAggregationSaved(aggregatedSelection: UserDataset) {
-  aggregatedSelection.name = `${aggregatedSelection.name} ${datasets.value.length + 1}`;
+  const n = datasets.value.map(d => d.name).filter(n => n?.startsWith(aggregatedSelection.name + ' ' || 'animpossiblename')).length;
+  aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
