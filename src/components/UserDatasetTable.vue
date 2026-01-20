@@ -67,6 +67,11 @@ function formatValueError(value: number | undefined | null, error: number | unde
   if (!value && !error) {
     return '';
   }
+  if (props.dataset.molecule === 'o3') {
+    const valStr = value ? value.toFixed(2) : 'N/A';
+    const errStr = error ? error.toFixed(2) : 'N/A';
+    return `${valStr} (${errStr})`;
+  }
   const valStr = value ? (value / 1e14).toFixed(2) : 'N/A';
   const errStr = error ? (error / 1e14).toFixed(2) : 'N/A';
   return `${valStr} (${errStr})`;
@@ -84,9 +89,9 @@ const sampleHeaders = [
     value: item => toTime(item.date) 
   },
   { 
-    title: 'Column Density (error)',
+    title: props.dataset.molecule === 'o3' ? 'Dalton units' : 'Column Density (error)',
     children: [{
-      title: '10¹⁴ molecules/cm²',
+      title:  props.dataset.molecule === 'o3' ? null : '10¹⁴ molecules/cm²',
       key: 'columnDensity',
       value: item => formatValueError(item.value, item.error),
     }]
@@ -118,9 +123,9 @@ const foldedHeaders = [
     key: 'date',
   },
   { 
-    title: 'Column Density (error)',
+    title: props.dataset.molecule === 'o3' ? 'Dalton units' : 'Column Density (error)',
     children: [{
-      title: '10¹⁴ molecules/cm²',
+      title: props.dataset.molecule === 'o3' ? null : '10¹⁴ molecules/cm²',
       key: 'columnDensity',
       value: item => formatValueError(item.value, item.error)
     }]
