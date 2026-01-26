@@ -1,7 +1,11 @@
 <template>
   <div class="comparison-data-controls">
     <p class="my-3">
-      Choose other datasets to view with the TEMPO Data. Drag cards to re-order data layers.
+      Choose datasets to view with the TEMPO Data. 
+      <ul class="cdc-instruction">
+        <li>Drag cards to re-order data layers.</li>
+        <li>Use slider to adjust layer opacity.</li>
+      </ul>
     </p>
     <div
       v-for="(map, index) in maps"
@@ -65,5 +69,12 @@ const {
 
 :deep(.v-checkbox .v-label) {
   font-size: 10pt;
+}
+
+.comparison-data-controls ul.cdc-instruction {
+  font-size: 0.8em;
+  list-style-type: disc;
+  list-style-position: outside;
+  margin-left: 1.2em;
 }
 </style>
