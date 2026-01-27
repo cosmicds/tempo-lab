@@ -10,11 +10,18 @@
       v-if="layersPanelTarget"
       :to="layersPanelTarget"
     >
-      <v-slide-x-transition>
-        <comparison-data-controls
-          class="comparison-data-controls"
-        />
-      </v-slide-x-transition>
+      <side-placeholder
+        open-direction="right"
+        icon="mdi-layers"
+        color="surface-variant"
+        v-model:open="layerControlsOpen"
+      >
+        <template #default>
+          <comparison-data-controls
+            class="comparison-data-controls"
+          />
+        </template>
+      </side-placeholder>
     </teleport>
 
     <div v-if="mapTargets">
@@ -31,21 +38,26 @@
       v-if="datasetsPanelTarget"
       :to="datasetsPanelTarget"
     >
-      <collapsible-side-panel>
+      <side-placeholder
+        open-direction="left"
+        icon="mdi-chart-line"
+        color="surface-variant"
+        v-model:open="datasetControlsOpen"
+      >
         <template #default>
           <dataset-controls
            class="dataset-controls"
           />
         </template>
-      </collapsible-side-panel>
+      </side-placeholder>
     </teleport>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
+import { computed, onBeforeMount, onMounted, nextTick, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
+import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentContainer, type RowOrColumn } from "golden-layout";
 import { v4 } from "uuid";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
@@ -92,19 +104,26 @@ onBeforeMount(() => {
   }
 });
 
-function mapConfig(): ComponentItemConfig {
-  return {
+function mapConfig(width: number | null = null): ComponentItemConfig {
+  const config: ComponentItemConfig = {
     type: 'component',
     componentType: 'map-panel',
     title: 'Map',
     draggable: false,
+    minWidth: 500,
+    width: "6fr",
   };
+  if (width != null) {
+    config.width = width;
+  }
+  return config;
 }
 
 const DEFAULT_PANEL_WIDTH_PX = 300;
-function getGLPanelWidth(): number {
+const PLACEHOLDER_WIDTH_PX = 40;
+function getGLPanelWidth(): string {
   const glRoot = root.value as HTMLElement;
-  return Math.min(Math.max(DEFAULT_PANEL_WIDTH_PX * 100 / glRoot.clientWidth, 10), 25);
+  return `${Math.min(Math.max(DEFAULT_PANEL_WIDTH_PX * 100 / glRoot.clientWidth, 10), 25)}%`;
 }
 
 function layersPanelConfig(width: number | null = null): ComponentItemConfig {
@@ -150,56 +169,70 @@ function removeMapPanel(index: number) {
   }
 }
 
-let datasetsItem: ContentItem | null = null;
-let layersItem: ContentItem | null = null;
-
-function setDatasetsPanelVisibility(visible: boolean) {
-  if (!layout) { return; }
-  const row = layout.rootItem as RowOrColumn;
-
-  const index = row.contentItems.length - 1;
-  const item = row.contentItems[index].contentItems[0];
-  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
-  if (visible === isAtIndex) { return; }
-  const layersWidth = layersItem?.container.width ?? 0;
-  if (visible) {
-    datasetsItem = row.newItem(datasetsPanelConfig(), index + 1);
-    datasetsItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
-  } else {
-    item.remove();
-    datasetsItem = null;
-  }
-  layersItem?.container.setSize(layersWidth);
+function glWidth(): number {
+  return layout?.width ?? window.innerWidth;
 }
 
-function setLayersPanelVisibility(visible: boolean) {
+function updateSizes(indexChanged: number | null = null) {
+  if (!layout) { return; } 
+
+  const width = glWidth();
+  const row = layout.rootItem as RowOrColumn;
+  if (indexChanged != null && indexChanged < 0) {
+    indexChanged += row.contentItems.length;
+  }
+  const lastIndex = row.contentItems.length - 1;
+  const layersContainer = row.contentItems[0].contentItems[0].container;
+  const datasetsContainer = row.contentItems[lastIndex].contentItems[0].container;
+
+  layersContainer._config.minSize = layerControlsOpen.value ? 300 : 40;
+  datasetsContainer._config.minSize = datasetControlsOpen.value ? 300 : 40;
+
+  const layersSize = !layerControlsOpen.value ? PLACEHOLDER_WIDTH_PX : (indexChanged == 0 ? DEFAULT_PANEL_WIDTH_PX : layersContainer.width);
+  if (layersSize != layersContainer.width) {
+    layersContainer.setSize(layersSize);
+  }
+
+  const datasetsSize = !datasetControlsOpen.value ? PLACEHOLDER_WIDTH_PX : (indexChanged == lastIndex ? DEFAULT_PANEL_WIDTH_PX : layersContainer.width);
+  if (datasetsSize != datasetsContainer.width) {
+    datasetsContainer.setSize(datasetsSize);
+  }
+
+  const mapSize = width - layersContainer.width - datasetsContainer.width;
+  const mapContainer = row.contentItems[1].contentItems[0].container;
+  mapContainer.setSize(mapSize);
+}
+
+function _onPanelOpenChange(open: boolean, panelIndex: number) {
   if (!layout) { return; }
   const row = layout.rootItem as RowOrColumn;
-
-  const index = 0;
-  const item = row.contentItems[index].contentItems[0];
-  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
-  if (visible === isAtIndex) { return; }
-  const datasetsWidth = datasetsItem?.container.width ?? 0;
-  if (visible) {
-    layersItem = row.newItem(layersPanelConfig(), index);
-    layersItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
-  } else {
-    item.remove();
-    layersItem = null;
+  if (panelIndex < 0) {
+    panelIndex += row.contentItems.length;
   }
-  datasetsItem?.container.setSize(datasetsWidth);
+  const item = row.contentItems[panelIndex].contentItems[0];
+  const container = item.container;
+  container.setSize(open ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX);
+}
+
+function onDatasetPanelOpenChange(open: boolean) {
+  nextTick(() => {
+    updateSizes(-1);
+    document.querySelectorAll(".lm_splitter.lm_horizontal")[1].style.display = open ? "unset" : "none";
+  });
+}
+
+function onLayersPanelOpenChange(open: boolean) {
+  nextTick(() => {
+    updateSizes(0);
+    document.querySelectorAll(".lm_splitter.lm_horizontal")[0].style.display = open ? "unset" : "none";
+  });
 }
 
 function layoutContent(): ComponentItemConfig[] {
-  const content = [mapConfig()];
-  if (layerControlsOpen.value) {
-    content.unshift(layersPanelConfig());
-  }
-  if (datasetControlsOpen.value) {
-    content.push(datasetsPanelConfig());
-  }
-  return content;
+  const layersWidth = layerControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+  const datasetsWidth = datasetControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+  const mapWidth = glWidth() - layersWidth - datasetsWidth;
+  return [layersPanelConfig(layersWidth), mapConfig(mapWidth), datasetsPanelConfig(datasetsWidth)];
 }
 
 // bind add and remove to the window for easy access from the console
@@ -244,7 +277,7 @@ onMounted(() => {
       responsiveMode: "always",
     },
     dimensions: {
-      defaultMinItemWidth: "250px",
+      defaultMinItemWidth: `${PLACEHOLDER_WIDTH_PX}px`,
     },
     root: {
       type: 'row',
@@ -266,8 +299,8 @@ onMounted(() => {
   });
 });
 
-watch(datasetControlsOpen, setDatasetsPanelVisibility);
-watch(layerControlsOpen, setLayersPanelVisibility);
+watch(datasetControlsOpen, onDatasetPanelOpenChange);
+watch(layerControlsOpen, onLayersPanelOpenChange);
 </script>
 
 <style lang="less">
@@ -306,6 +339,7 @@ body {
 }
 
 .map-panel {
+  min-width: 250px;
   display: flex;
   flex-direction: row;
   padding-left: 10px;
@@ -322,6 +356,10 @@ body {
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+.lm_stack:has(.side-panel-control.closed) {
+  width: 40px !important;
 }
 
 #datasets-panel {
