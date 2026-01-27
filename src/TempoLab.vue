@@ -31,9 +31,13 @@
       v-if="datasetsPanelTarget"
       :to="datasetsPanelTarget"
     >
-      <dataset-controls
-       class="dataset-controls"
-      />
+      <collapsible-side-panel>
+        <template #default>
+          <dataset-controls
+           class="dataset-controls"
+          />
+        </template>
+      </collapsible-side-panel>
     </teleport>
   </v-app>
 </template>

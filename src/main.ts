@@ -27,6 +27,7 @@ import MaplibreLayerControlItem from "./components/MaplibreLayerControlItem.vue"
 import PowerPlantsFilterControl from "./components/PowerPlantsFilterControl.vue";
 import IconCheckbox from "./components/IconCheckbox.vue";
 import SaveState from "./components/SaveState.vue";
+import CollapsibleSidePanel from "./components/CollapsibleSidePanel.vue";
 
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -129,6 +130,7 @@ createApp(TempoLab, {})
   .component('icon-checkbox', IconCheckbox)
   .component('local-scope', LocalScope)
   .component('save-state', SaveState)
+  .component('collapsible-side-panel', CollapsibleSidePanel)
 
   // Mount
   .mount("#app");
