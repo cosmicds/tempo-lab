@@ -210,17 +210,15 @@ onMounted(() => {
 
     const onRightMove = (event: PointerEvent) => {
       const dx = event.clientX - startXRight;
-      const width = root.value?.clientWidth ?? 0;
       const minRight = datasetControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
-      const newRightSize = Math.max(minRight, width - (startRight - dx));
-      console.log(newRightSize);
+      const newRightSize = Math.max(minRight, startRight - dx);
       setBasis(rightPanel, newRightSize);
     };
 
     const initialRightHandler = (event: PointerEvent) => {
       startXRight = event.clientX;
       startRight = getBasis(rightPanel);
-      console.log(getBasis(rightPanel));
+      console.log(event.clientX, getBasis(rightPanel));
     };
 
     setupHandleEvents({
