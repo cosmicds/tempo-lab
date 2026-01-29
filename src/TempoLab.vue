@@ -274,12 +274,9 @@ watch(layerControlsOpen, onLayersPanelOpenChange);
 // JC: This was commented out, but I put it back in because my browser (Chrome on Ubuntu) didn't already have Lexend
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
 
-html, body .layout-root {
+html, body {
   width: 100%;
   height: 100%;
-}
-
-html, body {
   padding: 0;
   margin: 0;
 }
@@ -294,6 +291,7 @@ body {
     -webkit-user-select: none;
   }
   font-family: "Lexend", sans-serif;
+  height: 100%;
 }
 
 .map-panel {
@@ -375,13 +373,13 @@ body {
   flex: 0 0 var(--handle-size);
   width: var(--handle-size);
   cursor: col-resize;
-  background: var(--info-background);
+  background: var(--handle-color);
   position: relative;
   touch-action: none;
 }
 
 .handle:hover {
-  background: var(--info-background);
+  background: var(--handle-hover-color);
 }
 
 .handle::after {
