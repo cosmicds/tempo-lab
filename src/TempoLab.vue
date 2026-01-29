@@ -5,26 +5,26 @@
   >
     <header-bar />
     <div ref="root" class="layout-root">
-
-      <teleport
-        v-if="layersPanelTarget"
-        :to="layersPanelTarget"
+      <side-placeholder
+        ref="layers-panel"
+        open-direction="right"
+        icon="mdi-layers"
+        color="surface-variant"
+        v-model:open="layerControlsOpen"
       >
-        <side-placeholder
-          open-direction="right"
-          icon="mdi-layers"
-          color="surface-variant"
-          v-model:open="layerControlsOpen"
-        >
-          <template #default>
-            <comparison-data-controls
-              class="comparison-data-controls"
-            />
-          </template>
-        </side-placeholder>
-      </teleport>
+        <template #default>
+          <comparison-data-controls
+            class="comparison-data-controls"
+          />
+        </template>
+      </side-placeholder>
 
-      <div class="handle" data-handle="1" aria-label="Resize left/middle" role="separator"></div>
+      <div
+        class="handle"
+        ref="left-handle"
+        aria-label="Resize left/middle"
+        role="separator"
+      ></div>
 
       <div v-if="mapTargets" class="maps">
         <teleport
@@ -36,25 +36,26 @@
         </teleport>
       </div>
 
-      <div class="handle" data-handle="2" aria-label="Resize middle/right" role="separator"></div>
+      <div
+        class="handle"
+        ref="right-handle"
+        aria-label="Resize middle/right"
+        role="separator"
+      ></div>
 
-      <teleport
-        v-if="datasetsPanelTarget"
-        :to="datasetsPanelTarget"
+      <side-placeholder
+        ref="datasets-panel"
+        open-direction="left"
+        icon="mdi-chart-line"
+        color="surface-variant"
+        v-model:open="datasetControlsOpen"
       >
-        <side-placeholder
-          open-direction="left"
-          icon="mdi-chart-line"
-          color="surface-variant"
-          v-model:open="datasetControlsOpen"
-        >
-          <template #default>
-            <dataset-controls
-             class="dataset-controls"
-            />
-          </template>
-        </side-placeholder>
-      </teleport>
+        <template #default>
+          <dataset-controls
+           class="dataset-controls"
+          />
+        </template>
+      </side-placeholder>
     </div>
   </v-app>
 </template>
@@ -67,10 +68,12 @@ import { v4 } from "uuid";
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
 type MaybeHTMLElement = HTMLElement | null;
-const root = useTemplateRef("root");
+const root = useTemplateRef<HTMLDivElement>("root");
+const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");
+const rightHandle = useTemplateRef<HTMLDivElement>("right-handle");
+const layersPanel = useTemplateRef<HTMLElement>("layers-panel");
+const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
 const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
-const datasetsPanelTarget = ref<MaybeHTMLElement>(null);
-const layersPanelTarget = ref<MaybeHTMLElement>(null);
 
 
 const store = useTempoStore();
@@ -90,20 +93,48 @@ const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 const infoColor = "#092088";
 const cssVars = computed(() => {
   return {
-    '--accent-color': accentColor.value,
-    '--accent-color-2': accentColor2.value,
-    '--info-background': infoColor,
-    '--tempo-red': tempoRed.value,
+    "--accent-color": accentColor.value,
+    "--accent-color-2": accentColor2.value,
+    "--info-background": infoColor,
+    "--tempo-red": tempoRed.value,
+    "--handle-size": "8px",
+    "--handle-color": "gray",
+    "--handle-hover-color": infoColor,
   };
 });
 
 const localStorageKey = "tempods";
+
+function setBasis(panel: HTMLElement, sizePx: number) {
+  panel.style.flexBasis = `${sizePx}px`;
+}
+
+function getBasis(panel: HTMLElement): number {
+  return parseFloat(getComputedStyle(panel).flexBasis);
+}
 
 onBeforeMount(() => {
   const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
   if (storedState) {
     updateStoreFromJSON(store, storedState);
   }
+});
+
+onMounted(() => {
+  const handles = [leftHandle.value, rightHandle.value];
+  handles.forEach((handle) => {
+    if (!handle) { return; } 
+
+    handle.addEventListener("pointerdown", (event: PointerEvent) => {
+      event.preventDefault();
+      handle.setPointerCapture(event.pointerId);
+
+      handle.classList.add("dragging");
+
+      const startX = event.clientX;
+    });
+
+  });
 });
 
 
@@ -120,10 +151,6 @@ watch(layerControlsOpen, onLayersPanelOpenChange);
 // NB: The styles here are NOT scoped - these are intended to apply to the overall application,
 // as this component is really just a layout container.
 // If we do want component-only styles, just add a <style scoped> block below this one
-
-:root {
-  --handle-size: 8px;
-}
 
 @font-face {
   font-family: "Highway Gothic Narrow";
