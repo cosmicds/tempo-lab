@@ -6,7 +6,9 @@
     <header-bar />
     <div ref="root" class="layout-root">
       <side-placeholder
+        id="layers-panel"
         ref="layers-panel"
+        class="panel"
         open-direction="right"
         icon="mdi-layers"
         color="surface-variant"
@@ -26,15 +28,7 @@
         role="separator"
       ></div>
 
-      <div v-if="mapTargets" class="maps">
-        <teleport
-          v-for="[key, target] in Object.entries(mapTargets)"
-          :key="key"
-          :to="target"
-        >
-          <map-with-controls />
-        </teleport>
-      </div>
+      <map-with-controls id="map-panel" />
 
       <div
         class="handle"
@@ -44,7 +38,9 @@
       ></div>
 
       <side-placeholder
+        id="datasets-panel"
         ref="datasets-panel"
+        class="panel"
         open-direction="left"
         icon="mdi-chart-line"
         color="surface-variant"
@@ -55,25 +51,23 @@
            class="dataset-controls"
           />
         </template>
-      </side-placeholder>
+     </side-placeholder>
     </div>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, nextTick, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
+import { computed, onBeforeMount, onMounted, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { v4 } from "uuid";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
-type MaybeHTMLElement = HTMLElement | null;
 const root = useTemplateRef<HTMLDivElement>("root");
 const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");
 const rightHandle = useTemplateRef<HTMLDivElement>("right-handle");
-const layersPanel = useTemplateRef<HTMLElement>("layers-panel");
-const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
-const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
+// const layersPanel = useTemplateRef<HTMLElement>("layers-panel");
+// const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
+// const mapsPanel = useTemplateRef<HTMLElement>("maps-panel");
 
 
 const store = useTempoStore();
@@ -91,26 +85,32 @@ debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.t
 const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
+const HANDLE_SIZE_PX = 8;
+const DEFAULT_PANEL_WIDTH_PX = 300;
+const MIN_PANEL_WIDTH_PX = 250;
+const PLACEHOLDER_WIDTH_PX = 40;
 const cssVars = computed(() => {
   return {
     "--accent-color": accentColor.value,
     "--accent-color-2": accentColor2.value,
     "--info-background": infoColor,
     "--tempo-red": tempoRed.value,
-    "--handle-size": "8px",
+    "--handle-size": `${HANDLE_SIZE_PX}px`,
     "--handle-color": "gray",
     "--handle-hover-color": infoColor,
   };
 });
 
 const localStorageKey = "tempods";
+let animationFrame = 0;
 
 function setBasis(panel: HTMLElement, sizePx: number) {
   panel.style.flexBasis = `${sizePx}px`;
 }
 
 function getBasis(panel: HTMLElement): number {
-  return parseFloat(getComputedStyle(panel).flexBasis);
+  const basis = parseFloat(getComputedStyle(panel).flexBasis);
+  return isNaN(basis) ? 0 : basis;
 }
 
 onBeforeMount(() => {
@@ -120,28 +120,144 @@ onBeforeMount(() => {
   }
 });
 
-onMounted(() => {
-  const handles = [leftHandle.value, rightHandle.value];
-  handles.forEach((handle) => {
-    if (!handle) { return; } 
+function updateSizes(initial=false) {
+  // const rootElement = root.value;
+  const layers = document.querySelector("#layers-panel") as HTMLElement;
+  const datasets = document.querySelector("#datasets-panel") as HTMLElement;
 
-    handle.addEventListener("pointerdown", (event: PointerEvent) => {
-      event.preventDefault();
-      handle.setPointerCapture(event.pointerId);
+  console.log(layers, layers.clientWidth, initial, layerControlsOpen.value);
 
-      handle.classList.add("dragging");
+  setBasis(layers, layerControlsOpen.value ? (initial ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, layers.clientWidth)) : PLACEHOLDER_WIDTH_PX);
+  setBasis(datasets, datasetControlsOpen.value ? (initial ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, datasets.clientWidth)) : PLACEHOLDER_WIDTH_PX);
+}
 
-      const startX = event.clientX;
-    });
+type EventHandler = (event: PointerEvent) => void;
+
+interface HandleSetupParams {
+  handle: HTMLElement;
+  onMove: EventHandler;
+  initialEventHandler?: (event: PointerEvent) => void;
+}
+
+function setupHandleEvents(params: HandleSetupParams) {
+  
+  const { handle, onMove } = params;
+
+  handle.addEventListener("pointerdown", (event: PointerEvent) => {
+
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+
+    document.body.classList.add("dragging");
+
+    if (params.initialEventHandler) {
+      params.initialEventHandler(event); 
+    }
+
+    const onUp = (ev: PointerEvent) => {
+      try {
+        handle.releasePointerCapture(ev.pointerId); 
+      } catch (error) {
+        console.error(error);
+      }
+      document.body.classList.remove("dragging");
+
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
 
   });
+}
+
+onMounted(() => {
+  
+  const left = leftHandle.value;
+  const leftPanel = document.querySelector("#layers-panel") as HTMLElement;
+  if (left && leftPanel) {
+    let startXLeft = 0;
+    let startLeft = 0;
+
+    const onLeftMove = (event: PointerEvent) => {
+      const dx = event.clientX - startXLeft;
+      const minLeft = layerControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      const newLeftSize = Math.max(minLeft, startLeft + dx);
+      setBasis(leftPanel, newLeftSize);
+    };
+
+    const initialLeftHandler = (event: PointerEvent) => {
+      startXLeft = event.clientX;
+      startLeft = getBasis(leftPanel);
+    };
+
+    setupHandleEvents({
+      handle: left,
+      onMove: onLeftMove,
+      initialEventHandler: initialLeftHandler,
+    });
+
+  }
+
+  const right = rightHandle.value;
+  const rightPanel = document.querySelector("#datasets-panel") as HTMLElement;
+  if (right && rightPanel) {
+    let startXRight = 0;
+    let startRight = 0;
+
+    const onRightMove = (event: PointerEvent) => {
+      const dx = event.clientX - startXRight;
+      const width = root.value?.clientWidth ?? 0;
+      const minRight = datasetControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      const newRightSize = Math.max(minRight, width - (startRight - dx));
+      console.log(newRightSize);
+      setBasis(rightPanel, newRightSize);
+    };
+
+    const initialRightHandler = (event: PointerEvent) => {
+      startXRight = event.clientX;
+      startRight = getBasis(rightPanel);
+      console.log(getBasis(rightPanel));
+    };
+
+    setupHandleEvents({
+      handle: right,
+      onMove: onRightMove,
+      initialEventHandler: initialRightHandler,
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = requestAnimationFrame(() => updateSizes());
+  });
+
+  window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && !ignoreCache) {
+      const stringified = serializeTempoStore(store); 
+      window.localStorage.setItem(localStorageKey, stringified);
+    }
+  });
+
+  updateSizes(true);
 });
 
+function onDatasetPanelOpenChange(open: boolean) {
+  updateSizes(); 
+  const handle = rightHandle.value;
+  if (!handle) { return; }
+  handle.style.display = open ? "unset" : "none";
+}
 
-const DEFAULT_PANEL_WIDTH_PX = 300;
-const PLACEHOLDER_WIDTH_PX = 40;
-
-
+function onLayersPanelOpenChange(open: boolean) {
+  updateSizes(); 
+  const handle = leftHandle.value;
+  if (!handle) { return; }
+  handle.style.display = open ? "unset" : "none";
+}
 
 watch(datasetControlsOpen, onDatasetPanelOpenChange);
 watch(layerControlsOpen, onLayersPanelOpenChange);
@@ -202,10 +318,6 @@ body {
   }
 }
 
-.lm_stack:has(.side-panel-control.closed) {
-  width: 40px !important;
-}
-
 #datasets-panel {
   overflow-y: scroll;
   padding-left: 2px;
@@ -237,26 +349,28 @@ body {
   }
 }
 
-// Some Golden Layout adjustments
-.lm_content {
-  background: rgb(var(--v-theme-background));
-  overflow-y: auto!important;
-}
-
-.lm_splitter {
-  background-color: #333333;
-  opacity: 0.7;
-
-  &.lm_dragging {
-    background-color: var(--smithsonian-blue);
-  }
-}
-
 .tab-content {
   padding: 0.5rem 1rem;
   border: 5px solid var(--tempo-red);
   border-radius: 10px;
   margin: 10px;
+}
+
+.layout-root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel {
+  flex: 0 0 auto;
+  width: 0;
+  background: var(--panel);
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .handle {
