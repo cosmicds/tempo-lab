@@ -1,7 +1,7 @@
 {
   "version": "0.0.0",
   "dependencies": {
-    "@allindevelopers/vue-local-scope": "^0.2.2",
+    "@all1ndev/vue-local-scope": "^0.3.2",
     "@cosmicds/vue-toolkit": "^0.5.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
@@ -50,5 +50,6 @@
     "lint": "vue-cli-service lint src --no-fix",
     "serve": "vue-cli-service serve"
   },
-  "name": "@cosmicds/tempo-lite"
+  "name": "@cosmicds/tempo-lite",
+  "packageManager": "yarn@4.12.0"
 }
