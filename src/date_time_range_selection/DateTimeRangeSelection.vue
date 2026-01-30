@@ -21,7 +21,7 @@
         <template #label>
           <span class="mr-2" style="text-wrap:nowrap">Single Day</span>
           <date-picker
-                v-if="timeSelectionRadio === 'single' && glContainerSize.width > 450"
+                v-if="timeSelectionRadio === 'single' && containerSize.width > 450"
                 class="mx-2 cds__date-picker"
                 ref="singleDateCalendar"
                 :model-value="singleDateObj"
@@ -52,7 +52,7 @@
         </template>
       </v-radio>
         <v-expand-transition title="Select a Single Date">
-        <div v-if="timeSelectionRadio === 'single' && glContainerSize.width <= 450" class="single-date-section">
+        <div v-if="timeSelectionRadio === 'single' && containerSize.width <= 450" class="single-date-section">
             <div class="my-4">
               <date-picker
                 class="mx-2 cds__date-picker"
@@ -605,16 +605,16 @@ function handleSingleDateChange(value: Date) {
 }
 
 const dtrsRoot = useTemplateRef('dtrs-root');
-const glContainerSize = ref<{width: number; height: number}>({width: 0, height: 0});
-import { watchGoldenLayoutContainerSize } from '@/utils/golden_layout';
+const containerSize = ref<{width: number; height: number}>({width: 0, height: 0});
+import { watchContainerSize } from '@/utils/dom';
 
 
 // === LIFECYCLE HOOKS ===
 onMounted(() => {
   if (dtrsRoot.value) {
     // console.log(dtrsRoot.value);
-    watchGoldenLayoutContainerSize(dtrsRoot.value as HTMLElement, (size) => {
-      glContainerSize.value = size;
+    watchContainerSize(dtrsRoot.value as HTMLElement, ".panel", (size) => {
+      containerSize.value = size;
     });
   }
   // Initialize default dates
