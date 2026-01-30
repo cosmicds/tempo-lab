@@ -44,7 +44,6 @@ export interface FoldedPlotlyGraphProps extends PlotlyGraphProps {
 }
 
 const props = defineProps<FoldedPlotlyGraphProps>();
-console.log(props);
 
 const rezonedDatasets = computed(() => {
   // do nothing if the timeseries isn't usind Date object

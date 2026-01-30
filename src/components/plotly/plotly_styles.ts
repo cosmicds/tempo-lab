@@ -11,7 +11,7 @@ type PredefinedFoldTypes = Exclude<FoldType,
   | 'noneOfYear'
 >;
 
-const ploylyGridStyles = {
+const plotlyGridStyles = {
   'xaxis': {
     'showgrid': true,
     // 'gridcolor': 'red',
@@ -321,7 +321,7 @@ export function getFoldTypeStyle(foldType: FoldType): Partial<Layout> {
 export function deepMerge(target: object, source: object): object {
   const result = {...target};
   for (const key in source) {
-    // if key has and non-array object, iterate recursively
+    // if key has a non-array object, iterate recursively
     if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
       result[key] = deepMerge(result[key] || {}, source[key]);
     } else {
@@ -334,5 +334,15 @@ export function deepMerge(target: object, source: object): object {
 
 export function mergeFoldTypeLayout(foldType: FoldType, customLayout?: Partial<Layout>): Partial<Layout> {
   const foldStyle = deepMerge(getFoldTypeStyle(foldType), _defaultyAxisStyle);
-  return deepMerge(deepMerge(foldStyle, ploylyGridStyles) , customLayout || {});
+  const layout = deepMerge(deepMerge(foldStyle, plotlyGridStyles) , customLayout || {});
+
+  const xaxisTitle = layout["xaxis"]?.title?.text;
+  if (xaxisTitle) {
+    const prefix = "Time: ";
+    if (!xaxisTitle.startsWith(prefix)) {
+      layout["xaxis"].title.text = `${prefix}${xaxisTitle}`;
+    }
+  }
+
+  return layout;
 }
