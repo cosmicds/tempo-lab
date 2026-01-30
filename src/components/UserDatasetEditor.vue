@@ -1,7 +1,7 @@
 <!-- eslint-disable @typescript-eslint/no-unused-vars -->
 <template>
   <!-- not too wide, and center it -->
-  <v-card width="fit-content" class="mx-auto">
+  <v-card width="fit-content" class="mx-auto popup-card--outline">
     
     <v-card-text class="pb-0">
       

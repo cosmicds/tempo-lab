@@ -1,6 +1,6 @@
 <template>
   <v-card 
-    class="mx-auto px-3 py-2" 
+    class="mx-auto px-3 py-2 popup-card--outline" 
     :min-width="minWidth" 
     :width="width"
     >

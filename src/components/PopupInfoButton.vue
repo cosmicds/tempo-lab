@@ -45,6 +45,7 @@ if (props.width != undefined) {
 .info-card {
   padding: 10px;
   border-radius: 5px;
+  outline: 1px solid rgb(var(--v-theme-surface-variant));
 }
 
 .v-btn {
