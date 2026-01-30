@@ -336,8 +336,12 @@ export function mergeFoldTypeLayout(foldType: FoldType, customLayout?: Partial<L
   const foldStyle = deepMerge(getFoldTypeStyle(foldType), _defaultyAxisStyle);
   const layout = deepMerge(deepMerge(foldStyle, plotlyGridStyles) , customLayout || {});
 
-  if (layout["xaxis"]?.title?.text) {
-    layout["xaxis"].title.text = `Time: ${layout["xaxis"].title.text}`;
+  const xaxisTitle = layout["xaxis"]?.title?.text;
+  if (xaxisTitle) {
+    const prefix = "Time: ";
+    if (!xaxisTitle.startsWith(prefix)) {
+      layout["xaxis"].title.text = `${prefix}${xaxisTitle}`;
+    }
   }
 
   return layout;
