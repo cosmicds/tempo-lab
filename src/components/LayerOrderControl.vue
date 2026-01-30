@@ -52,6 +52,7 @@
               <land-use-legend  v-if="element === 'land-use'"  />
               <AQILegend v-if="element === 'aqi-layer-aqi'" />
               <power-plants-filter-control :map="mapRef" v-if="element === 'power-plants-layer'"/>
+              <pop-dens-legend v-if="element === 'pop-dens'" mini/>
             </NarrowExpansionPanel>
 
           </template>
@@ -76,6 +77,7 @@ import { useTempoStore } from "@/stores/app";
 import NarrowExpansionPanel from './NarrowExpansionPanel.vue';
 import LandUseLegend from './LandUseLegend.vue';
 import AQILegend from './AQILegend.vue';
+import PopDensLegend from './PopDensLegend.vue';
 
 
 const store = useTempoStore();
@@ -182,7 +184,7 @@ const layerInfo: Record<string, string | undefined> = {
 
 };
 
-const hasLegend = ['land-use', 'aqi-layer-aqi', 'power-plants-layer'];
+const hasLegend = ['land-use', 'aqi-layer-aqi', 'power-plants-layer', 'pop-dens'];
 
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));

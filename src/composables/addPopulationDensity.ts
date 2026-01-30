@@ -8,6 +8,7 @@ const countVar = 'un-adjusted-population-count';
 
 const density = "gpw_v4_population_density_adjusted_to_2015_unwpp_country_totals_rev11";
 const densityVar = 'un-adjusted-population-density';
+console.log(sampleColormap('haline_r', 7).map((rgb, i) => `rgb(${rgb.join(',')})`));
 const densityRaster = {
   "rasterFunctionArguments": {
     // eslint-disable-next-line @typescript-eslint/naming-convention
