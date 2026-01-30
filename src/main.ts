@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Vue, { createApp } from "vue";
 
-import { LocalScope } from "@allindevelopers/vue-local-scope";
+import { LocalScope } from "@all1ndev/vue-local-scope";
 
 import { FundingAcknowledgement, IconButton, CreditLogos } from "@cosmicds/vue-toolkit";
 import LocationSearch from "./components/LocationSearch.vue";
