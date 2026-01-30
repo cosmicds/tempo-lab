@@ -1,17 +1,19 @@
 <template>
   <div
     :class="['side-panel-control', open ? 'open' : 'closed']"
+    :style="cssVars"
   >
     <div class="open-close-container">
       <v-icon
         :color="color"
-        :style="`float: ${openDirection};`"
+        class="open-close-icon"
         @click="toggleOpen()"
       >
         {{ open ? openIcon : closedIcon }}
       </v-icon>
+      <hr />
     </div>
-    <v-slide-x-transition>
+    <v-slide-x-transition class="content">
       <div v-if="open">
         <slot></slot>
       </div>
@@ -47,6 +49,10 @@ const closedIcon = computed(() => `mdi-chevron-double-${props.openDirection}`);
 function toggleOpen() {
   open.value = !open.value;
 }
+
+const cssVars = computed(() => ({
+  "--icon-alignment": props.openDirection == "left" ? "start" : "end",
+}));
 </script>
 
 <style scoped lang="less">
@@ -55,5 +61,25 @@ function toggleOpen() {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+}
+
+hr {
+  background: white;
+  margin: auto;
+  width: 100%;
+}
+
+.open-close-container {
+  display: flex;
+  background: #222222;
+  flex-direction: column;
+
+  .open-close-icon {
+    align-self: var(--icon-alignment);
+  }
+}
+
+.content {
+  margin-top: 10px;
 }
 </style>

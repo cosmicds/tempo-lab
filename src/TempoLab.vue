@@ -85,7 +85,7 @@ debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.t
 const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
-const HANDLE_SIZE_PX = 8;
+const HANDLE_SIZE_PX = 6;
 const DEFAULT_PANEL_WIDTH_PX = 300;
 const MIN_PANEL_WIDTH_PX = 250;
 const PLACEHOLDER_WIDTH_PX = 40;
@@ -97,7 +97,7 @@ const cssVars = computed(() => {
     "--tempo-red": tempoRed.value,
     "--handle-size": `${HANDLE_SIZE_PX}px`,
     "--handle-color": "gray",
-    "--handle-hover-color": infoColor,
+    "--handle-hover-color": accentColor2.value,
   };
 });
 
@@ -120,15 +120,15 @@ onBeforeMount(() => {
   }
 });
 
-function updateSizes(initial=false) {
+function updateSizes(layersDefault: boolean = false, datasetsDefault: boolean = false) {
   // const rootElement = root.value;
   const layers = document.querySelector("#layers-panel") as HTMLElement;
   const datasets = document.querySelector("#datasets-panel") as HTMLElement;
 
-  console.log(layers, layers.clientWidth, initial, layerControlsOpen.value);
-
-  setBasis(layers, layerControlsOpen.value ? (initial ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, layers.clientWidth)) : PLACEHOLDER_WIDTH_PX);
-  setBasis(datasets, datasetControlsOpen.value ? (initial ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, datasets.clientWidth)) : PLACEHOLDER_WIDTH_PX);
+  const layersWidth = layerControlsOpen.value ? (layersDefault ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, layers.clientWidth)) : PLACEHOLDER_WIDTH_PX;
+  setBasis(layers, layersWidth);
+  const datasetsWidth = datasetControlsOpen.value ? (datasetsDefault ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, datasets.clientWidth)) : PLACEHOLDER_WIDTH_PX;
+  setBasis(datasets, datasetsWidth);
 }
 
 type EventHandler = (event: PointerEvent) => void;
@@ -218,7 +218,6 @@ onMounted(() => {
     const initialRightHandler = (event: PointerEvent) => {
       startXRight = event.clientX;
       startRight = getBasis(rightPanel);
-      console.log(event.clientX, getBasis(rightPanel));
     };
 
     setupHandleEvents({
@@ -240,18 +239,18 @@ onMounted(() => {
     }
   });
 
-  updateSizes(true);
+  updateSizes(true, true);
 });
 
 function onDatasetPanelOpenChange(open: boolean) {
-  updateSizes(); 
+  updateSizes(false, true);
   const handle = rightHandle.value;
   if (!handle) { return; }
   handle.style.display = open ? "unset" : "none";
 }
 
 function onLayersPanelOpenChange(open: boolean) {
-  updateSizes(); 
+  updateSizes(true, false);
   const handle = leftHandle.value;
   if (!handle) { return; }
   handle.style.display = open ? "unset" : "none";
@@ -363,7 +362,7 @@ body {
   flex: 0 0 auto;
   width: 0;
   background: var(--panel);
-  padding: 16px;
+  padding: 0 8px;
   box-sizing: border-box;
   overflow: auto;
   border: 1px solid rgba(255,255,255,0.06);
