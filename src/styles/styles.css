@@ -1,0 +1,3 @@
+.popup-card--outline {
+   outline: 1px solid rgb(var(--v-theme-surface-variant));
+ }

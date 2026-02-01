@@ -81,7 +81,6 @@
                         gridcolor: 'rgba(128, 128, 128, 0.3)',
                         title: {
                           standoff: 10,
-                          text: 'Time',
                         },
                       },
                       yaxis: {

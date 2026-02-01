@@ -144,6 +144,7 @@ watch(modelValue, value => {
 }
 .cds-dialog-card {
   align-self: center;
+  outline: 1px solid rgb(var(--v-theme-surface-variant)); 
 
   .v-toolbar, .v-toolbar__content {
     height: 40px !important;

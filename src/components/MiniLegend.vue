@@ -14,6 +14,7 @@ interface MiniOptions {
 
 interface Props {
   data: Entry[];
+  subtitle?: string;
   miniOptions?: MiniOptions;
 }
 
@@ -29,13 +30,14 @@ const colorIndices = miniOptions ? miniOptions.colorIndices : labelIndices;
     <div 
       :class="`legend-label ll-${data[value].name}`" 
       v-for="(value) of colorIndices" 
-      :style="{'--label-color': data[value].color, '--width': `calc(${100 / colorIndices.length}% - 2px)`}" 
+      :style="{'--label-color': data[value].color}" 
       :key="data[value].name"
     >
       <dt v-if="labelIndices.includes(value)" class="legend-text">
         {{data[value].label}}
       </dt>
     </div>
+    <div style="flex-grow: 50;"></div>
   </div>
 </template>
 
@@ -46,7 +48,7 @@ const colorIndices = miniOptions ? miniOptions.colorIndices : labelIndices;
     --space: 5px;
     padding: var(--space);
     padding-left: calc(1.5em + var(--space));
-  }
+  } 
 
   .legend-label::before {
     content: '';
@@ -73,6 +75,8 @@ const colorIndices = miniOptions ? miniOptions.colorIndices : labelIndices;
     align-items: stretch;
     width: 100%;
     gap: 1em;
+    justify-content: space-around;
+    flex-wrap: wrap;
   }
   
   .mini-legend .legend-label {
@@ -89,11 +93,13 @@ const colorIndices = miniOptions ? miniOptions.colorIndices : labelIndices;
   }
   
   .mini-legend .legend-label .legend-text {
-    font-size: 0.7em;
+    font-size: 0.8em;
     position: absolute;
     top: 1.5em;
-    left: 0;
-    width: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    /* width: 100%; */
+    width: max-content;
     text-align: center;
   }
 </style>
