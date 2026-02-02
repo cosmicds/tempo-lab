@@ -1,10 +1,15 @@
 <template>
-  <div v-if="json !== undefined" class="save-csv">
+  <div class="save-csv">
     <a ref="csvDownloadLink"
       style="display: none;"
       href="#"
       :download="datasetName ?? 'download.csv'"
       ></a>
+    <div v-if="isLoading" class="utdc--loading">
+      <v-progress-circular indeterminate color="primary" />
+      <span class="ml-4">Readying files...</span>
+    </div>
+    <div v-else>
     <v-btn
       class="save-csv__action"
       variant="text"
@@ -28,7 +33,7 @@
         class="save-csv__action"
         variant="text"
         density="compact"
-        :disabled="!isSupported || json === undefined"
+        :disabled="!isSupported || json === undefined || clipboardCSV === ''"
         @click="() => copy(clipboardCSV)"
         @keyup.enter="() => copy(clipboardCSV)"
       >
@@ -36,14 +41,24 @@
         <span class="save-csv__label">Copy CSV to clipboard</span>
       </v-btn>
     </use-clipboard>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, useTemplateRef, onUnmounted, ref, computed} from 'vue';
+import { onMounted, useTemplateRef, onUnmounted, ref, nextTick, watch} from 'vue';
 import { csv2FixedWidth, json2Csv, type SampleCSVJsonOutput } from '@/utils/data_converters';
 
-
+const isLoading = ref(true);
+const startLoading = performance.now();
+const bothReady = ref([false, false]); // [fileCSV ready, clipboardCSV ready]
+watch(bothReady, (newVal) => {
+  if (newVal[0] && newVal[1]) {
+    isLoading.value = false;
+    const endLoading = performance.now();
+    console.log(`SaveCSV: CSV generation took ${endLoading - startLoading} ms`);
+  }
+}, { immediate: true, deep: true });
 export interface OutputOptions {
   delimiter: string; // default ','
   includeHeaders: boolean; // default true
@@ -52,7 +67,7 @@ export interface OutputOptions {
   fixedWidth: boolean; // default false
 }
 interface SaveCsvProps {
-  json: SampleCSVJsonOutput;
+  json: SampleCSVJsonOutput | undefined;
   datasetName?: string;
   fileOptions?: OutputOptions;
   clipboardOptions?: OutputOptions;
@@ -76,9 +91,11 @@ const props = withDefaults(defineProps<SaveCsvProps>(), {
 });
 
 
-const fileCSV = computed(() => {
+const fileCSV = ref('');
+const clipboardCSV = ref('');
+const getfileCSV = async () => {
+  if (props.json === undefined) return '';
   if (props.fileOptions.fixedWidth === true) {
-    console.log('Generating fixed width file');
     const csv = json2Csv(props.json.data, {...props.json, ...props.fileOptions, delimiter: '@@@@@',});
     return csv2FixedWidth(csv, '@@@@@', props.fileOptions.delimiter ?? '\t');
   }
@@ -87,11 +104,11 @@ const fileCSV = computed(() => {
     props.json.data, 
     {...props.json, ...props.fileOptions}
   );
-});
+};
 
-const clipboardCSV = computed(() => {
+const getclipboardCSV = async () => {
+  if (props.json === undefined) return '';
   if (props.fileOptions.fixedWidth === true) {
-    console.log('Generating fixed width file');
     const csv = json2Csv(props.json.data, {...props.json, ...props.clipboardOptions, delimiter: '@@@@@',});
     return csv2FixedWidth(csv, '@@@@@', props.clipboardOptions.delimiter ?? '\t');
   }
@@ -99,18 +116,49 @@ const clipboardCSV = computed(() => {
     props.json.data, 
     {...props.json, ...props.clipboardOptions}
   );
-});
+};
 
 const csvDownloadLink = useTemplateRef<HTMLAnchorElement>('csvDownloadLink');
 const url = ref<string>('');
   
+function setupFileAndUrls() {
+  if (url.value !== '') {
+    URL.revokeObjectURL(url.value);
+    url.value = '';
+  }
+  isLoading.value = true;
+  console.log(`SaveCSV: Generating file CSV`);
+  getfileCSV().then((csv) => {
+    fileCSV.value = csv;
+  }).then(() => {
+    if (csvDownloadLink.value && props.json !== undefined) {
+      const blob = new Blob([fileCSV.value], { type: 'text/csv;charset=utf-8;' });
+      url.value = URL.createObjectURL(blob);
+      csvDownloadLink.value.href = url.value;
+      bothReady.value[0] = true;
+    } else {
+      console.error(`SaveCSV failed because csvDownloadLink or json is undefined`);
+    }
+  });
+  
+  getclipboardCSV().then((csv) => {
+    clipboardCSV.value = csv;
+    if (csv !== ''){
+      bothReady.value[1] = true;
+    }
+  });
+}
+  
 onMounted(() => {
-  if (csvDownloadLink.value && props.json !== undefined) {
-    const blob = new Blob([fileCSV.value], { type: 'text/csv;charset=utf-8;' });
-    url.value = URL.createObjectURL(blob);
-    csvDownloadLink.value.href = url.value;
-    // const uri = encodeURI(`data:text/csv;charset=utf-8,${csv}`);
-    // csvDownloadLink.value.href = uri;
+  console.log(`SaveCSV: Starting CSV generation`);
+  nextTick(setupFileAndUrls);
+});
+
+watch(() => props.json, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    console.log(`SaveCSV: json prop changed, regenerating CSV`);
+    bothReady.value = [false, false];
+    setupFileAndUrls();
   }
 });
 

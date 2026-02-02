@@ -1,50 +1,56 @@
 <template>
   <div id="user-dataset-table-container">
-    <div v-if="samples && Object.keys(samples).length > 0" id="utdc--samples">
-      <!-- must pass '\t' and '\n' as javascript, otherwise it will be interpreted literally -->
-      <save-csv 
-        :json="samplesToJSON(dataset, true, true)"
-        :clipboard-options="clipboardOptions"
-        :file-options="fileOptions"
-        :dataset-name="dataset.name"
-        />
-      <v-data-table
-      class="utdc--data-table utdc--sampples-table"
-      :items="samplesItems"
-      :headers="sampleHeaders"
-      @click:row="emits('rowClick', $event.item)"
-      />
+    <!-- Loading state -->
+    <div v-if="isLoading" class="utdc--loading">
+      <v-progress-circular indeterminate color="primary" />
+      <span class="ml-4">Creating table...</span>
     </div>
-    <div v-else-if="folded" id="utdc--folded">
-      <save-csv 
-        :json="foldedSamplesToJSON(dataset, true, true)" 
-        :clipboard-options="clipboardOptions"
-        :file-options="fileOptions"
-        :dataset-name="dataset.name"
+    <div v-else>
+      <div v-if="samples && Object.keys(samples).length > 0" id="utdc--samples">
+        <!-- must pass '\t' and '\n' as javascript, otherwise it will be interpreted literally -->
+        <save-csv 
+          :json="jsonData"
+          :clipboard-options="clipboardOptions"
+          :file-options="fileOptions"
+          :dataset-name="dataset.name"
+          />
+        <v-data-table
+          class="utdc--data-table utdc--sampples-table"
+          :items="samplesItems"
+          :headers="sampleHeaders"
+          @click:row="emits('rowClick', $event.item)"
         />
-      <v-data-table
-        v-if="folded"
-        class="utdc--data-table utdc--folded-table"
-        :headers="foldedHeaders"
-        :items="foldedItems"
-        @click:row="emits('rowClick', $event.item)"
+      </div>
+      <div v-else-if="folded" id="utdc--folded">
+        <save-csv 
+          :json="jsonData" 
+          :clipboard-options="clipboardOptions"
+          :file-options="fileOptions"
+          :dataset-name="dataset.name"
         />
-      <p class="utdc--uncertainty-note">
-        * The uncertainty for this value is the {{ errorTypeStrinc }}
-      </p>
+        <v-data-table
+          class="utdc--data-table utdc--folded-table"
+          :headers="foldedHeaders"
+          :items="foldedItems"
+          @click:row="emits('rowClick', $event.item)"
+        />
+        <p class="utdc--uncertainty-note">
+          * The uncertainty for this value is the {{ errorTypeStrinc }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { computed } from 'vue';
+import { computed, ref, onMounted, nextTick } from 'vue';
 import type { Prettify, UserDataset, UnifiedRegion } from '@/types';
 import type { FoldedTimeSeriesData, } from '@/esri/services/aggregation';
 import type { TimeBinOptions, FoldingPeriodOptions } from '@/utils/foldingValidation';
 import { regionCenter } from '@/utils/data_converters';
 
-import { samplesToJSON, foldedSamplesToJSON, } from '@/utils/data_converters';
+import { samplesToJSON, foldedSamplesToJSON, type SampleCSVJsonOutput } from '@/utils/data_converters';
 import tz_lookup from '@photostructure/tz-lookup';
 import SaveCsv, {type OutputOptions} from './SaveCSV.vue';
 import { formatFoldedBinValue } from '@/utils/folded_bin_processor';
@@ -74,6 +80,8 @@ const fileOptions: OutputOptions = {
 const props = defineProps<{
   dataset: Prettify<UserDataset>;
 }>();
+
+const isLoading = ref(true);
 
 const samples = props.dataset.samples;
 const errors = props.dataset.errors;
@@ -151,7 +159,15 @@ const sampleHeaders = [
     }]
   },
 ];
-const samplesItems = computed(() => {
+
+type DataTableItem = {
+  date: Date | number | string;
+  value: number | null;
+  error?: number;
+};
+const samplesItems = ref<DataTableItem[]>([]);
+
+const getSamplesItems = () => {
   if (!samples) {
     return [];
   }
@@ -160,7 +176,7 @@ const samplesItems = computed(() => {
     value: value.value,
     error: errors ? errors[key]?.upper : undefined,
   }));
-});
+};
 
 
 const folded = props.dataset.folded;
@@ -194,7 +210,8 @@ const foldedHeaders = [
     }]
   }
 ];
-const foldedItems = computed(() => {
+const foldedItems = ref<DataTableItem[]>([]);
+const getfFoldedItems = () => {
   if (!foldedData) {
     return [];
   }
@@ -204,7 +221,41 @@ const foldedItems = computed(() => {
     value: value.value,
     error: foldedData.errors ? foldedData.errors[key]?.upper : undefined,
   }));
+};
+
+const jsonData = ref<SampleCSVJsonOutput | undefined>(undefined);
+// Compute JSON data once for CSV export
+const getJsonData = () => {
+  if (samples && Object.keys(samples).length > 0) {
+    return samplesToJSON(props.dataset, true, true);
+  } else if (folded) {
+    return foldedSamplesToJSON(props.dataset, true, true);
+  }
+  return undefined;
+};
+
+onMounted(() => {
+  if (!samples && !folded) {
+    return;
+  }
+
+  // Use requestIdleCallback to avoid blocking the UI
+  const processData = () => {
+    samplesItems.value = getSamplesItems();
+    foldedItems.value = getfFoldedItems();
+    jsonData.value = getJsonData();
+    isLoading.value = false;
+  };
+
+  // this won't work on Safari, so we fallback, but waiting for idle
+  // makes the ui more responsive
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(processData);
+  } else {
+    processData();
+  }
 });
+
 
 const emits = defineEmits<{
   (event: 'rowClick', value: { date: Date | number; value: number; error?: number }): void;
