@@ -12,8 +12,11 @@
         open-direction="right"
         icon="mdi-layers"
         :color="accentColor2"
+        open-tooltip-text="Hide layer controls"
+        closed-tooltip-text="Show layer controls"
         open-arrow-color="surface-variant"
         :closed-arrow-color="accentColor2"
+        tooltips
         v-model:open="layerControlsOpen"
       >
         <template #default>
@@ -23,21 +26,37 @@
         </template>
       </side-placeholder>
 
-      <div
-        class="handle"
-        ref="left-handle"
-        aria-label="Resize left/middle"
-        role="separator"
-      ></div>
+      <v-tooltip
+        text="Change panel width"
+        location="top start"
+      >
+        <template #activator="{ props }">
+          <div
+            v-bind="props"
+            class="handle"
+            ref="left-handle"
+            aria-label="Resize left/middle"
+            role="separator"
+          ></div>
+        </template>
+      </v-tooltip>
 
       <map-with-controls id="map-panel" />
 
-      <div
-        class="handle"
-        ref="right-handle"
-        aria-label="Resize middle/right"
-        role="separator"
-      ></div>
+      <v-tooltip
+        text="Change panel width"
+        location="top end"
+      >
+        <template #activator="{ props }">
+          <div
+            v-bind="props"
+            class="handle"
+            ref="right-handle"
+            aria-label="Resize middle/right"
+            role="separator"
+          ></div>
+        </template>
+      </v-tooltip>
 
       <side-placeholder
         id="datasets-panel"
@@ -46,8 +65,11 @@
         open-direction="left"
         icon="mdi-chart-line"
         :color="accentColor2"
+        open-tooltip-text="Hide graphing controls"
+        closed-tooltip-text="Show graphing controls"
         open-arrow-color="surface-variant"
         :closed-arrow-color="accentColor2"
+        tooltips
         v-model:open="datasetControlsOpen"
       >
         <template #default>

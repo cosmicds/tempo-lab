@@ -4,13 +4,21 @@
     :style="cssVars"
   >
     <div class="open-close-container">
-      <v-icon
-        :color="open ? openArrowColor : closedArrowColor"
-        class="open-close-icon"
-        @click="toggleOpen()"
+      <v-tooltip
+        :disabled="!tooltips"
+        :text="open ? openTooltipText : closedTooltipText"
       >
-        {{ open ? openIcon : closedIcon }}
-      </v-icon>
+        <template #activator="{ props }">
+          <v-icon
+            v-bind="props"
+            :color="open ? openArrowColor : closedArrowColor"
+            class="open-close-icon"
+            @click="toggleOpen()"
+          >
+            {{ open ? openIcon : closedIcon }}
+          </v-icon>
+        </template>
+      </v-tooltip>
       <hr />
     </div>
     <v-slide-x-transition class="content">
@@ -18,12 +26,20 @@
         <slot></slot>
       </div>
       <div v-else>
-        <v-icon
-          :color="color"
-          @click="toggleOpen()"
+        <v-tooltip
+          :disabled="!tooltips"
+          :text="open ? openTooltipText : closedTooltipText"
         >
-          {{ props.icon }}
-        </v-icon>
+          <template #activator="{ props }">
+            <v-icon
+              v-bind="props"
+              :color="color"
+              @click="toggleOpen()"
+            >
+              {{ props.icon }}
+            </v-icon>
+        </template>
+      </v-tooltip>
       </div>
     </v-slide-x-transition>
   </div>
@@ -38,12 +54,18 @@ interface Props {
   color?: string;
   openArrowColor?: string;
   closedArrowColor?: string;
+  tooltips?: boolean;
+  openTooltipText?: string | undefined;
+  closedTooltipText?: string | undefined;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: "white",
   openArrowColor: "gray",
   closedArrowColor: "gray",
+  tooltips: false,
+  openTooltipText: undefined,
+  closedTooltipText: undefined,
 });
 const open = defineModel<boolean>("open", { type: Boolean, default: false });
 const closeDirection = computed(() => props.openDirection === "left" ? "right" : "left");
