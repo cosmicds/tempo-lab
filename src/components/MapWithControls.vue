@@ -6,6 +6,15 @@
         color="var(--info-background)"
       >
         <v-toolbar-title text="TEMPO Data Viewer"></v-toolbar-title>
+        <v-tooltip text="Save map as image">
+          <template #activator="{ props }">
+            <MaplibreDownloadButton
+              v-bind="props"
+              :map="map" 
+              filename="tempo-lab"
+              />
+          </template>
+        </v-tooltip>
         <!-- switch for preview points -->
         <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
           <template #activator="{ props }">
@@ -143,6 +152,7 @@ import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
 
 import EsriMap from "@/components/EsriMap.vue";
 import MapColorbarWrap from "@/components/MapColorbarWrap.vue";
+import MaplibreDownloadButton from "@/components/MaplibreDownloadButton.vue";
 
 type MapType = Map | null;
 type MapTypeRef = Ref<MapType>;
@@ -698,24 +708,6 @@ watch(focusRegion, region => {
   }
 });
 
-
-
-import { downloadCanvasToImage } from "@/utils/canvas_downloader";
-import { AllAvailableColorMaps } from "@/colormaps";
-function downloadMap() {
-  if (!map.value) {
-    alert('Map not ready yet!');
-    return;
-  }
-  const html = map.value.getCanvas();
-  console.log('Downloading map image...', html);
-  // see: https://stackoverflow.com/a/78283389/11594175
-  map.value.once('render', () => {
-    downloadCanvasToImage(html, 'tempo-map.png');
-  });
-  map.value.redraw();
-  
-}
 </script>
 
 <style lang="less">
