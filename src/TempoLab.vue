@@ -4,54 +4,96 @@
     :style="cssVars"
   >
     <header-bar />
-    <div ref="root" class="layout-root"></div>
-
-    <teleport
-      v-if="layersPanelTarget"
-      :to="layersPanelTarget"
-    >
-      <v-slide-x-transition>
-        <comparison-data-controls
-          class="comparison-data-controls"
-        />
-      </v-slide-x-transition>
-    </teleport>
-
-    <div v-if="mapTargets">
-      <teleport
-        v-for="[key, target] in Object.entries(mapTargets)"
-        :key="key"
-        :to="target"
+    <div ref="root" class="layout-root">
+      <side-placeholder
+        id="layers-panel"
+        ref="layers-panel"
+        class="panel"
+        open-direction="right"
+        icon="mdi-layers"
+        :color="accentColor2"
+        open-tooltip-text="Hide layer controls"
+        closed-tooltip-text="Show layer controls"
+        open-arrow-color="surface-variant"
+        :closed-arrow-color="accentColor2"
+        tooltips
+        v-model:open="layerControlsOpen"
       >
-        <map-with-controls />
-      </teleport>
-    </div>
+        <template #default>
+          <comparison-data-controls
+            class="comparison-data-controls"
+          />
+        </template>
+      </side-placeholder>
 
-    <teleport
-      v-if="datasetsPanelTarget"
-      :to="datasetsPanelTarget"
-    >
-      <dataset-controls
-       class="dataset-controls"
-      />
-    </teleport>
+      <v-tooltip
+        text="Change panel width"
+        location="top start"
+      >
+        <template #activator="{ props }">
+          <div
+            v-bind="props"
+            class="handle"
+            ref="left-handle"
+            aria-label="Resize left/middle"
+            role="separator"
+          ></div>
+        </template>
+      </v-tooltip>
+
+      <map-with-controls id="map-panel" />
+
+      <v-tooltip
+        text="Change panel width"
+        location="top end"
+      >
+        <template #activator="{ props }">
+          <div
+            v-bind="props"
+            class="handle"
+            ref="right-handle"
+            aria-label="Resize middle/right"
+            role="separator"
+          ></div>
+        </template>
+      </v-tooltip>
+
+      <side-placeholder
+        id="datasets-panel"
+        ref="datasets-panel"
+        class="panel"
+        open-direction="left"
+        icon="mdi-chart-line"
+        :color="accentColor2"
+        open-tooltip-text="Hide graphing controls"
+        closed-tooltip-text="Show graphing controls"
+        open-arrow-color="surface-variant"
+        :closed-arrow-color="accentColor2"
+        tooltips
+        v-model:open="datasetControlsOpen"
+      >
+        <template #default>
+          <dataset-controls
+           class="dataset-controls"
+          />
+        </template>
+     </side-placeholder>
+    </div>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, reactive, ref, useTemplateRef, watch, type Ref } from "vue";
+import { computed, onBeforeMount, onMounted, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { ComponentItemConfig, GoldenLayout, LayoutConfig, type ComponentItem, type ContentItem, type ComponentContainer, type RowOrColumn } from "golden-layout";
-import { v4 } from "uuid";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
-type MaybeHTMLElement = HTMLElement | null;
-const root = useTemplateRef("root");
-const mapTargets = reactive<Record<string, Ref<MaybeHTMLElement>>>({});
-const mapContainers = reactive<Record<string, ComponentContainer>>({});
-const datasetsPanelTarget = ref<MaybeHTMLElement>(null);
-const layersPanelTarget = ref<MaybeHTMLElement>(null);
+const root = useTemplateRef<HTMLDivElement>("root");
+const leftHandle = useTemplateRef<HTMLDivElement>("left-handle");
+const rightHandle = useTemplateRef<HTMLDivElement>("right-handle");
+// const layersPanel = useTemplateRef<HTMLElement>("layers-panel");
+// const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
+// const mapsPanel = useTemplateRef<HTMLElement>("maps-panel");
 
 
 const store = useTempoStore();
@@ -69,190 +111,152 @@ debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.t
 const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
+const HANDLE_SIZE_PX = 4;
+const DEFAULT_PANEL_WIDTH_PX = 300;
+const MIN_PANEL_WIDTH_PX = 250;
+const PLACEHOLDER_WIDTH_PX = 40;
 const cssVars = computed(() => {
   return {
-    '--accent-color': accentColor.value,
-    '--accent-color-2': accentColor2.value,
-    '--info-background': infoColor,
-    '--tempo-red': tempoRed.value,
+    "--accent-color": accentColor.value,
+    "--accent-color-2": accentColor2.value,
+    "--info-background": infoColor,
+    "--tempo-red": tempoRed.value,
+    "--handle-size": `${HANDLE_SIZE_PX}px`,
+    "--handle-color": "gray",
+    "--handle-hover-color": accentColor.value,
   };
 });
 
 const localStorageKey = "tempods";
+let animationFrame = 0;
+
+function setBasis(panel: HTMLElement, sizePx: number) {
+  panel.style.flexBasis = `${sizePx}px`;
+}
+
+function getBasis(panel: HTMLElement): number {
+  const basis = parseFloat(getComputedStyle(panel).flexBasis);
+  return isNaN(basis) ? 0 : basis;
+}
 
 onBeforeMount(() => {
-  
   const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
   if (storedState) {
     updateStoreFromJSON(store, storedState);
   }
 });
 
-function mapConfig(): ComponentItemConfig {
-  return {
-    type: 'component',
-    componentType: 'map-panel',
-    title: 'Map',
-    draggable: false,
-  };
+function updateSizes(layersDefault: boolean = false, datasetsDefault: boolean = false) {
+  // const rootElement = root.value;
+  const layers = document.querySelector("#layers-panel") as HTMLElement;
+  const datasets = document.querySelector("#datasets-panel") as HTMLElement;
+
+  const layersWidth = layerControlsOpen.value ? (layersDefault ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, layers.clientWidth)) : PLACEHOLDER_WIDTH_PX;
+  setBasis(layers, layersWidth);
+  const datasetsWidth = datasetControlsOpen.value ? (datasetsDefault ? DEFAULT_PANEL_WIDTH_PX : Math.max(MIN_PANEL_WIDTH_PX, datasets.clientWidth)) : PLACEHOLDER_WIDTH_PX;
+  setBasis(datasets, datasetsWidth);
 }
 
-const DEFAULT_PANEL_WIDTH_PX = 300;
-function getGLPanelWidth(): number {
-  const glRoot = root.value as HTMLElement;
-  return Math.min(Math.max(DEFAULT_PANEL_WIDTH_PX * 100 / glRoot.clientWidth, 10), 25);
+type EventHandler = (event: PointerEvent) => void;
+
+interface HandleSetupParams {
+  handle: HTMLElement;
+  onMove: EventHandler;
+  initialEventHandler?: (event: PointerEvent) => void;
 }
 
-function layersPanelConfig(width: number | null = null): ComponentItemConfig {
-  return {
-    type: 'component',
-    componentType: 'layers-panel',
-    title: 'Layers',
-    draggable: false,
-    width: width ?? getGLPanelWidth(),
-  };
-}
+function setupHandleEvents(params: HandleSetupParams) {
+  
+  const { handle, onMove } = params;
 
-function datasetsPanelConfig(width: number | null = null): ComponentItemConfig {
-  return {
-    type: 'component',
-    componentType: 'datasets-panel',
-    title: 'Controls',
-    draggable: false,
-    width: width ?? getGLPanelWidth(),
-  };
-}
+  handle.addEventListener("pointerdown", (event: PointerEvent) => {
 
-// We'll probably be using this eventually
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function addMapPanel() {
-  if (layout) {
-    const config = mapConfig();
-    const row = layout.rootItem as RowOrColumn;
-    row.addItem(config, Object.keys(mapTargets).length);
-  }
-}
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
 
-// And maybe this too
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function removeMapPanel(index: number) {
-  if (layout) {
-    const idx = Math.round(index);
-    if (idx >= Object.keys(mapTargets).length) {
-      throw new Error(`Index ${idx} is out of range for map panels`);
+    document.body.classList.add("dragging");
+
+    if (params.initialEventHandler) {
+      params.initialEventHandler(event); 
     }
-    const row = layout.rootItem as RowOrColumn;
-    row.contentItems[idx]?.remove();
-  }
+
+    const onUp = (ev: PointerEvent) => {
+      try {
+        handle.releasePointerCapture(ev.pointerId); 
+      } catch (error) {
+        console.error(error);
+      }
+      document.body.classList.remove("dragging");
+
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+
+  });
 }
 
-let datasetsItem: ContentItem | null = null;
-let layersItem: ContentItem | null = null;
-
-function setDatasetsPanelVisibility(visible: boolean) {
-  if (!layout) { return; }
-  const row = layout.rootItem as RowOrColumn;
-
-  const index = row.contentItems.length - 1;
-  const item = row.contentItems[index].contentItems[0];
-  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "datasets-panel";
-  if (visible === isAtIndex) { return; }
-  const layersWidth = layersItem?.container.width ?? 0;
-  if (visible) {
-    datasetsItem = row.newItem(datasetsPanelConfig(), index + 1);
-    datasetsItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
-  } else {
-    item.remove();
-    datasetsItem = null;
-  }
-  layersItem?.container.setSize(layersWidth);
-}
-
-function setLayersPanelVisibility(visible: boolean) {
-  if (!layout) { return; }
-  const row = layout.rootItem as RowOrColumn;
-
-  const index = 0;
-  const item = row.contentItems[index].contentItems[0];
-  const isAtIndex = item != null && item.isComponent && (item as ComponentItem).componentType === "layers-panel";
-  if (visible === isAtIndex) { return; }
-  const datasetsWidth = datasetsItem?.container.width ?? 0;
-  if (visible) {
-    layersItem = row.newItem(layersPanelConfig(), index);
-    layersItem.container.setSize(DEFAULT_PANEL_WIDTH_PX);
-  } else {
-    item.remove();
-    layersItem = null;
-  }
-  datasetsItem?.container.setSize(datasetsWidth);
-}
-
-function layoutContent(): ComponentItemConfig[] {
-  const content = [mapConfig()];
-  if (layerControlsOpen.value) {
-    content.unshift(layersPanelConfig());
-  }
-  if (datasetControlsOpen.value) {
-    content.push(datasetsPanelConfig());
-  }
-  return content;
-}
-
-// bind add and remove to the window for easy access from the console
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).addMapPanel = addMapPanel;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).removeMapPanel = removeMapPanel;
-
-let layout: GoldenLayout | null = null;
 onMounted(() => {
-  const rootEl = root.value as HTMLElement;
-  if (!rootEl) {
-    return;
+  
+  const left = leftHandle.value;
+  const leftPanel = document.querySelector("#layers-panel") as HTMLElement;
+  if (left && leftPanel) {
+    let startXLeft = 0;
+    let startLeft = 0;
+
+    const onLeftMove = (event: PointerEvent) => {
+      const dx = event.clientX - startXLeft;
+      const minLeft = layerControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      const newLeftSize = Math.max(minLeft, startLeft + dx);
+      setBasis(leftPanel, newLeftSize);
+    };
+
+    const initialLeftHandler = (event: PointerEvent) => {
+      startXLeft = event.clientX;
+      startLeft = getBasis(leftPanel);
+    };
+
+    setupHandleEvents({
+      handle: left,
+      onMove: onLeftMove,
+      initialEventHandler: initialLeftHandler,
+    });
+
   }
-  layout = new GoldenLayout(rootEl);
 
-  layout.registerComponentFactoryFunction("datasets-panel", container => {
-    container.element.id = "datasets-panel";
-    datasetsPanelTarget.value = container.element;
+  const right = rightHandle.value;
+  const rightPanel = document.querySelector("#datasets-panel") as HTMLElement;
+  if (right && rightPanel) {
+    let startXRight = 0;
+    let startRight = 0;
+
+    const onRightMove = (event: PointerEvent) => {
+      const dx = event.clientX - startXRight;
+      const minRight = datasetControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      const newRightSize = Math.max(minRight, startRight - dx);
+      setBasis(rightPanel, newRightSize);
+    };
+
+    const initialRightHandler = (event: PointerEvent) => {
+      startXRight = event.clientX;
+      startRight = getBasis(rightPanel);
+    };
+
+    setupHandleEvents({
+      handle: right,
+      onMove: onRightMove,
+      initialEventHandler: initialRightHandler,
+    });
+  }
+
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = requestAnimationFrame(() => updateSizes());
   });
-
-  layout.registerComponentFactoryFunction("layers-panel", container => {
-    container.element.id = "layers-panel";
-    layersPanelTarget.value = container.element;
-  });
-
-  layout.registerComponentFactoryFunction("map-panel", container => {
-    container.element.classList.add("map-panel");
-    const id = v4();
-    const target = ref<MaybeHTMLElement>(null);
-    target.value = container.element;
-    mapContainers[id] = container;
-    mapTargets[id] = target;
-  });
-
-  // const panelWidth = getPanelWidth();
-  // const mapWidth = 100 - 2 * panelWidth;
-
-  const config: LayoutConfig = {
-    settings: {
-      hasHeaders: false,
-      responsiveMode: "always",
-    },
-    dimensions: {
-      defaultMinItemWidth: "250px",
-    },
-    root: {
-      type: 'row',
-      content: layoutContent(),
-      isClosable: false,
-    },
-  };
-  layout.resizeWithContainerAutomatically = true;
-  layout.loadLayout(config);
-  console.log(layout);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).layout = layout;
 
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden" && !ignoreCache) {
@@ -260,10 +264,26 @@ onMounted(() => {
       window.localStorage.setItem(localStorageKey, stringified);
     }
   });
+
+  updateSizes(true, true);
 });
 
-watch(datasetControlsOpen, setDatasetsPanelVisibility);
-watch(layerControlsOpen, setLayersPanelVisibility);
+function onDatasetPanelOpenChange(open: boolean) {
+  updateSizes(false, true);
+  const handle = rightHandle.value;
+  if (!handle) { return; }
+  handle.style.display = open ? "unset" : "none";
+}
+
+function onLayersPanelOpenChange(open: boolean) {
+  updateSizes(true, false);
+  const handle = leftHandle.value;
+  if (!handle) { return; }
+  handle.style.display = open ? "unset" : "none";
+}
+
+watch(datasetControlsOpen, onDatasetPanelOpenChange);
+watch(layerControlsOpen, onLayersPanelOpenChange);
 </script>
 
 <style lang="less">
@@ -279,12 +299,9 @@ watch(layerControlsOpen, setLayersPanelVisibility);
 // JC: This was commented out, but I put it back in because my browser (Chrome on Ubuntu) didn't already have Lexend
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
 
-html, body .layout-root {
+html, body {
   width: 100%;
   height: 100%;
-}
-
-html, body {
   padding: 0;
   margin: 0;
 }
@@ -299,29 +316,26 @@ body {
     -webkit-user-select: none;
   }
   font-family: "Lexend", sans-serif;
+  height: 100%;
 }
 
 .map-panel {
+  min-width: 250px;
   display: flex;
   flex-direction: row;
   padding-left: 10px;
   gap: 5px;
 }
 
-#layers-panel {
+#layers-panel, #datasets-panel {
   overflow-y: scroll;
+}
+
+#layers-panel {
   margin-right: 5px;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 #datasets-panel {
-  overflow-y: scroll;
   padding-left: 2px;
 }
 
@@ -351,25 +365,56 @@ body {
   }
 }
 
-// Some Golden Layout adjustments
-.lm_content {
-  background: rgb(var(--v-theme-background));
-  overflow-y: auto!important;
-}
-
-.lm_splitter {
-  background-color: #333333;
-  opacity: 0.7;
-
-  &.lm_dragging {
-    background-color: var(--smithsonian-blue);
-  }
-}
-
 .tab-content {
   padding: 0.5rem 1rem;
   border: 5px solid var(--tempo-red);
   border-radius: 10px;
   margin: 10px;
+}
+
+.layout-root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel {
+  flex: 0 0 auto;
+  width: 100%;
+  background: var(--panel);
+  box-sizing: border-box;
+  overflow: auto;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.handle {
+  flex: 0 0 var(--handle-size);
+  width: var(--handle-size);
+  cursor: col-resize;
+  background: var(--handle-color);
+  position: relative;
+  touch-action: none;
+}
+
+.handle:hover {
+  background: var(--handle-hover-color);
+}
+
+.handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.35);
+  box-shadow: -6px 0 0 rgba(255,255,255,0.18), 6px 0 0 rgba(255,255,255,0.18);
+}
+
+.dragging, .dragging * {
+  cursor: col-resize !important;
 }
 </style>
