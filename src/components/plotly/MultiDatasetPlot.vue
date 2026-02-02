@@ -9,7 +9,7 @@
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} - {{ foldTypeToHumanReadable(foldType as FoldType) }}
+                {{ descriptor.fullName.text }} - {{ foldTypeToHumanReadable(foldType as FoldType) }} Timeseries
               </div>
             </summary>
             <folded-plotly-graph
@@ -111,13 +111,13 @@ function foldTypeToHumanReadable(ft: FoldType): string {
     return 'Annual Variation (All Points)';
 
   case 'hourOfNone':
-    return 'Hourly Timeseries';
+    return 'Hourly';
   case 'dayOfNone':
-    return 'Daily Timeseries';
+    return 'Daily';
   case 'weekOfNone':
-    return 'Weekly Timeseries';
+    return 'Weekly';
   case 'monthOfNone':
-    return 'Monthly Timeseries';
+    return 'Monthly';
 
   default:
     return pascalToSnake(ft);
