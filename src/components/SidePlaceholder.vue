@@ -21,20 +21,22 @@
       </v-tooltip>
       <hr />
     </div>
-    <v-slide-x-transition class="content">
-      <div v-if="open">
+    <v-slide-x-transition class="content-container">
+      <div v-if="open" class="content">
         <slot></slot>
       </div>
-      <div v-else>
+      <div class="placeholder-content" v-else>
         <v-tooltip
           :disabled="!tooltips"
           :text="open ? openTooltipText : closedTooltipText"
         >
           <template #activator="{ props }">
             <v-icon
+              class="content-icon"
               v-bind="{ ...props, icon }"
               :color="color"
               @click="toggleOpen()"
+              size="large"
             >
             </v-icon>
         </template>
@@ -86,6 +88,14 @@ const cssVars = computed(() => ({
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding: 0;
+
+  &.closed::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 hr {
@@ -104,7 +114,13 @@ hr {
   }
 }
 
-.content {
+.content-container {
   margin-top: 10px;
+}
+
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>

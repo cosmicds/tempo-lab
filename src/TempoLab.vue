@@ -327,20 +327,15 @@ body {
   gap: 5px;
 }
 
-#layers-panel {
+#layers-panel, #datasets-panel {
   overflow-y: scroll;
+}
+
+#layers-panel {
   margin-right: 5px;
-
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 #datasets-panel {
-  overflow-y: scroll;
   padding-left: 2px;
 }
 
@@ -386,9 +381,8 @@ body {
 
 .panel {
   flex: 0 0 auto;
-  width: 0;
+  width: 100%;
   background: var(--panel);
-  padding: 0 8px;
   box-sizing: border-box;
   overflow: auto;
   border: 1px solid rgba(255,255,255,0.06);
