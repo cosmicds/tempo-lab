@@ -89,7 +89,7 @@ debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.t
 const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
 
 const infoColor = "#092088";
-const HANDLE_SIZE_PX = 6;
+const HANDLE_SIZE_PX = 4;
 const DEFAULT_PANEL_WIDTH_PX = 300;
 const MIN_PANEL_WIDTH_PX = 250;
 const PLACEHOLDER_WIDTH_PX = 40;
