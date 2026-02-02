@@ -101,7 +101,7 @@ const cssVars = computed(() => {
     "--tempo-red": tempoRed.value,
     "--handle-size": `${HANDLE_SIZE_PX}px`,
     "--handle-color": "gray",
-    "--handle-hover-color": accentColor2.value,
+    "--handle-hover-color": accentColor.value,
   };
 });
 
