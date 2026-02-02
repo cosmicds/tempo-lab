@@ -32,11 +32,10 @@
         >
           <template #activator="{ props }">
             <v-icon
-              v-bind="props"
+              v-bind="{ ...props, icon }"
               :color="color"
               @click="toggleOpen()"
             >
-              {{ props.icon }}
             </v-icon>
         </template>
       </v-tooltip>
