@@ -9,7 +9,7 @@
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} ({{ pascalToSnake(foldType) }}) stacked timeseries
+                {{ descriptor.fullName.text }} - {{ foldTypeToHumanReadable(foldType as FoldType) }}
               </div>
             </summary>
             <folded-plotly-graph
@@ -73,6 +73,56 @@ import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
 import { pascalToSnake } from '@/utils/text';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
+import type { FoldType } from '@/esri/services/aggregation';
+
+function foldTypeToHumanReadable(ft: FoldType): string {
+  switch (ft) {
+
+  case 'hourOfDay':
+    return 'Diurnal Variation (Hourly)';
+  case 'noneOfDay':
+    return 'Diurnal Variation (All Points)';
+    
+  case 'hourOfWeek':
+    return 'Weekly Variation (Hourly)';
+  case 'dayOfWeek':
+    return 'Weekly Variation (Daily)';
+  case 'noneOfWeek':
+    return 'Weekly Variation (All Points)';
+
+  case 'hourOfMonth':
+    return 'Monthly Variation (Hourly)';
+  case 'dayOfMonth':
+    return 'Monthly Variation (Daily)';
+  case 'weekOfMonth':
+    return 'Monthly Variation (Weekly)';
+  case 'noneOfMonth':
+    return 'Monthly Variation (All Points)';
+
+  case 'hourOfYear':
+    return 'Annual Variation (Hourly)';
+  case 'dayOfYear':
+    return 'Annual Variation (Daily)';
+  case 'weekOfYear':
+    return 'Annual Variation (Weekly)';
+  case 'monthOfYear':
+    return 'Annual Variation (Monthly)';
+  case 'noneOfYear':
+    return 'Annual Variation (All Points)';
+
+  case 'hourOfNone':
+    return 'Hourly Timeseries';
+  case 'dayOfNone':
+    return 'Daily Timeseries';
+  case 'weekOfNone':
+    return 'Weekly Timeseries';
+  case 'monthOfNone':
+    return 'Monthly Timeseries';
+
+  default:
+    return pascalToSnake(ft);
+  }
+}
 
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
