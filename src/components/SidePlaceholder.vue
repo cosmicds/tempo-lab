@@ -5,7 +5,7 @@
   >
     <div class="open-close-container">
       <v-icon
-        :color="color"
+        :color="open ? openArrowColor : closedArrowColor"
         class="open-close-icon"
         @click="toggleOpen()"
       >
@@ -36,10 +36,14 @@ interface Props {
   openDirection: "left" | "right";
   icon: string;
   color?: string;
+  openArrowColor?: string;
+  closedArrowColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   color: "white",
+  openArrowColor: "gray",
+  closedArrowColor: "gray",
 });
 const open = defineModel<boolean>("open", { type: Boolean, default: false });
 const closeDirection = computed(() => props.openDirection === "left" ? "right" : "left");

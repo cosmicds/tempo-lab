@@ -11,7 +11,9 @@
         class="panel"
         open-direction="right"
         icon="mdi-layers"
-        color="surface-variant"
+        :color="accentColor2"
+        open-arrow-color="surface-variant"
+        :closed-arrow-color="accentColor2"
         v-model:open="layerControlsOpen"
       >
         <template #default>
@@ -43,7 +45,9 @@
         class="panel"
         open-direction="left"
         icon="mdi-chart-line"
-        color="surface-variant"
+        :color="accentColor2"
+        open-arrow-color="surface-variant"
+        :closed-arrow-color="accentColor2"
         v-model:open="datasetControlsOpen"
       >
         <template #default>
