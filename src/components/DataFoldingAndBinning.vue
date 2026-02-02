@@ -609,6 +609,7 @@ function createFoldedTimeRange() {
     description: `Stacked data (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}) ${selectedMethod.value}`,
     range: ranges,
     type: 'folded' as TimeRangeSelectionType,
+    source: props.selection.timeRange,
   };
 }
 

@@ -1,21 +1,37 @@
 <template>
   <div id="user-dataset-table-container">
     <div v-if="samples && Object.keys(samples).length > 0" id="utdc--samples">
-      <save-csv  :csv="samplesToCsv(dataset)" />
+      <!-- must pass '\t' and '\n' as javascript, otherwise it will be interpreted literally -->
+      <save-csv 
+        :json="samplesToJSON(dataset, true, true)"
+        :clipboard-options="clipboardOptions"
+        :file-options="fileOptions"
+        :dataset-name="dataset.name"
+        />
       <v-data-table
+      class="utdc--data-table utdc--sampples-table"
       :items="samplesItems"
       :headers="sampleHeaders"
       @click:row="emits('rowClick', $event.item)"
       />
     </div>
     <div v-else-if="folded" id="utdc--folded">
-      <save-csv :csv="foldedSamplesToCsv(dataset)" />
+      <save-csv 
+        :json="foldedSamplesToJSON(dataset, true, true)" 
+        :clipboard-options="clipboardOptions"
+        :file-options="fileOptions"
+        :dataset-name="dataset.name"
+        />
       <v-data-table
         v-if="folded"
+        class="utdc--data-table utdc--folded-table"
         :headers="foldedHeaders"
         :items="foldedItems"
         @click:row="emits('rowClick', $event.item)"
         />
+      <p class="utdc--uncertainty-note">
+        * The uncertainty for this value is the {{ errorTypeStrinc }}
+      </p>
     </div>
   </div>
 </template>
@@ -28,10 +44,32 @@ import type { FoldedTimeSeriesData, } from '@/esri/services/aggregation';
 import type { TimeBinOptions, FoldingPeriodOptions } from '@/utils/foldingValidation';
 import { regionCenter } from '@/utils/data_converters';
 
-import { samplesToCsv, foldedSamplesToCsv } from '@/utils/data_converters';
+import { samplesToJSON, foldedSamplesToJSON, } from '@/utils/data_converters';
 import tz_lookup from '@photostructure/tz-lookup';
-import SaveCsv from './SaveCSV.vue';
+import SaveCsv, {type OutputOptions} from './SaveCSV.vue';
 import { formatFoldedBinValue } from '@/utils/folded_bin_processor';
+
+
+const FILE_DELIMITER = ',';
+const FIXED_WIDTH_DELIMITER = '\t'; // fixed width files use tabs
+const DOWNLOAD_FILE_FIXED_WIDTH = true;
+const CLIPBOARD_DELIMITER = '\t'; // a tab break is intepreted by google sheets as a column break
+
+const clipboardOptions: OutputOptions = {
+  delimiter: CLIPBOARD_DELIMITER,
+  includeHeaders: true,
+  includeMeta: true, // codap formatted meta, includes units
+  includeUnits: true, // unit row not seen by codap, but probably useful in a spreadsheet, so keep it. to exclude it, set <<<< this to false.
+  fixedWidth: true, // doesn't have to be fixed width. but we'll keep it consistent with file download
+};
+
+const fileOptions: OutputOptions = {
+  delimiter: DOWNLOAD_FILE_FIXED_WIDTH ? FIXED_WIDTH_DELIMITER : FILE_DELIMITER,
+  includeHeaders: true,
+  includeMeta: true,
+  includeUnits: true,
+  fixedWidth: DOWNLOAD_FILE_FIXED_WIDTH,
+};
 
 const props = defineProps<{
   dataset: Prettify<UserDataset>;
@@ -63,17 +101,25 @@ const toDateTime = (date: Date) => date.toLocaleString(undefined, {
   timeZone: tz,
 });
 
+
+function formatValue(value: number | undefined | null): string {
+  if (value === undefined || value === null) { return 'N/A'; }
+  if (props.dataset.molecule === 'o3') { return value.toFixed(2); }
+  return (value / 1e14).toFixed(2);
+}
+
+function formatError(error: number | undefined | null): string {
+  if (error === undefined || error === null) { return 'N/A'; }
+  if (props.dataset.molecule === 'o3') { return error.toFixed(2); }
+  return (error / 1e14).toFixed(2);
+}
+
 function formatValueError(value: number | undefined | null, error: number | undefined | null): string {
   if (!value && !error) {
     return '';
   }
-  if (props.dataset.molecule === 'o3') {
-    const valStr = value ? value.toFixed(2) : 'N/A';
-    const errStr = error ? error.toFixed(2) : 'N/A';
-    return `${valStr} (${errStr})`;
-  }
-  const valStr = value ? (value / 1e14).toFixed(2) : 'N/A';
-  const errStr = error ? (error / 1e14).toFixed(2) : 'N/A';
+  const valStr = formatValue(value);
+  const errStr = formatError(error);
   return `${valStr} (${errStr})`;
 }
 
@@ -89,11 +135,19 @@ const sampleHeaders = [
     value: item => toTime(item.date) 
   },
   { 
-    title: props.dataset.molecule === 'o3' ? 'Dalton units' : 'Column Density (error)',
+    title: 'Column Density',
     children: [{
-      title:  props.dataset.molecule === 'o3' ? null : '10¹⁴ molecules/cm²',
+      title:  props.dataset.molecule === 'o3' ? 'Dobson Units' : '10¹⁴ molecules/cm²',
       key: 'columnDensity',
-      value: item => formatValueError(item.value, item.error),
+      value: item => formatValue(item.value),
+    }]
+  },
+  {
+    title: 'Uncertainty*',
+    children: [{
+      title:  props.dataset.molecule === 'o3' ? 'Dobson Units' : '10¹⁴ molecules/cm²',
+      key: 'uncertainty',
+      value: item => formatError(item.error),
     }]
   },
 ];
@@ -115,7 +169,8 @@ const foldPeriod = props.dataset.folded?.foldPeriod as FoldingPeriodOptions | un
 const foldedData = props.dataset.folded?.raw as FoldedTimeSeriesData | undefined;
 
 import { foldTypeToLabel } from '@/utils/folded_bin_processor';
-import { format } from 'maplibre-gl';
+
+const errorTypeStrinc = (!folded || (folded && folded.useSEM)) ? 'standard error of mean' : 'standard deviation';
 
 const foldedHeaders = [
   { 
@@ -123,13 +178,21 @@ const foldedHeaders = [
     key: 'date',
   },
   { 
-    title: props.dataset.molecule === 'o3' ? 'Dalton units' : 'Column Density (error)',
+    title: 'Column Density',
     children: [{
-      title: props.dataset.molecule === 'o3' ? null : '10¹⁴ molecules/cm²',
+      title: props.dataset.molecule === 'o3' ? 'Dobson Units' : '10¹⁴ molecules/cm²',
       key: 'columnDensity',
-      value: item => formatValueError(item.value, item.error)
+      value: item => formatValue(item.value)
     }]
   },
+  {
+    title: 'Uncertainty*',
+    children: [{
+      title:  props.dataset.molecule === 'o3' ? 'Dobson Units' : '10¹⁴ molecules/cm²',
+      key: 'uncertainty',
+      value: item => formatError(item.error),
+    }]
+  }
 ];
 const foldedItems = computed(() => {
   if (!foldedData) {
@@ -147,3 +210,18 @@ const emits = defineEmits<{
   (event: 'rowClick', value: { date: Date | number; value: number; error?: number }): void;
 }>();
 </script>
+
+<style>
+p.utdc--uncertainty-note {
+  border-top: 1px solid wheat;
+  margin-top: 8px;
+  font-size: 0.8em;
+  font-style: italic;
+}
+
+
+.utdc--data-table {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+</style>

@@ -124,6 +124,14 @@ export function formatFoldedBinValue(foldType: FoldType | string, bin: number): 
   }
 }
 
+export function foldedDataBinUnit(foldType: FoldType | string): string | null {
+  const unit = normalizeFoldTypeForLabels(foldType).split('Of')[0];
+  if (unit === 'none') {
+    return 'Time';
+  }
+  return unit;
+}
+
 import { camelToSentance } from './text';
 
 export function foldTypeToLabel(foldType: FoldType | string): string {

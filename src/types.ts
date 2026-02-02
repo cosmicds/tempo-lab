@@ -162,6 +162,7 @@ export interface TimeRange {
   range: MillisecondRange | MillisecondRange[];
   type: TimeRangeSelectionType; 
   config?: TimeRangeConfig;
+  source?: TimeRange
 }
 
 export type MoleculeType = 'no2' | 'o3' | 'hcho';

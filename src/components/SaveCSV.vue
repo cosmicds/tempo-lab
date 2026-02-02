@@ -1,5 +1,5 @@
 <template>
-  <div v-if="csv !== undefined" class="save-csv">
+  <div v-if="json !== undefined" class="save-csv">
     <a
       ref="csvDownloadLink"
       href="#"
@@ -9,19 +9,20 @@
       <v-icon
         icon="mdi-table-arrow-down"
         color="#ffcc33"
-        :disabled="csv === undefined"
+        :disabled="json === undefined"
       />
       <span class="save-csv__label">
         Download Table
       </span>
     </a>
-    <use-clipboard v-slot="{ copy, isSupported }" :source="csv">
+    <use-clipboard v-slot="{ copy, isSupported }" :source="json">
       <v-btn
         class="save-csv__action"
         variant="text"
         density="compact"
-        :disabled="!isSupported || csv === undefined"
-        @click="() => copy(csv)"
+        :disabled="!isSupported || json === undefined"
+        @click="() => copy(clipboardCSV)"
+        @keyup.enter="() => copy(clipboardCSV)"
       >
         <v-icon icon="mdi-clipboard-check-multiple" color="#ffcc33" />
         <span class="save-csv__label">Copy CSV to clipboard</span>
@@ -31,20 +32,73 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, useTemplateRef, onUnmounted, ref} from 'vue';
+import { onMounted, useTemplateRef, onUnmounted, ref, computed} from 'vue';
+import { csv2FixedWidth, json2Csv, type SampleCSVJsonOutput } from '@/utils/data_converters';
 
-const { csv } = defineProps<{
-  csv: string;
+
+export interface OutputOptions {
+  delimiter: string; // default ','
+  includeHeaders: boolean; // default true
+  includeUnits: boolean; // default true
+  includeMeta: boolean; // default true
+  fixedWidth: boolean; // default false
+}
+interface SaveCsvProps {
+  json: SampleCSVJsonOutput;
   datasetName?: string;
-}>();
+  fileOptions?: OutputOptions;
+  clipboardOptions?: OutputOptions;
+}
 
+const props = withDefaults(defineProps<SaveCsvProps>(), {
+  fileOptions: () => ({
+    delimiter: ',',
+    includeHeaders: true,
+    includeUnits: true,
+    includeMeta: true,
+    fixedWidth: false,
+  }),
+  clipboardOptions: () => ({
+    delimiter: '\t',
+    includeHeaders: true,
+    includeUnits: false,
+    includeMeta: true,
+    fixedWidth: false,
+  }),
+});
+
+
+const fileCSV = computed(() => {
+  if (props.fileOptions.fixedWidth === true) {
+    console.log('Generating fixed width file');
+    const csv = json2Csv(props.json.data, {...props.json, ...props.fileOptions, delimiter: '@@@@@',});
+    return csv2FixedWidth(csv, '@@@@@', props.fileOptions.delimiter ?? '\t');
+  }
+  
+  return json2Csv(
+    props.json.data, 
+    {...props.json, ...props.fileOptions}
+  );
+});
+
+const clipboardCSV = computed(() => {
+  if (props.fileOptions.fixedWidth === true) {
+    console.log('Generating fixed width file');
+    const csv = json2Csv(props.json.data, {...props.json, ...props.clipboardOptions, delimiter: '@@@@@',});
+    return csv2FixedWidth(csv, '@@@@@', props.clipboardOptions.delimiter ?? '\t');
+  }
+  return json2Csv(
+    props.json.data, 
+    {...props.json, ...props.clipboardOptions}
+  );
+});
 
 const csvDownloadLink = useTemplateRef<HTMLAnchorElement>('csvDownloadLink');
 const url = ref<string>('');
   
 onMounted(() => {
-  if (csvDownloadLink.value && csv !== undefined) {
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  if (csvDownloadLink.value && props.json !== undefined) {
+    const blob = new Blob([fileCSV.value], { type: 'text/csv;charset=utf-8;' });
     url.value = URL.createObjectURL(blob);
     csvDownloadLink.value.href = url.value;
     // const uri = encodeURI(`data:text/csv;charset=utf-8,${csv}`);
