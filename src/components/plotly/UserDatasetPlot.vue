@@ -98,7 +98,7 @@ const datasetIsFolded = computed(() => isFolded(props.dataset));
 
 </script>
 
-<style>
+<style scoped>
 div.dataset-plot-container {
   width: 100%;
   display: flex;

@@ -134,10 +134,10 @@ const normalDatasets = computed(() => {
 
 </script>
 
-<style>
+<style scoped>
 div.dataset-plot-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 5px;
 }
 
