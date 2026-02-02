@@ -1,20 +1,28 @@
 <template>
   <div v-if="json !== undefined" class="save-csv">
-    <a
-      ref="csvDownloadLink"
+    <a ref="csvDownloadLink"
+      style="display: none;"
       href="#"
       :download="datasetName ?? 'download.csv'"
+      ></a>
+    <v-btn
       class="save-csv__action"
+      variant="text"
+      density="compact"
+      :disabled="json === undefined || url === ''"
+      @click="downloadCsv"
+      @keyup.enter="downloadCsv"
     >
-      <v-icon
-        icon="mdi-table-arrow-down"
+      <v-icon v-if="url!==''" icon="mdi-table-arrow-down" color="#ffcc33" />
+      <v-progress-circular
+        v-else
+        indeterminate
+        size="16"
+        width="2"
         color="#ffcc33"
-        :disabled="json === undefined"
       />
-      <span class="save-csv__label">
-        Download Table
-      </span>
-    </a>
+      <span class="save-csv__label">Download CSV</span>
+    </v-btn>
     <use-clipboard v-slot="{ copy, isSupported }" :source="json">
       <v-btn
         class="save-csv__action"
@@ -106,6 +114,12 @@ onMounted(() => {
   }
 });
 
+
+function downloadCsv() {
+  if (csvDownloadLink.value) {
+    csvDownloadLink.value.click();
+  }
+}
 
 onUnmounted(() => {
   if (url.value !== '') {
