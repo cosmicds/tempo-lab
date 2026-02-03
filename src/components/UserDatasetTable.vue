@@ -57,7 +57,7 @@ import { formatFoldedBinValue } from '@/utils/folded_bin_processor';
 
 
 const FILE_DELIMITER = ',';
-const FIXED_WIDTH_DELIMITER = '\t'; // fixed width files use tabs
+const FIXED_WIDTH_DELIMITER = ','; // fixed width files use tabs
 const DOWNLOAD_FILE_FIXED_WIDTH = true;
 const CLIPBOARD_DELIMITER = '\t'; // a tab break is intepreted by google sheets as a column break
 
