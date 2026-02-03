@@ -218,9 +218,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cosmicds/tempo-lite@workspace:.":
+"@cosmicds/tempo-lab@workspace:.":
   version: 0.0.0-use.local
-  resolution: "@cosmicds/tempo-lite@workspace:."
+  resolution: "@cosmicds/tempo-lab@workspace:."
   dependencies:
     "@all1ndev/vue-local-scope": "npm:^0.3.2"
     "@cosmicds/vue-toolkit": "npm:^0.5.0"
