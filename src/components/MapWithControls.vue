@@ -6,6 +6,15 @@
         color="var(--info-background)"
       >
         <v-toolbar-title text="TEMPO Data Viewer"></v-toolbar-title>
+        <v-tooltip text="Save map as image">
+          <template #activator="{ props }">
+            <MaplibreDownloadButton
+              v-bind="props"
+              :map="map" 
+              filename="tempo-lab"
+              />
+          </template>
+        </v-tooltip>
         <!-- switch for preview points -->
         <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
           <template #activator="{ props }">
@@ -143,6 +152,7 @@ import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
 
 import EsriMap from "@/components/EsriMap.vue";
 import MapColorbarWrap from "@/components/MapColorbarWrap.vue";
+import MaplibreDownloadButton from "@/components/MaplibreDownloadButton.vue";
 
 type MapType = Map | null;
 type MapTypeRef = Ref<MapType>;
