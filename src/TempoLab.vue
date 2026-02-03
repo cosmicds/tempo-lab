@@ -28,7 +28,8 @@
 
       <v-tooltip
         text="Change panel width"
-        location="top start"
+        location="end center"
+        :disabled="dragging"
       >
         <template #activator="{ props }">
           <div
@@ -45,7 +46,8 @@
 
       <v-tooltip
         text="Change panel width"
-        location="top end"
+        location="start center"
+        :disabled="dragging"
       >
         <template #activator="{ props }">
           <div
@@ -83,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, onMounted, useTemplateRef, watch } from "vue";
+import { computed, onBeforeMount, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
@@ -157,6 +159,8 @@ function updateSizes(layersDefault: boolean = false, datasetsDefault: boolean = 
   setBasis(datasets, datasetsWidth);
 }
 
+const dragging = ref(false);
+
 type EventHandler = (event: PointerEvent) => void;
 
 interface HandleSetupParams {
@@ -176,6 +180,8 @@ function setupHandleEvents(params: HandleSetupParams) {
 
     document.body.classList.add("dragging");
 
+    dragging.value = true;
+
     if (params.initialEventHandler) {
       params.initialEventHandler(event); 
     }
@@ -187,6 +193,7 @@ function setupHandleEvents(params: HandleSetupParams) {
         console.error(error);
       }
       document.body.classList.remove("dragging");
+      dragging.value = false;
 
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -266,20 +273,24 @@ onMounted(() => {
   });
 
   updateSizes(true, true);
+  setHandleVisibility(leftHandle, layerControlsOpen.value);
+  setHandleVisibility(rightHandle, datasetControlsOpen.value);
 });
+
+function setHandleVisibility(handle: Ref<HTMLElement | null>, visible: boolean) {
+  if (handle.value) {
+    handle.value.style.display = visible ? "unset" : "none";
+  }
+}
 
 function onDatasetPanelOpenChange(open: boolean) {
   updateSizes(false, true);
-  const handle = rightHandle.value;
-  if (!handle) { return; }
-  handle.style.display = open ? "unset" : "none";
+  setHandleVisibility(rightHandle, open);
 }
 
 function onLayersPanelOpenChange(open: boolean) {
   updateSizes(true, false);
-  const handle = leftHandle.value;
-  if (!handle) { return; }
-  handle.style.display = open ? "unset" : "none";
+  setHandleVisibility(leftHandle, open);
 }
 
 watch(datasetControlsOpen, onDatasetPanelOpenChange);
