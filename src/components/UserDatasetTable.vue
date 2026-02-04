@@ -27,7 +27,7 @@
 import { computed } from 'vue';
 import type { Prettify, UserDataset, UnifiedRegion } from '@/types';
 import type { FoldedTimeSeriesData, } from '@/esri/services/aggregation';
-import type { TimeBinOptions, FoldingPeriodOptions } from './DataFoldingAndBinning.vue';
+import type { TimeBinOptions, FoldingPeriodOptions } from '@/utils/foldingValidation';
 
 
 import tz_lookup from '@photostructure/tz-lookup';

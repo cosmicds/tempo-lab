@@ -35,7 +35,7 @@
           density="compact"
           :color="titleColor"
         >
-          <v-toolbar-title :text="title"></v-toolbar-title>
+          <v-toolbar-title class="cds-dialog-v-toolbar-title" :text="title"></v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn
             class="cds-dialog-close-icon"
@@ -165,6 +165,10 @@ watch(modelValue, value => {
 .cds-dialog-v-card-text {
 
 }
+
+.v-toolbar-title.cds-dialog-v-toolbar-title > .v-toolbar-title__placeholder {
+  padding-bottom: 1px; /* needed for text with unicode subscript text */
+} 
 
 .cds-dialog.nonmodal {
 

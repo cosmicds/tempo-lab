@@ -426,7 +426,7 @@
                     </v-expand-transition>
                     
                     <cds-dialog
-                      title="Graph of Quantity vs. Time"
+                      :title="`${moleculeDescriptor(dataset.molecule).shortName.text} Quantity vs. Time`"
                       v-model="openGraphs[dataset.id]"
                       title-color="var(--info-background)"
                       draggable
@@ -673,7 +673,7 @@ import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 import type { MillisecondRange, TimeRange, UserDataset, UnifiedRegion, MoleculeType } from "../types";
 import type { TimeRangeConfig } from "@/date_time_range_selection/date_time_range_generators";
 import { serializeTempoStore, useTempoStore } from "../stores/app";
-import { MOLECULE_OPTIONS } from "../esri/utils";
+import { MOLECULE_OPTIONS, moleculeDescriptor } from "../esri/utils";
 import { areEquivalentTimeRanges, formatTimeRange } from "../utils/timeRange";
 import { atleast1d } from "../utils/atleast1d";
 import { titleBarPredicate } from "../utils/draggable";
