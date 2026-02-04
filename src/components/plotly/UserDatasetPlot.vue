@@ -1,6 +1,12 @@
 <template>
 <div class="dataset-plot-container">
   <h3 class="dataset-plot__title">{{ dataset.name }}</h3>
+  <div class="dataset-plot__fold-desc" v-if="datasetIsFolded">
+    <ul>
+      <li v-if="dataset.folded?.foldingPeriod">Stacked by {{ dataset.folded?.foldingPeriod }}</li>
+      <li v-if="dataset.folded?.timeBin" >Binned by {{ dataset.folded?.timeBin }}</li>
+    </ul>
+  </div>
   <div class="dataset-plot">
     <local-scope
       :descriptor="moleculeDescriptor(dataset.molecule)"
@@ -109,8 +115,9 @@ div.dataset-plot {
   width: 100%;
 }
 
-div.dataset-plot__title {
-  font-size: 0.8em;
+h3.dataset-plot__title {
+  font-weight: normal;
+  margin-bottom: 5px;
 }
 
 div.dataset-plot__plot {
@@ -121,5 +128,10 @@ div.dataset-plot__plot {
   border-radius: 6px;
   background-color: rgba(0 0 0 / .25);
   font-size: 0.8em;
+}
+
+.dataset-plot__fold-desc ul {
+  list-style-position: inside;
+  padding-left: 5px;
 }
 </style>

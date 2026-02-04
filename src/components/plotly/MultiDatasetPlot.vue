@@ -5,11 +5,11 @@
         :descriptor="moleculeDescriptor(datasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
+          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} - {{ foldTypeToHumanReadable(foldType as FoldType) }} Timeseries
+                {{ descriptor.fullName.text }} Timeseries - {{ foldTypeToHumanReadable(foldType as FoldType) }}
               </div>
             </summary>
             <folded-plotly-graph
@@ -34,11 +34,11 @@
         :descriptor="moleculeDescriptor(normalDatasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
+          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
             <summary>
               <!-- {molecule} timeseries -->
               <div>
-                {{ descriptor.fullName.text }} timeseries
+                {{ descriptor.fullName.text }} Timeseries
               </div>
             </summary>
             <plotly-graph
@@ -79,45 +79,45 @@ function foldTypeToHumanReadable(ft: FoldType): string {
   switch (ft) {
 
   case 'hourOfDay':
-    return 'Diurnal Variation (Hourly)';
+    return 'Stacked by day, binned by hour';
   case 'noneOfDay':
-    return 'Diurnal Variation (All Points)';
+    return 'Stacked by day';
     
   case 'hourOfWeek':
-    return 'Weekly Variation (Hourly)';
+    return 'Stacked by week, binned by hour';
   case 'dayOfWeek':
-    return 'Weekly Variation (Daily)';
+    return 'Stacked by week, binned by day';
   case 'noneOfWeek':
-    return 'Weekly Variation (All Points)';
+    return 'Stacked by week';
 
   case 'hourOfMonth':
-    return 'Monthly Variation (Hourly)';
+    return 'Stacked by month, binned by hour';
   case 'dayOfMonth':
-    return 'Monthly Variation (Daily)';
+    return 'Stacked by month, binned by day';
   case 'weekOfMonth':
-    return 'Monthly Variation (Weekly)';
+    return 'Stacked by month, binned by week';
   case 'noneOfMonth':
-    return 'Monthly Variation (All Points)';
+    return 'Stacked by month';
 
   case 'hourOfYear':
-    return 'Annual Variation (Hourly)';
+    return 'Stacked by year, binned by hour';
   case 'dayOfYear':
-    return 'Annual Variation (Daily)';
+    return 'Stacked by year, binned by day';
   case 'weekOfYear':
-    return 'Annual Variation (Weekly)';
+    return 'Stacked by year, binned by week';
   case 'monthOfYear':
-    return 'Annual Variation (Monthly)';
+    return 'Stacked by year, binned by month';
   case 'noneOfYear':
-    return 'Annual Variation (All Points)';
+    return 'Stacked by year';
 
   case 'hourOfNone':
-    return 'Hourly';
+    return 'Hourly average';
   case 'dayOfNone':
-    return 'Daily';
+    return 'Daily average';
   case 'weekOfNone':
-    return 'Weekly';
+    return 'Weekly average';
   case 'monthOfNone':
-    return 'Monthly';
+    return 'Monthly average';
 
   default:
     return pascalToSnake(ft);
