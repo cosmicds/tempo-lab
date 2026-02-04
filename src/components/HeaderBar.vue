@@ -11,21 +11,6 @@
     </a>
     </div>
 
-    <v-btn
-      @click="layerControlsOpen = !layerControlsOpen"
-      class="layers-button"
-      aria-label="Toggle layer controls"
-      variant="outlined"
-      rounded="lg"
-      density="default"
-      :color="accentColor2"
-      elevation="0"
-      size="lg"
-    >
-      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle layer controls"></v-tooltip>
-      <v-icon>mdi-layers</v-icon>
-    </v-btn>
-
     <h1 id="title">TEMPO Lab: Investigate Air Quality</h1>
     <!-- <cds-dialog
       title="Time Series"
@@ -71,26 +56,6 @@
         <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="What's new"></v-tooltip>
         <v-icon>mdi-creation</v-icon>
       </v-btn>
-
-      <v-btn
-        @click="datasetControlsOpen = !datasetControlsOpen"
-        class="layers-button"
-        aria-label="Toggle dataset controls"
-        variant="outlined"
-        rounded="lg"
-        density="default"
-        :color="accentColor2"
-        elevation="0"
-        size="lg"
-      >
-        <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Toggle dataset controls"></v-tooltip>
-        <v-icon>mdi-chart-line</v-icon>
-      </v-btn>
-
-      <v-divider
-        vertical
-        thickness="3"
-      />
 
      <v-btn
         @click="showSaveDialog = !showSaveDialog"
@@ -218,8 +183,6 @@ const emit = defineEmits<{
 const store = useTempoStore();
 const {
   accentColor2,
-  datasetControlsOpen,
-  layerControlsOpen,
 } = storeToRefs(store);
 
 const display = useDisplay();

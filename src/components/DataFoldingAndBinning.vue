@@ -9,7 +9,7 @@
         <v-row class="df__panel-container">
           <!-- Left Panel: Folding Options with collapsible drawer -->
           <div class="df__left-pane">
-            <CollapsableSidePanel 
+            <CollapsibleSidePanel 
               v-model="showAggregationControls"
               :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
               >
@@ -43,7 +43,7 @@
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
               />
-            </CollapsableSidePanel>
+            </CollapsibleSidePanel>
           </div>
           
           <!-- Right Panel: Timeseries Graph -->
@@ -139,7 +139,7 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
 import { moleculeDescriptor } from '@/esri/utils';
-import CollapsableSidePanel from './CollapsableSidePanel.vue';
+import CollapsibleSidePanel from './CollapsibleSidePanel.vue';
 const store = useTempoStore();
 const {
   debugMode,

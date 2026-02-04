@@ -1,3 +1,4 @@
+import { watchContainerSize } from "./dom";
 
 /**
  * Get the size of the nearest containing Golden Layout container.
@@ -19,16 +20,5 @@ export function watchGoldenLayoutContainerSize(
   element: HTMLElement,
   callback: (size: { width: number; height: number }) => void
 ): ResizeObserver | null {
-  const container = element.closest('.lm_content');
-  
-  if (container) {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect; // there should be only one entry when we observe a single element
-      callback({ width: rect.width, height: rect.height });
-
-    });
-    resizeObserver.observe(container);
-    return resizeObserver;
-  }
-  return null;
+  return watchContainerSize(element, ".lm_content", callback);
 }

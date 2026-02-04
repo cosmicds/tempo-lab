@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Vue, { createApp } from "vue";
 
-import { LocalScope } from "@allindevelopers/vue-local-scope";
+import { LocalScope } from "@all1ndev/vue-local-scope";
 
 import { FundingAcknowledgement, IconButton, CreditLogos } from "@cosmicds/vue-toolkit";
 import LocationSearch from "./components/LocationSearch.vue";
@@ -27,6 +27,7 @@ import MaplibreLayerControlItem from "./components/MaplibreLayerControlItem.vue"
 import PowerPlantsFilterControl from "./components/PowerPlantsFilterControl.vue";
 import IconCheckbox from "./components/IconCheckbox.vue";
 import SaveState from "./components/SaveState.vue";
+import SidePlaceholder from "./components/SidePlaceholder.vue";
 
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -130,6 +131,7 @@ createApp(TempoLab, {})
   .component('icon-checkbox', IconCheckbox)
   .component('local-scope', LocalScope)
   .component('save-state', SaveState)
+  .component('side-placeholder', SidePlaceholder)
 
   // Mount
   .mount("#app");
