@@ -76,31 +76,31 @@ class PsuedoEvent {
 type MaplibreLayerOrderControlEvent = 'layer-order-changed';
 // higher index = higher layer
 export class MaplibreLayerOrderControl extends PsuedoEvent {
-  private map: M.Map;
-  private desiredLayerOrder: string[]; // bottom to top 
-  private keepAtTop: boolean;
-  private initialized = false;
-  private eventHandlers: [string, () => void][] = [];
+  private _map: M.Map;
+  private _desiredLayerOrder: string[]; // bottom to top 
+  private _keepAtTop: boolean;
+  private _initialized = false;
+  private _eventHandlers: [string, () => void][] = [];
   private _layerOrder: string[] = [];
   private _linked: LinkedLayers[] = [];
   
   constructor(map: M.Map, initialOrder: string[], options: Options = {}) {
     super();
-    this.desiredLayerOrder = initialOrder;
-    this.map = map;
-    this.keepAtTop = options.keepAtTop ?? false;
+    this._desiredLayerOrder = initialOrder;
+    this._map = map;
+    this._keepAtTop = options.keepAtTop ?? false;
     if (options.linkedLayers) {
       this._linked = options.linkedLayers.map(link => this._newLink(link));
     }
     
     const idleListener = () => {
-      this.orderLayers();
-      this.initialized = true;
-      this.watchForChanges();
-      this.map.off('idle', idleListener);
+      this._orderLayers();
+      this._initialized = true;
+      this._watchForChanges();
+      this._map.off('idle', idleListener);
     };
     // wait for map to be ready
-    this.map.on('idle',idleListener);
+    this._map.on('idle',idleListener);
     
   }
   
@@ -109,24 +109,24 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   }
 
   get desiredLayerAvailability() {
-    return this.desiredLayerOrder.reduce((acc, layer) => {
+    return this._desiredLayerOrder.reduce((acc, layer) => {
       acc[layer] = this.hasLayer(layer);
       return acc;
     }, {} as Record<string, boolean>);
   }
   
   get availableDesiredOrder() {
-    return this.desiredLayerOrder.filter(l => this.hasLayer(l));
+    return this._desiredLayerOrder.filter(l => this.hasLayer(l));
   }
   
   get currentlyManagedLayerOrder() {
-    this._layerOrder = this.map.
+    this._layerOrder = this._map.
       getLayersOrder().
-      filter(l => this.desiredLayerOrder.includes(l));
+      filter(l => this._desiredLayerOrder.includes(l));
     return this._layerOrder;
   }
   
-  private checkLayerChanges() {
+  private _checkLayerChanges() {
     const orderAtLastCheck = this._layerOrder;
     const currentOrder = this.currentlyManagedLayerOrder;
     const val = {
@@ -141,31 +141,31 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   }
   
   private _moveLayerBelow(layer: string, anchor: string) {
-    this.map.moveLayer(layer, anchor);
+    this._map.moveLayer(layer, anchor);
   }
   
   private _moveLayerAbove(layer: string, anchor: string) {
     // this.map.moveLayer(anchor, layer); 
     // without moving the anchor
-    const currentOrder = this.map.getLayersOrder();
+    const currentOrder = this._map.getLayersOrder();
     const anchorIndex = currentOrder.indexOf(anchor);
     const nextLayerUpIndex = anchorIndex + 1;
     if (nextLayerUpIndex >= currentOrder.length) {
       // anchor is already top layer
-      this.map.moveLayer(layer);
+      this._map.moveLayer(layer);
     } else {
       // move below the next layer up
       const nextLayerUp = currentOrder[nextLayerUpIndex];
-      this.map.moveLayer(layer, nextLayerUp);
+      this._map.moveLayer(layer, nextLayerUp);
     }
   }
   
-  private applyLinkedLayers() {
+  private _applyLinkedLayers() {
     if (!this._linked.length) return;
     console.log('Applying linked layers', this._linked);
     
     const mapOrder = new Map<string, number>(
-      this.map.getLayersOrder().map((layer, index) => [layer, index])
+      this._map.getLayersOrder().map((layer, index) => [layer, index])
     );
     console.log('Current map layer order', mapOrder.size);
     
@@ -214,7 +214,7 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   setLinkedLayers(linkedLayers: LinkedLayers[]) {
     this._linked = linkedLayers;
-    this.maintainOrder();
+    this._maintainOrder();
   }
   
   linkLayers(linkage: [string, string[]]) {
@@ -225,50 +225,50 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     };
     
     this._linked.push(link);
-    this.maintainOrder();
+    this._maintainOrder();
   }
   
-  private orderLayers() {
-    if (this.keepAtTop) {
+  private _orderLayers() {
+    if (this._keepAtTop) {
       // moves top-most managed available layer to the top
       this.startAtTop(); 
     }
     
-    for (let i = this.desiredLayerOrder.length - 1; i > 0; i--) {
-      const bottomLayer = this.desiredLayerOrder[i-1];
-      const topLayer = this.desiredLayerOrder[i];
+    for (let i = this._desiredLayerOrder.length - 1; i > 0; i--) {
+      const bottomLayer = this._desiredLayerOrder[i-1];
+      const topLayer = this._desiredLayerOrder[i];
       this.safeMoveLayerBelow(bottomLayer, topLayer);
     }
     
-    this.applyLinkedLayers();
+    this._applyLinkedLayers();
     
     this.dispatchEvent('layer-order-changed');
   }
   
-  private maintainOrder() {
-    const check = this.checkLayerChanges();
+  private _maintainOrder() {
+    const check = this._checkLayerChanges();
     if (!checkArrayEquality(this.availableDesiredOrder, this.currentlyManagedLayerOrder) || check.changed) {
-      this.orderLayers();
+      this._orderLayers();
     }
   }
   
-  private watchForChanges() {
-    const onStyleData = () => this.maintainOrder();
-    this.map.on('styledata', onStyleData);
-    this.eventHandlers.push(['styledata', onStyleData]);
+  private _watchForChanges() {
+    const onStyleData = () => this._maintainOrder();
+    this._map.on('styledata', onStyleData);
+    this._eventHandlers.push(['styledata', onStyleData]);
   }
   
   destroy() {
     this.cleanup();
     
-    this.eventHandlers.forEach(([event, handler]) => {
-      this.map.off(event, handler);
+    this._eventHandlers.forEach(([event, handler]) => {
+      this._map.off(event, handler);
     });
-    this.eventHandlers = [];
+    this._eventHandlers = [];
   }
   
-  private moveLayer(layer: string, newIndex: number) {
-    const currentOrder = this.desiredLayerOrder;
+  private _moveLayer(layer: string, newIndex: number) {
+    const currentOrder = this._desiredLayerOrder;
     const currentLayerIndex = currentOrder.indexOf(layer);
     
     // if it's not there, ignore it
@@ -277,10 +277,10 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
       return;
     }
     
-    const newLayerOrder = arrayMove(this.desiredLayerOrder, currentLayerIndex, newIndex);
-    this.desiredLayerOrder = newLayerOrder;
+    const newLayerOrder = arrayMove(this._desiredLayerOrder, currentLayerIndex, newIndex);
+    this._desiredLayerOrder = newLayerOrder;
     
-    this.maintainOrder();
+    this._maintainOrder();
   }
   
   moveActualLayerByIndex(fromIndex: number, toIndex: number, maintainOrder = true) {
@@ -312,24 +312,24 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     }
     
     // get layerAtNewIndex's index in the full layer order
-    const oldLayerOrderIndex = this.desiredLayerOrder.indexOf(layer);
-    const newLayerOrderIndex = this.desiredLayerOrder.indexOf(layerAtNewIndex);
+    const oldLayerOrderIndex = this._desiredLayerOrder.indexOf(layer);
+    const newLayerOrderIndex = this._desiredLayerOrder.indexOf(layerAtNewIndex);
     
-    const newLayerOrder = arrayMove(this.desiredLayerOrder, oldLayerOrderIndex, newLayerOrderIndex);
-    this.desiredLayerOrder = newLayerOrder;
+    const newLayerOrder = arrayMove(this._desiredLayerOrder, oldLayerOrderIndex, newLayerOrderIndex);
+    this._desiredLayerOrder = newLayerOrder;
     
     if (maintainOrder) {
-      this.maintainOrder();
+      this._maintainOrder();
     }
   }
   
   moveToFront(layer: string) {
-    const topIndex = this.desiredLayerOrder.length - 1;
-    this.moveLayer(layer, topIndex);
+    const topIndex = this._desiredLayerOrder.length - 1;
+    this._moveLayer(layer, topIndex);
   }
   
   moveToBack(layer: string) {
-    this.moveLayer(layer, 0);
+    this._moveLayer(layer, 0);
   }
   
   moveUp(layer: string) {
@@ -349,17 +349,17 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   
   setOrder(order: string[]) {
-    this.desiredLayerOrder = [...order];
-    if (this.initialized) this.maintainOrder();
+    this._desiredLayerOrder = [...order];
+    if (this._initialized) this._maintainOrder();
   }
   
   setKeepAtTop(keepAtTop: boolean) {
-    this.keepAtTop = keepAtTop;
-    if (this.initialized) this.maintainOrder();
+    this._keepAtTop = keepAtTop;
+    if (this._initialized) this._maintainOrder();
   }
   
   hasLayer(layer: string) {
-    return this.map.getLayer(layer) !== undefined;
+    return this._map.getLayer(layer) !== undefined;
   }
   
   get reverseLayerOrder() {
@@ -369,10 +369,10 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   // easy accessor for the top layer
   startAtTop() {
-    const currentOrder = this.map.getLayersOrder();
+    const currentOrder = this._map.getLayersOrder();
     for (const layer of this.reverseLayerOrder) {
       if (currentOrder.includes(layer)) {
-        this.map.moveLayer(layer);
+        this._map.moveLayer(layer);
         return;
       }
     }
@@ -390,13 +390,13 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     
     if (!this.hasLayer(layerItShouldBeBelow)) {
       // if it doesn't have this layer, try the next one above it
-      const nextIndex = this.desiredLayerOrder.indexOf(layerItShouldBeBelow) + 1;
-      if (nextIndex < this.desiredLayerOrder.length) {
-        return this.safeMoveLayerBelow(layerToMove, this.desiredLayerOrder[nextIndex]);
+      const nextIndex = this._desiredLayerOrder.indexOf(layerItShouldBeBelow) + 1;
+      if (nextIndex < this._desiredLayerOrder.length) {
+        return this.safeMoveLayerBelow(layerToMove, this._desiredLayerOrder[nextIndex]);
       }
       return false;
     }
-    this.map.moveLayer(layerToMove, layerItShouldBeBelow);
+    this._map.moveLayer(layerToMove, layerItShouldBeBelow);
     return true;
   }
   
@@ -409,14 +409,14 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
 
     if (!this.hasLayer(layerItShouldBeAbove)) {
       // if it doesn't have this layer, try the next one below it
-      const nextIndex = this.desiredLayerOrder.indexOf(layerToMove) - 1;
+      const nextIndex = this._desiredLayerOrder.indexOf(layerToMove) - 1;
       if (nextIndex >= 0) {
-        return this.safeMoveLayerAbove(layerToMove, this.desiredLayerOrder[nextIndex]);
+        return this.safeMoveLayerAbove(layerToMove, this._desiredLayerOrder[nextIndex]);
       }
       return false;
     }
     // to move above a layer, move that layer below this one
-    this.map.moveLayer(layerItShouldBeAbove, layerToMove);
+    this._map.moveLayer(layerItShouldBeAbove, layerToMove);
     return true;
   }
 
@@ -440,7 +440,7 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     const newDesiredOrder: string[] = [];
     let managedIndex = 0;
     
-    for (const layer of this.desiredLayerOrder) {
+    for (const layer of this._desiredLayerOrder) {
       if (managedLayerMap.has(layer)) {
         newDesiredOrder.push(newManagedOrder[managedIndex]);
         managedIndex++;
@@ -449,8 +449,8 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
       }
     }
     
-    this.desiredLayerOrder = newDesiredOrder;
-    this.maintainOrder();
+    this._desiredLayerOrder = newDesiredOrder;
+    this._maintainOrder();
     
   }
     
