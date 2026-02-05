@@ -52,9 +52,13 @@
             </div>
           </div>
         </v-expand-transition>
-        <div class="time-range-show-details" v-if="isHovering" @click="onShowClick">
-          Click to {{ showDetails ? 'hide' : 'show' }} details
-        </div>
+        <v-expand-transition>
+          <div class="time-range-show-details" v-if="isHovering" @click="onShowClick">
+            Click to {{ showDetails ? 'hide' : 'show' }} details
+          </div>
+        </v-expand-transition>
+        
+        
       </div>
     </div>
 </template>
