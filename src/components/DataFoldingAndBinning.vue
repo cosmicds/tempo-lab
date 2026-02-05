@@ -9,10 +9,18 @@
         <v-row class="df__panel-container">
           <!-- Left Panel: Folding Options with collapsible drawer -->
           <div class="df__left-pane">
-            <CollapsibleSidePanel 
-              v-model="showAggregationControls"
-              :tooltipText="['Show Aggregation Controls', 'Hide Aggregation Controls']"
-              >
+            <side-placeholder
+              v-model:open="showAggregationControls"
+              open-direction="right"
+              icon="mdi-calculator"
+              open-tooltip-text="Show stacking and binning controls"
+              closed-tooltip-text="Close stacking and binning controls"
+              open-arrow-color="surface-variant"
+              closed-arrow-color="surface-variant"
+              tooltips
+              color="surface-variant"
+            >
+              <v-scroll-x-transition>
               <AggregationControls
                 :foldingPeriodOptions="foldingPeriodOptions"
                 :validFoldingForData="validFoldingForData"
@@ -43,7 +51,8 @@
                 v-model:selectedMethod="selectedMethod"
                 v-model:foldedData="foldedData"
               />
-            </CollapsibleSidePanel>
+              </v-scroll-x-transition>
+            </side-placeholder>
           </div>
           
           <!-- Right Panel: Timeseries Graph -->
@@ -53,9 +62,6 @@
                 :descriptor="selection?.molecule ? moleculeDescriptor(selection?.molecule) : null"
               >
               <template #default="{ descriptor }">
-                <v-card-title>
-                  <span v-html="descriptor?.shortName.html ?? ''"></span> Timeseries
-                </v-card-title>
                 <div  class="df__graph-container">
                   <folded-plotly-graph
                     :datasets="graphData"
@@ -139,11 +145,12 @@ import { toZonedTime, fromZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
 import { moleculeDescriptor } from '@/esri/utils';
-import CollapsibleSidePanel from './CollapsibleSidePanel.vue';
+
 const store = useTempoStore();
 const {
   debugMode,
   showAggregationControls,
+  accentColor2
 } = storeToRefs(store);
 
 import {
