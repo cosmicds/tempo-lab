@@ -287,7 +287,9 @@ const ozoneLayer = useTempoLayer({
 const no2Layer = ref<UseEsriTempoLayer | null>(null);
 
 function addAdvancedLayers(m: Map | null) {
-  if (m === null) return;
+  if (m === null) {
+    throw new Error('Tried to addAdvancedLayers but map was null');
+  }
   // pp.addheatmapLayer();
   // pp.togglePowerPlants(false);
   aqiLayer.addToMap(m);
@@ -310,7 +312,9 @@ function addAdvancedLayers(m: Map | null) {
 }
 
 function removeAdvancedLayers(m: Map | null) {
-  if (m === null) return;
+  if (m === null) {
+    throw new Error('Tried to removeAdvancedLayers but map was null');
+  }
   aqiLayer.removeFromMap(m);
   popLayer.removeEsriSource();
   sentinalLandUseLayer.removeEsriSource();

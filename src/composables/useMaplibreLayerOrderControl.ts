@@ -74,7 +74,12 @@ class PsuedoEvent {
 }
 
 type MaplibreLayerOrderControlEvent = 'layer-order-changed';
-// higher index = higher layer
+
+/**
+ * Controls the ordering of MapLibre GL layers in a declarative way.
+ * Maintains a desired layer order even as layers are added/removed from the map.
+ * Higher index in order array = higher/more visible layer on map.
+ */
 export class MaplibreLayerOrderControl extends PsuedoEvent {
   private _map: M.Map;
   private _desiredLayerOrder: string[]; // bottom to top 
@@ -84,6 +89,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   private _layerOrder: string[] = [];
   private _linked: LinkedLayers[] = [];
   
+  /**
+   * Creates a new layer order controller.
+   * @param map - The MapLibre GL map instance
+   * @param initialOrder - Initial desired layer order (bottom to top)
+   * @param options - Configuration options
+   */
   constructor(map: M.Map, initialOrder: string[], options: Options = {}) {
     super();
     this._desiredLayerOrder = initialOrder;
@@ -104,10 +115,18 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     
   }
   
+  /**
+   * Register an event handler for layer order changes.
+   * Handler fires after each ordering pass completes.
+   */
   on(event: MaplibreLayerOrderControlEvent, handler: () => void) {
     this.addEventListener(event, handler);
   }
 
+  /** Get which managed layers are currently available on the map. 
+   * 
+   * returns {layerName: boolean, ... }
+  */
   get desiredLayerAvailability() {
     return this._desiredLayerOrder.reduce((acc, layer) => {
       acc[layer] = this.hasLayer(layer);
@@ -115,10 +134,18 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     }, {} as Record<string, boolean>);
   }
   
+  /**
+   * Get the subset of desired layers that currently exist on the map (bottom to top).
+   * Layers missing from the map are filtered out.
+   */
   get availableDesiredOrder() {
     return this._desiredLayerOrder.filter(l => this.hasLayer(l));
   }
   
+  /**
+   * Get the current managed layers in their actual order on the map (bottom to top).
+   * Uses the map's actual layer stack, filtered to only managed layers.
+   */
   get currentlyManagedLayerOrder() {
     this._layerOrder = this._map.
       getLayersOrder().
@@ -140,10 +167,19 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     };
   }
   
+  /** A thin wrapper for maplibre.Map.moveLayer
+   * Moves a layer to a different z-position.
+   * @param layer — The ID of the layer to move.
+   * @param anchor — The ID of an existing layer to insert the new layer before. When viewing the map, the id layer will appear beneath the anchor layer. If anchor is omitted, the layer will be appended to the end of the layers array and appear above all other layers on the map.
+   * @example Move a layer with ID 'polygon' before the layer with ID 'country-label'. The polygon layer will appear beneath the country-label layer on the map.
+   */
   private _moveLayerBelow(layer: string, anchor: string) {
     this._map.moveLayer(layer, anchor);
   }
   
+  /** Does the oppposite of _moveLayerBelow. Placing the layer
+   * below the anchor layer.
+  */
   private _moveLayerAbove(layer: string, anchor: string) {
     // this.map.moveLayer(anchor, layer); 
     // without moving the anchor
@@ -203,6 +239,11 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     }
   }
   
+  /**
+   * Creates a new LinkedLayers object from a given linkage tuple.
+   * @param linkage - A tuple where the [primary, [link1, link2, ...]],
+   *   If the anchor is not included in the 2nd element, layers will be ordered below the anchor
+   */
   private _newLink(linkage: [string, string[]]): LinkedLayers {
     const [anchor, layersToLink] = linkage;
     return {
@@ -211,12 +252,22 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     };
   }
   
-  
+  /**
+   * Set all linked layer groups, **replacing any existing linkages.**   
+   * Triggers immediate reordering to apply the new linkages 
+   * @example setLinkedLayers([{ primary: 'roads', linkedLayers: ['borders', 'roads', 'labels'] }])
+   * To simply add alink use `linkLayers(linkage: [primary, [link1, link2, ...]])
+   */
   setLinkedLayers(linkedLayers: LinkedLayers[]) {
     this._linked = linkedLayers;
     this._maintainOrder();
   }
   
+  /**
+   * Add a group of layers that should move together.
+   * Layers not present on the map are automatically skipped during reordering.
+   * Triggers immediate reordering.
+   */
   linkLayers(linkage: [string, string[]]) {
     const [anchor, layersToLink] = linkage;
     const link: LinkedLayers = {
@@ -228,6 +279,10 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     this._maintainOrder();
   }
   
+  /** 
+   * Oder layers takes the curernt desired layer order and moves layers to match this
+   * After sorting them, it then moves any linked-layers into position
+   */
   private _orderLayers() {
     if (this._keepAtTop) {
       // moves top-most managed available layer to the top
@@ -258,6 +313,10 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     this._eventHandlers.push(['styledata', onStyleData]);
   }
   
+  /**
+   * Clean up event listeners and remove this controller.
+   * Safe to call multiple times. Call before discarding the instance.
+   */
   destroy() {
     this.cleanup();
     
@@ -267,6 +326,10 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     this._eventHandlers = [];
   }
   
+  /** 
+   * Move a layer to a new index within the desired layer order
+   * Does nothing if the layer name given is not in the desired layers
+   */
   private _moveLayer(layer: string, newIndex: number) {
     const currentOrder = this._desiredLayerOrder;
     const currentLayerIndex = currentOrder.indexOf(layer);
@@ -283,7 +346,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     this._maintainOrder();
   }
   
-  moveActualLayerByIndex(fromIndex: number, toIndex: number, maintainOrder = true) {
+  /**
+   * Move a layer by its current index to a new index position.
+   * Indices must be within bounds of currently available managed layers (those in the desired layer order AND are dispalyed on the map).
+   * @throws {Error} If fromIndex or toIndex are out of bounds
+   */
+  private _moveActualLayerByIndex(fromIndex: number, toIndex: number, maintainOrder = true) {
     const currentOrder = this.currentlyManagedLayerOrder;
     if (fromIndex < 0 || fromIndex >= currentOrder.length) {
       throw new Error(`fromIndex out of bounds. Got ${fromIndex} for ${currentOrder.length} available layers ${currentOrder}`);
@@ -293,10 +361,16 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     }
     
     const layer = currentOrder[fromIndex];
-    this.moveActualLayer(layer, toIndex, maintainOrder);
+    this._moveActualLayer(layer, toIndex, maintainOrder);
   }
   
-  moveActualLayer(layer: string, newIndex: number, maintainOrder = true) {
+  /**
+   * Move a layer by its name to a new index position in the currently visible managed layers (those in the desired layer order AND are dispalyed on the map).
+   * The newIndex refers to positions in currentlyManagedLayerOrder (only layers on the map).
+   * @throws {Error} If newIndex is out of bounds for currentlyManagedLayerOrder
+   * @returns Early if `layer` is not found in `currentlyManagedLayerOrder` (logs error)
+   */
+  private _moveActualLayer(layer: string, newIndex: number, maintainOrder = true) {
     const currentOrder = this.currentlyManagedLayerOrder;
     const currentLayerIndex = currentOrder.indexOf(layer);
     
@@ -323,45 +397,80 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     }
   }
   
+  /**
+   * Move a layer to the topmost position in the managed order.
+   * Does nothing if the layer is not part of the managed layers.
+   */
   moveToFront(layer: string) {
     const topIndex = this._desiredLayerOrder.length - 1;
     this._moveLayer(layer, topIndex);
   }
   
+  /**
+   * Move a layer to the bottommost position in the managed order.
+   * Does nothing if the layer is not part of the managed layers.
+   */
   moveToBack(layer: string) {
     this._moveLayer(layer, 0);
   }
   
+  /**
+   * Move a layer up one position in the order.
+   * Does nothing if the layer is not managed or already at the top.
+   */
   moveUp(layer: string) {
     const currentOrder = this.currentlyManagedLayerOrder;
     const index = currentOrder.indexOf(layer);
     if (index === -1 || index === currentOrder.length - 1) return;
-    this.moveActualLayer(layer, index + 1);
+    this._moveActualLayer(layer, index + 1);
   }
   
+  /**
+   * Move a layer down one position in the order.
+   * Does nothing if the layer is not managed or already at the bottom.
+   */
   moveDown(layer: string) {
     const currentOrder = this.currentlyManagedLayerOrder;
     const index = currentOrder.indexOf(layer);
     if (index <= 0) return;
-    this.moveActualLayer(layer, index - 1);
+    this._moveActualLayer(layer, index - 1);
   }
   
   
-  
+  /**
+   * Replace the entire desired layer order.
+   * WARNING: Completely replaces the order, losing track of hidden layer positions.
+   * Use setManagedOrder() instead when layers may be dynamically added/removed.
+   */
   setOrder(order: string[]) {
     this._desiredLayerOrder = [...order];
     if (this._initialized) this._maintainOrder();
   }
   
+  /**
+   * Update the "keep at top" behavior.
+   * When enabled, the top-most managed layer is moved to the very top of the map's layer stack, 
+   * and the rest of the layer's we are managing will follow
+   * Triggers immediate reordering.
+   */
   setKeepAtTop(keepAtTop: boolean) {
     this._keepAtTop = keepAtTop;
     if (this._initialized) this._maintainOrder();
   }
   
+  /**
+   * Check if a layer currently exists on the map.
+   * Returns false if the layer was removed or never added.
+   */
   hasLayer(layer: string) {
     return this._map.getLayer(layer) !== undefined;
   }
   
+  /**
+   * Get the current managed layers in reverse order (top to bottom).
+   * Useful for iterating from top-most to bottom-most layer.
+   * Returns a copy; modifications won't affect the controller.
+   */
   get reverseLayerOrder() {
     // create copy to avoid mutating the original
     return this.currentlyManagedLayerOrder.slice().reverse();
@@ -382,6 +491,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
 
   
   
+  /**
+   * Safely moves a layer below another specified layer in the map's layer stack.
+   *
+   * This method checks if the layer to move exists. If the target layer to move below does not exist,
+   * and `layerItShouldBeBelow` is 
+   */
   safeMoveLayerBelow(layerToMove: string, layerItShouldBeBelow: string): boolean {
     const hasLayer = this.hasLayer(layerToMove);
     if (!hasLayer) {
@@ -391,7 +506,8 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     if (!this.hasLayer(layerItShouldBeBelow)) {
       // if it doesn't have this layer, try the next one above it
       const nextIndex = this._desiredLayerOrder.indexOf(layerItShouldBeBelow) + 1;
-      if (nextIndex < this._desiredLayerOrder.length) {
+      // if layerItShouldBeBelow is not in _desiredLayerOrder, indexOf returns -1, so gaurd -1 + 1 = 0
+      if (nextIndex > 0 && nextIndex < this._desiredLayerOrder.length) {
         return this.safeMoveLayerBelow(layerToMove, this._desiredLayerOrder[nextIndex]);
       }
       return false;
@@ -420,6 +536,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     return true;
   }
 
+  /**
+   * Update the order of currently visible layers while preserving positions of hidden layers.
+   * RECOMMENDED method for reordering when layers may be dynamically added/removed.
+   * Early returns if the new managed order is unchanged from current.
+   * Merges the new order with existing order, maintaining positions of absent layers.
+   */
   setManagedOrder(newManagedOrder: string[]) {
     // if (!isSubset(newManagedOrder, this.desiredLayerOrder)) {
     //   throw new Error('New managed order must be a subset of the original managed layers');
