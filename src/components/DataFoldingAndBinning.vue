@@ -149,8 +149,7 @@ import { moleculeDescriptor } from '@/esri/utils';
 const store = useTempoStore();
 const {
   debugMode,
-  showAggregationControls,
-  accentColor2
+  showAggregationControls
 } = storeToRefs(store);
 
 import {
