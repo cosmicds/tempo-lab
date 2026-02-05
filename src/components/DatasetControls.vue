@@ -113,6 +113,7 @@
               <v-list>
                 <v-list-item
                   v-for="(region, index) in regions"
+                  :class="` my-2 rounded-lg region-list-item region-list-item-${index}`"
                   :key="index"
                   :title="region.name"
                   :style="{ 'background-color': region.color }"
@@ -182,24 +183,32 @@
               @ranges-change="handleDateTimeRangeSelectionChange"
             />
             <div class="my-selections" v-if="timeRanges.length>0" style="margin-top: 1em;">
-              <h4>My Time Ranges</h4>
+
               <v-list>
+                <v-hover
+                  v-for="(timeRange, index) in timeRanges"
+                  :key="index" v-slot="{ isHovering, props }">
                 <v-list-item
                   class="my-2 rounded-lg time-range-v-list-item"
-                  v-for="(timeRange, index) in timeRanges"
-                  :key="index"
+                  v-bind="props"
+                  density="compact"
+                  slim
+                  :title="timeRange.name === 'Displayed Day' ? `Displayed Day: ${ formatTimeRange(timeRange.range) }` : (timeRange.name ?? formatTimeRange(timeRange.range))"
                 >
                   
                   <template #default>
                     <TimeRangeCard 
                     :name="timeRange.name === 'Displayed Day' ? `Displayed Day: ${ formatTimeRange(timeRange.range) }` : (timeRange.name ?? formatTimeRange(timeRange.range))"
-                    :time-range="timeRange" />
-
+                    :time-range="timeRange" 
+                    :is-hovering="isHovering ?? false"  
+                    />
+                  </template>
+                  <template #append>
                   <div class="time-range-action-buttons">
                     <v-btn
                       v-if="timeRange.id !== 'displayed-day'"
                       variant="plain"
-                      size="x-small"
+                      size="small"
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
@@ -211,7 +220,7 @@
                     <v-btn
                       v-if="timeRange.id !== 'displayed-day' && !datasets.some(s => areEquivalentTimeRanges(s.timeRange, timeRange))"
                       variant="plain"
-                      size="x-small"
+                      size="small"
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
@@ -221,6 +230,7 @@
                   </div>
                   </template>
                 </v-list-item>
+                </v-hover>
               </v-list>
             </div>
           </template>
@@ -260,7 +270,7 @@
           </selection-composer>
           <div class="my-selections" v-if="datasets.length>0" style="margin-top: 1em;">
 
-            <h4>My Datasets</h4>
+
             
             <dataset-card
               :datasets="datasets"
@@ -1004,5 +1014,9 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 
 .dataset-select-all-none > button {
   flex-grow: 1;
+}
+
+.region-list-item {
+  
 }
 </style>

@@ -1,7 +1,6 @@
 <!-- TimeRange Card to display time range configuration -->
 <template>
-  <v-hover v-slot="{ isHovering, props }">
-    <div v-bind="props" class="time-range-card">
+    <div class="time-range-card">
       
       <!-- Display Date -->
       <div v-if='timeRange?.config === undefined' class="time-range-config-name">
@@ -55,8 +54,6 @@
         </v-expand-transition>
       </div>
     </div>
-    
-  </v-hover>
 </template>
 
 <script setup lang="ts">
@@ -76,6 +73,7 @@ const formatDate = (date: Date): string => {
 const props = defineProps<{
   name?: string;
   timeRange: TimeRange;
+  isHovering: boolean;
 }>();
 // console.log('TimeRangeCard props:', props.timeRange.config);
 </script>
@@ -83,14 +81,14 @@ const props = defineProps<{
 
 <style land="less" scoped>
 .time-range-card {
-  border-radius: 8px;
-  padding: 4px 16px;
+  padding: 0px;
   height: fit-content;
 }
 
 .time-range-config-name {
-  font-weight: bold;
-  margin-bottom: 8px;
+  font-weight: normal;
+  margin: 0;
+  display: none;
 }
 
 .time-range-config-item {
