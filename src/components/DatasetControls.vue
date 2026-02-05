@@ -187,7 +187,10 @@
               <v-list>
                 <v-hover
                   v-for="(timeRange, index) in timeRanges"
-                  :key="index" v-slot="{ isHovering, props }">
+                  :key="index" v-slot="{ isHovering, props }"
+                  close-delay="50"
+                  open-delay="250"
+                  >
                 <v-list-item
                   class="my-2 rounded-lg time-range-v-list-item"
                   v-bind="props"

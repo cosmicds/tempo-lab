@@ -24,7 +24,7 @@
         </div>
       
         <v-expand-transition>
-          <div v-if="isHovering">
+          <div v-if="showDetails" @click="onShowClick">
             <!-- Date Range -->
             <div class="time-range-config-item">
               <strong>Date Range:</strong> 
@@ -52,12 +52,16 @@
             </div>
           </div>
         </v-expand-transition>
+        <div class="time-range-show-details" v-if="isHovering" @click="onShowClick">
+          Click to {{ showDetails ? 'hide' : 'show' }} details
+        </div>
       </div>
     </div>
 </template>
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { computed, ref } from 'vue';
 import type { TimeRangeConfig } from './date_time_range_generators';
 import type { TimeRange } from '@/types';
 
@@ -76,6 +80,12 @@ const props = defineProps<{
   isHovering: boolean;
 }>();
 // console.log('TimeRangeCard props:', props.timeRange.config);
+
+const showDetails = ref(false);
+function onShowClick() {
+  showDetails.value = !showDetails.value;
+}
+
 </script>
     
 
@@ -94,5 +104,11 @@ const props = defineProps<{
 .time-range-config-item {
   margin-bottom: 2px;
   font-size: 0.8em;
+}
+
+.time-range-show-details {
+  font-size: 0.7em;
+  background-color: cadetblue;
+  border-radius: 4px;
 }
 </style>
