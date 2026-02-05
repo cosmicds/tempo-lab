@@ -131,12 +131,14 @@
                       v-tooltip="regionHasSamples(region as UnifiedRegionType) ? 'Cannot edit geometry after samples are fetched for a selection using this region' : 'Edit Geometry'"
                       @click="() => editRegionGeometry(region as UnifiedRegionType)"
                     ></v-btn> -->
+                    <div class="datset-controls-action-buttons region-action-buttons">
                     <v-btn
                       variant="plain"
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
                       size="small"
+                      density="compact"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         editRegionName(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -149,11 +151,13 @@
                       icon="mdi-delete"
                       color="white"
                       size="small"
+                      density="compact"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         store.deleteRegion(region as UnifiedRegionType);
                         event.stopPropagation();
                       }"
                     ></v-btn>
+                    </div>
                   </template>
                 </v-list-item>
               </v-list>
@@ -207,11 +211,12 @@
                     />
                   </template>
                   <template #append>
-                  <div class="time-range-action-buttons">
+                  <div class="datset-controls-action-buttons time-range-action-buttons">
                     <v-btn
                       v-if="timeRange.id !== 'displayed-day'"
                       variant="plain"
                       size="small"
+                      density="compact"
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
@@ -224,6 +229,7 @@
                       v-if="timeRange.id !== 'displayed-day' && !datasets.some(s => areEquivalentTimeRanges(s.timeRange, timeRange))"
                       variant="plain"
                       size="small"
+                      density="compact"
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
@@ -979,6 +985,11 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   align-items: center;
 }
 
+.datset-controls-action-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
 .time-range-action-buttons {
   text-align: right;
 }
