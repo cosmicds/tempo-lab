@@ -254,9 +254,7 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   private watchForChanges() {
     const onStyleData = () => this.maintainOrder();
-    this.map.on('styledata', () => {
-      onStyleData();
-    });
+    this.map.on('styledata', onStyleData);
     this.eventHandlers.push(['styledata', onStyleData]);
   }
   
