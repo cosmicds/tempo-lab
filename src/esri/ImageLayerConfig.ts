@@ -120,7 +120,7 @@ export const colorbarOptions = {
     colormap: colorramps['Ozone_Column_Amount'], 
     rgbcolormap: rgbcolorramps['Ozone_Column_Amount'],
     label: 'Ozone',
-    unit: "Dobson unit",
+    unit: "Dobson Units",
   },
   'hcho': {
     stretch: stretches['HCHO'], 
