@@ -33,6 +33,7 @@
     "src/**/*.ts",
     "src/**/*.json",
     "src/*.vue",
+    "src/**/*.vue.ts",
     "src/**/*.vue"
   ]
 }

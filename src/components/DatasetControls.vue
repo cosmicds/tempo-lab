@@ -113,6 +113,7 @@
               <v-list>
                 <v-list-item
                   v-for="(region, index) in regions"
+                  :class="` my-2 rounded-lg region-list-item region-list-item-${index}`"
                   :key="index"
                   :title="region.name"
                   :style="{ 'background-color': region.color }"
@@ -130,12 +131,14 @@
                       v-tooltip="regionHasSamples(region as UnifiedRegionType) ? 'Cannot edit geometry after samples are fetched for a selection using this region' : 'Edit Geometry'"
                       @click="() => editRegionGeometry(region as UnifiedRegionType)"
                     ></v-btn> -->
+                    <div class="datset-controls-action-buttons region-action-buttons">
                     <v-btn
                       variant="plain"
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
                       size="small"
+                      density="compact"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         editRegionName(region as UnifiedRegionType);
                         event.stopPropagation();
@@ -148,11 +151,13 @@
                       icon="mdi-delete"
                       color="white"
                       size="small"
+                      density="compact"
                       @click="(event: MouseEvent | KeyboardEvent) => {
                         store.deleteRegion(region as UnifiedRegionType);
                         event.stopPropagation();
                       }"
                     ></v-btn>
+                    </div>
                   </template>
                 </v-list-item>
               </v-list>
@@ -182,24 +187,36 @@
               @ranges-change="handleDateTimeRangeSelectionChange"
             />
             <div class="my-selections" v-if="timeRanges.length>0" style="margin-top: 1em;">
-              <h4>My Time Ranges</h4>
+
               <v-list>
+                <v-hover
+                  v-for="(timeRange, index) in timeRanges"
+                  :key="index" v-slot="{ isHovering, props }"
+                  close-delay="50"
+                  open-delay="250"
+                  >
                 <v-list-item
                   class="my-2 rounded-lg time-range-v-list-item"
-                  v-for="(timeRange, index) in timeRanges"
-                  :key="index"
+                  v-bind="props"
+                  density="compact"
+                  slim
+                  :title="timeRange.name === 'Displayed Day' ? `Displayed Day: ${ formatTimeRange(timeRange.range) }` : (timeRange.name ?? formatTimeRange(timeRange.range))"
                 >
                   
                   <template #default>
                     <TimeRangeCard 
                     :name="timeRange.name === 'Displayed Day' ? `Displayed Day: ${ formatTimeRange(timeRange.range) }` : (timeRange.name ?? formatTimeRange(timeRange.range))"
-                    :time-range="timeRange" />
-
-                  <div class="time-range-action-buttons">
+                    :time-range="timeRange" 
+                    :is-hovering="isHovering ?? false"  
+                    />
+                  </template>
+                  <template #append>
+                  <div class="datset-controls-action-buttons time-range-action-buttons">
                     <v-btn
                       v-if="timeRange.id !== 'displayed-day'"
                       variant="plain"
-                      size="x-small"
+                      size="small"
+                      density="compact"
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
@@ -211,7 +228,8 @@
                     <v-btn
                       v-if="timeRange.id !== 'displayed-day' && !datasets.some(s => areEquivalentTimeRanges(s.timeRange, timeRange))"
                       variant="plain"
-                      size="x-small"
+                      size="small"
+                      density="compact"
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
@@ -221,6 +239,7 @@
                   </div>
                   </template>
                 </v-list-item>
+                </v-hover>
               </v-list>
             </div>
           </template>
@@ -260,7 +279,7 @@
           </selection-composer>
           <div class="my-selections" v-if="datasets.length>0" style="margin-top: 1em;">
 
-            <h4>My Datasets</h4>
+
             
             <dataset-card
               :datasets="datasets"
@@ -426,7 +445,7 @@
                     </v-expand-transition>
                     
                     <cds-dialog
-                      title="Graph of Quantity vs. Time"
+                      :title="`${moleculeDescriptor(dataset.molecule).shortName.text} Quantity vs. Time`"
                       v-model="openGraphs[dataset.id]"
                       title-color="var(--info-background)"
                       draggable
@@ -673,7 +692,7 @@ import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
 import type { MillisecondRange, TimeRange, UserDataset, UnifiedRegion, MoleculeType } from "../types";
 import type { TimeRangeConfig } from "@/date_time_range_selection/date_time_range_generators";
 import { serializeTempoStore, useTempoStore } from "../stores/app";
-import { MOLECULE_OPTIONS } from "../esri/utils";
+import { MOLECULE_OPTIONS, moleculeDescriptor } from "../esri/utils";
 import { areEquivalentTimeRanges, formatTimeRange } from "../utils/timeRange";
 import { atleast1d } from "../utils/atleast1d";
 import { titleBarPredicate } from "../utils/draggable";
@@ -966,6 +985,11 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   align-items: center;
 }
 
+.datset-controls-action-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
 .time-range-action-buttons {
   text-align: right;
 }
@@ -1004,5 +1028,9 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 
 .dataset-select-all-none > button {
   flex-grow: 1;
+}
+
+.region-list-item {
+  
 }
 </style>
