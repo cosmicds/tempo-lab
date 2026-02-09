@@ -71,7 +71,6 @@ import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
-import { camelToSentance } from '@/utils/text';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 import type { FoldType } from '@/esri/services/aggregation';
 
