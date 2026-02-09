@@ -30,7 +30,7 @@
           </popup-info-button>
         </template>
       </v-checkbox>
-
+      <v-spacer />
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
@@ -126,7 +126,10 @@ watch(() => [props.map, props.layerId],
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between;
+  
+  
 }
+
 
 .mlc-layer-item-checkbox-opacity-container {
   width: 100%;
@@ -142,6 +145,11 @@ watch(() => [props.map, props.layerId],
 
   .v-slider {
     width: 70px;
+    flex-grow: 1;
+    flex-shrink: 0;
+  }
+  
+  .v-input {
     flex-grow: 0;
   }
 }
