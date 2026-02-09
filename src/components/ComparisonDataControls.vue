@@ -1,12 +1,12 @@
 <template>
   <div class="comparison-data-controls">
-    <p class="my-3">
+    <div class="my-3">
       Choose datasets to view with the TEMPO Data. 
       <ul class="cdc-instruction">
         <li>Drag cards to re-order data layers.</li>
         <li>Use slider to adjust layer opacity.</li>
       </ul>
-    </p>
+    </div>
     <div
       v-for="(map, index) in maps"
       :key="index"

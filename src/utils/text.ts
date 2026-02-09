@@ -6,7 +6,7 @@ const STOP_WORDS = [
   'At', 'By', 'In', 'Of', 'On', 'To', 'Up',
 ];
 
-export function pascalToSnake(s: string): string {
+export function camelToSentance(s: string): string {
   if (s.length == 0) return s;
   let out = s[0].toUpperCase();
   for (const c of s.slice(1)) {
@@ -20,4 +20,9 @@ export function pascalToSnake(s: string): string {
     return word;
   });
   return out;
+}
+
+// https://stackoverflow.com/a/4149612/11594175
+export function camelToSnake(s: string, delimeter = '_'): string {
+  return s.replace(/([a-z])([A-Z])/g, `$1${delimeter}$2`).toLowerCase();
 }

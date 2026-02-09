@@ -162,9 +162,13 @@ export interface TimeRange {
   range: MillisecondRange | MillisecondRange[];
   type: TimeRangeSelectionType; 
   config?: TimeRangeConfig;
+  source?: TimeRange
 }
 
 export type MoleculeType = 'no2' | 'o3' | 'hcho';
+
+export type TimeBinOptions = 'none' | 'hour' | 'day' | 'week' | 'month';
+export type FoldingPeriodOptions = 'none' | 'day' | 'week' | 'month' | 'year' | 'weekdayWeekend';
 
 export interface UserDataset {
   id: string;
@@ -180,8 +184,8 @@ export interface UserDataset {
   // Shape expected: { foldType: string; values: Record<number, {value: number|null; bin: number}>; errors: Record<number, DataPointError>; bins?: unknown }
   // Used when timeRange.type === 'folded'
   folded?: {
-    timeBin: string,
-    foldingPeriod: string,
+    timeBin: TimeBinOptions,
+    foldingPeriod: FoldingPeriodOptions,
     foldType: string,
     method: string,
     timezone: string,
