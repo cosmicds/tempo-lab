@@ -50,5 +50,5 @@
     "lint": "vue-cli-service lint src --no-fix",
     "serve": "vue-cli-service serve"
   },
-  "name": "@cosmicds/tempo-lite"
+  "name": "@cosmicds/tempo-lab"
 }
