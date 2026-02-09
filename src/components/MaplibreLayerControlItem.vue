@@ -19,6 +19,7 @@
           {{ displayName ?? layerId }}
         </template>
         <template #append>
+          <slot name="warning"></slot>
           <popup-info-button
             v-if="showInfo"
             width="500px"

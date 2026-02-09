@@ -286,6 +286,14 @@ const ozoneLayer = useTempoLayer({
 });
 const no2Layer = ref<UseEsriTempoLayer | null>(null);
 
+function syncLayerReady(layerName: string, serviceReady: boolean[] | undefined) {
+  if (!serviceReady || serviceReady.length === 0) {
+    store.clearLayerReady(layerName);
+    return;
+  }
+  store.setLayerReady(layerName, serviceReady);
+}
+
 function addAdvancedLayers(m: Map | null) {
   if (m === null) {
     throw new Error('Tried to addAdvancedLayers but map was null');
@@ -298,6 +306,10 @@ function addAdvancedLayers(m: Map | null) {
   hmsFire.addToMap(m);
   hchoLayer.addEsriSource(m);
   ozoneLayer.addEsriSource(m);
+  syncLayerReady('tempo-hcho', hchoLayer.serviceReady.value);
+  syncLayerReady('tempo-o3', ozoneLayer.serviceReady.value);
+  syncLayerReady('pop-dens', popLayer.serviceReady.value);
+  syncLayerReady('land-use', sentinalLandUseLayer.serviceReady.value);
   // Only move if target layer exists (avoid errors if initial KML load failed)
   try {
     if (m.getLayer('kml-layer-aqi')) {
@@ -322,6 +334,10 @@ function removeAdvancedLayers(m: Map | null) {
   hchoLayer.removeEsriSource();
   ozoneLayer.removeEsriSource();
   pp.removeLayer();
+  store.clearLayerReady('tempo-hcho');
+  store.clearLayerReady('tempo-o3');
+  store.clearLayerReady('pop-dens');
+  store.clearLayerReady('land-use');
 }
 
 const onMapReady = (m: Map) => {
@@ -351,6 +367,29 @@ watch(molecule, (newMolecule) => {
 });
 
 const activeLayer = computed(() => `tempo-${molecule.value}`);
+
+watch(() => [
+  no2Layer.value?.serviceReady,
+  hchoLayer.serviceReady.value,
+  ozoneLayer.serviceReady.value,
+  popLayer.serviceReady.value,
+  sentinalLandUseLayer.serviceReady.value,
+], ([no2Ready, hchoReady, ozoneReady, popReady, landUseReady]) => {
+  syncLayerReady('tempo-no2', no2Ready);
+
+  if (showAdvancedLayers.value) {
+    syncLayerReady('tempo-hcho', hchoReady);
+    syncLayerReady('tempo-o3', ozoneReady);
+    syncLayerReady('pop-dens', popReady);
+    syncLayerReady('land-use', landUseReady);
+    return;
+  }
+
+  store.clearLayerReady('tempo-hcho');
+  store.clearLayerReady('tempo-o3');
+  store.clearLayerReady('pop-dens');
+  store.clearLayerReady('land-use');
+}, { deep: true, immediate: true });
 
 import { stretches, colorramps, rgbstretches, rgbcolorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
   

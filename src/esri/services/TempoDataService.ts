@@ -376,7 +376,7 @@ export class TempoDataService {
     return Promise.all(metadataPromises) as unknown as Promise<void>;
   }
   
-  private async serviceStatusReady() {
+  async serviceStatusReady() {
     let i = 0;
     while (this._serviceActive.size < this.baseUrlArray.length && i < 1_000) {
       await new Promise((resolve) => setTimeout(() => {
@@ -394,7 +394,7 @@ export class TempoDataService {
         console.log(`%c something else for ${abbrevSerivceUrl(url)}`, 'font-size: 10pt; color: white; background-color: orange;');
       }
     }
-    return this._serviceActive.size === this.baseUrlArray.length;
+    return this._serviceActive;
   }
 
   /**

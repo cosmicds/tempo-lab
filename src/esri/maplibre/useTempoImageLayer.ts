@@ -21,6 +21,7 @@ export interface UseEsriTempoLayer {
   removeEsriSource: () => void;
   setVisibility: (visible: boolean) => void;
   renderOptions: Ref<RenderingRuleOptions>;
+  serviceReady: Ref<boolean[]>
 }
 
 export interface UseEsriTempoLayerOptions {
@@ -56,7 +57,15 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     range: stretches[variable.value],
     colormap: ramps[variable.value],
   });
-
+  
+  const serviceReady = ref<boolean[]>([]);
+  tds.value.serviceStatusReady().then((ready) => {
+    const servicesReady: boolean[] = [];
+    for (const kv of ready) {
+      servicesReady.push(kv[1]);
+    }
+    serviceReady.value = servicesReady;
+  });
   
   const options = computed(() => {
     return  {
@@ -302,7 +311,6 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     removeEsriSource,
     renderOptions,
     setVisibility,
+    serviceReady,
   } as UseEsriTempoLayer;
 }
-
-
