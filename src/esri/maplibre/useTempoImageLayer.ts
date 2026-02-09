@@ -149,7 +149,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     map.value = mMap;
 
     const svc = tds.value;
-    const url = timestamp.value 
+    const url = timestamp.value !== null
       ? svc.selectBaseUrlForTimestamp(timestamp.value)
       : svc.baseUrlArray[svc.baseUrlArray.length - 1];
 
@@ -183,7 +183,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     }
 
     const svc = tds.value;
-    const url = svc.selectBaseUrlForRange({ start: nearest, end: nearest });
+    const url = svc.selectBaseUrlForTimestamp(nearest);
 
     const currentUrl = dynamicMapService.value.esriServiceOptions.url;
     if (currentUrl !== url) {
@@ -241,7 +241,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   watch(molecule, (_newMol: MoleculeType) => {
     // refresh() already handled by useEsriTimesteps watch
     const svc = tds.value;
-    const url = timestamp.value
+    const url = timestamp.value !== null
       ? svc.selectBaseUrlForTimestamp(timestamp.value)
       : svc.baseUrlArray[svc.baseUrlArray.length - 1];
     

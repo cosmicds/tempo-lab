@@ -681,6 +681,8 @@ const samplingPreviewMarkers = useMultiMarker(map as MapTypeRef , {
 const sampler = ref<EsriSampler>(null);
 currentTempoDataService.value.withMetadataCache().then(meta => {
   sampler.value = new EsriSampler(meta);
+}).catch((error) => {
+  console.log("could not create sampler because there is no metada");
 });
 
 watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal) => {
