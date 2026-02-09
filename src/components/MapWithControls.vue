@@ -324,6 +324,7 @@ const onMapReady = (m: Map) => {
   map.value = m; // ESRI source already added by EsriMap
   if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
+  m.resize();
 };
 
 watch(showAdvancedLayers, (value) => {
