@@ -124,7 +124,7 @@ const displayOrder = computed({
     return currentOrder.value.slice().reverse();
   },
   set(value: string[]) {
-    controller?.setOrder(value.slice().reverse());
+    controller?.setManagedOrder(value.slice().reverse());
   }
 });
 
