@@ -9,6 +9,7 @@
     height="fit-content"
     persistent
     draggable
+    :scrim="false"
     :drag-predicate="titleBarPredicate"
   > 
     <new-data-generic-aggregation
