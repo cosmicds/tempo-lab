@@ -1,7 +1,7 @@
 <template>
   <cds-dialog
     v-model="dialogOpen"
-    title="Graph of Quantity vs. Time"
+    :title="`${selection ? moleculeDescriptor(selection.molecule).shortName.text : 'Graph of'} Quantity vs. Time`"
     density="compact"
     title-color="var(--info-background)"
     max-width="90vw"
@@ -28,6 +28,7 @@
 import { ref } from 'vue';
 import type { UserDataset, UnifiedRegion, MoleculeType} from '../types';
 import NewDataGenericAggregation from './DataFoldingAndBinning.vue';
+import { moleculeDescriptor } from '@/esri/utils';
 
 import { titleBarPredicate } from "../utils/draggable";
 

@@ -1,7 +1,6 @@
 <!-- TimeRange Card to display time range configuration -->
 <template>
-  <v-hover v-slot="{ isHovering, props }">
-    <div v-bind="props" class="time-range-card">
+    <div class="time-range-card">
       
       <!-- Display Date -->
       <div v-if='timeRange?.config === undefined' class="time-range-config-name">
@@ -25,7 +24,7 @@
         </div>
       
         <v-expand-transition>
-          <div v-if="isHovering">
+          <div v-if="showDetails" @click="onShowClick">
             <!-- Date Range -->
             <div class="time-range-config-item">
               <strong>Date Range:</strong> 
@@ -53,14 +52,20 @@
             </div>
           </div>
         </v-expand-transition>
+        <v-expand-transition>
+          <div class="time-range-show-details" v-if="isHovering" @click="onShowClick">
+            Click to {{ showDetails ? 'hide' : 'show' }} details
+          </div>
+        </v-expand-transition>
+        
+        
       </div>
     </div>
-    
-  </v-hover>
 </template>
 
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { computed, ref } from 'vue';
 import type { TimeRangeConfig } from './date_time_range_generators';
 import type { TimeRange } from '@/types';
 
@@ -76,25 +81,38 @@ const formatDate = (date: Date): string => {
 const props = defineProps<{
   name?: string;
   timeRange: TimeRange;
+  isHovering: boolean;
 }>();
 // console.log('TimeRangeCard props:', props.timeRange.config);
+
+const showDetails = ref(false);
+function onShowClick() {
+  showDetails.value = !showDetails.value;
+}
+
 </script>
     
 
 <style land="less" scoped>
 .time-range-card {
-  border-radius: 8px;
-  padding: 4px 16px;
+  padding: 0px;
   height: fit-content;
 }
 
 .time-range-config-name {
-  font-weight: bold;
-  margin-bottom: 8px;
+  font-weight: normal;
+  margin: 0;
+  display: none;
 }
 
 .time-range-config-item {
   margin-bottom: 2px;
   font-size: 0.8em;
+}
+
+.time-range-show-details {
+  font-size: 0.7em;
+  background-color: cadetblue;
+  border-radius: 4px;
 }
 </style>

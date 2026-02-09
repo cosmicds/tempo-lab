@@ -162,25 +162,25 @@ const layerInfo: Record<string, string | undefined> = {
                 <br/><br/>
                 The colors represent the fire’s radiative power (FRP), which is a measure of the heat energy released by the fire, expressed in megawatts (MW). Higher FRP values often indicate more intense burning within a group of fire pixels, though these values can vary depending on imaging conditions. If FRP data isn’t available for a location, a placeholder value is used.
                 <br/><br/>
-                Source: <a href="https://www.ospo.noaa.gov/products/land/hms.html">NOAA Hazard Mapping System Fire And Smoke Product</a>
+                Source: NOAA Hazard Mapping System Fire And Smoke Product (<a href="https://www.ospo.noaa.gov/products/land/hms.html" target="_blank" rel="noopener noreferrer">link</a>)
                 <br/><br/>
                 Satellites: GOES/ABI, the JPSS/VIIRS and EOS/MODIS`,
   "land-use": `This layer shows a global map of land use and land cover (LULC) created from high-resolution Sentinel-2 satellite imagery. The annual map is generated using Impact Observatory’s AI land classification model which was trained on billions of pixels each labeled by a person and provided by the National Geographic Society.
                 <br/><br/>
                 The land cover categories include: Water, Trees, Flooded Vegetation, Crops, Built Areas, Bare Ground, Snow/Ice, Clouds, and Rangeland.
                 <br/><br/>
-                Source: <a href="https://livingatlas.arcgis.com/landcoverexplorer/">ESA Sentinel-2</a>, model produced by ESRI and Impact Observatory`,
+                Source: ESA Sentinel-2, model produced by ESRI and Impact Observatory (<a href="https://livingatlas.arcgis.com/landcoverexplorer/" target="_blank" rel="noopener noreferrer">link</a>)`,
   "pop-dens": `This layer shows the estimates of human population density, indicated as the number of people per square kilometer, based on official national census and population data. The layer was created using data from ~13.5 million administrative units worldwide.
                  <br/><br/>
-                 Source: Created by <a href="https://www.arcgis.com/home/item.html?id=a9fea1ecd1ba4f7db80a0f667fbc508b">Center for International Earth Science Information Network - CIESIN - Columbia University. Published by NASA Socioeconomic Data and Applications Center (SEDAC)</a>`,
+                 Source: Created by Center for International Earth Science Information Network - CIESIN - Columbia University. Published by NASA Socioeconomic Data and Applications Center (<a href="https://www.arcgis.com/home/item.html?id=a9fea1ecd1ba4f7db80a0f667fbc508b" target="_blank" rel="noopener noreferrer">link</a>)`,
   "aqi-layer-aqi": `This layer shows the air quality index (AQI) using six color coded categories, each representing a range of values. Higher AQI values indicate higher levels of air pollution.  The AQI for each pollutant is based on health standards set for that pollutant and the scientific information that supports that standard. For ozone, the AQI is calculated on an 8-hour average while for particle pollution it uses a 24-hour average. The reported AQI is the highest AQI value for any of the five measured pollutants.
                     <br/><br/>
-                    Source: <a href="https://gispub.epa.gov/airnow/index.html?tab=3&monitors=pm25&xmin=-22773986.638966657&xmax=-6121721.4048757255&ymin=-2287422.7865274334&ymax=10881759.942665514">Air Quality monitors in the U.S, Canada, and Mexico</a> via the EPA`,
+                    Source: Air Quality monitors in the U.S, Canada, and Mexico (<a href="https://gispub.epa.gov/airnow/index.html?tab=3&monitors=pm25&xmin=-22773986.638966657&xmax=-6121721.4048757255&ymin=-2287422.7865274334&ymax=10881759.942665514" target="_blank" rel="noopener noreferrer">link</a>) via the EPA`,
   "power-plants-layer": `This layer shows all of the operable electric power plants in the United States with a maximum combined generating capacity of at least 30 megawatts (MW) or more (anywhere from ~400-800 homes a year). They are categorized by their energy source. The layer includes plants that are currently running, on standby, or are temporarily out of service.
                          <br/><br/>
                          The three major categories for generating electricity are fossil fuels, nuclear energy, and renewable energy sources.
                          <br/><br/>
-                         Source: <a href="https://gis-fema.hub.arcgis.com/datasets/b063316fac7345dba4bae96eaa813b2f/about">U.S. Energy Information Administration (EIA)</a>, provided by FEMA Geospatial Resource Center. Last accessed Oct. 16, 2025`,
+                         Source: U.S. Energy Information Administration (EIA)</a>, provided by FEMA Geospatial Resource Center (<a href="https://gis-fema.hub.arcgis.com/datasets/b063316fac7345dba4bae96eaa813b2f/about" target="_blank" rel="noopener noreferrer">link</a>). Last accessed Oct. 16, 2025`,
 
 };
 

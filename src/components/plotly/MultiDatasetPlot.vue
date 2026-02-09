@@ -5,11 +5,11 @@
         :descriptor="moleculeDescriptor(datasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
+          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
-                {{ descriptor.fullName.text }} ({{ camelToSentance(foldType) }}) stacked timeseries
+                {{ descriptor.fullName.text }} Timeseries - {{ foldTypeToHumanReadable(foldType as FoldType) }}
               </div>
             </summary>
             <folded-plotly-graph
@@ -34,11 +34,11 @@
         :descriptor="moleculeDescriptor(normalDatasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details open :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
+          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
             <summary>
               <!-- {molecule} timeseries -->
               <div>
-                {{ descriptor.fullName.text }} timeseries
+                {{ descriptor.fullName.text }} Timeseries
               </div>
             </summary>
             <plotly-graph
@@ -73,6 +73,56 @@ import type { Config } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
 import { camelToSentance } from '@/utils/text';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
+import type { FoldType } from '@/esri/services/aggregation';
+
+function foldTypeToHumanReadable(ft: FoldType): string {
+  switch (ft) {
+
+  case 'hourOfDay':
+    return 'Stacked by day, binned by hour';
+  case 'noneOfDay':
+    return 'Stacked by day';
+    
+  case 'hourOfWeek':
+    return 'Stacked by week, binned by hour';
+  case 'dayOfWeek':
+    return 'Stacked by week, binned by day';
+  case 'noneOfWeek':
+    return 'Stacked by week';
+
+  case 'hourOfMonth':
+    return 'Stacked by month, binned by hour';
+  case 'dayOfMonth':
+    return 'Stacked by month, binned by day';
+  case 'weekOfMonth':
+    return 'Stacked by month, binned by week';
+  case 'noneOfMonth':
+    return 'Stacked by month';
+
+  case 'hourOfYear':
+    return 'Stacked by year, binned by hour';
+  case 'dayOfYear':
+    return 'Stacked by year, binned by day';
+  case 'weekOfYear':
+    return 'Stacked by year, binned by week';
+  case 'monthOfYear':
+    return 'Stacked by year, binned by month';
+  case 'noneOfYear':
+    return 'Stacked by year';
+
+  case 'hourOfNone':
+    return 'Hourly average';
+  case 'dayOfNone':
+    return 'Daily average';
+  case 'weekOfNone':
+    return 'Weekly average';
+  case 'monthOfNone':
+    return 'Monthly average';
+
+  default:
+    return pascalToSnake(ft);
+  }
+}
 
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
@@ -134,10 +184,10 @@ const normalDatasets = computed(() => {
 
 </script>
 
-<style>
+<style scoped>
 div.dataset-plot-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 5px;
 }
 

@@ -13,6 +13,9 @@
         class="selection-item my-2 rounded-lg"
         :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000' }"
         :ripple="touchscreen"
+        density="compact"
+        slim
+        @click="showDetails = !showDetails"
       >
         <template v-slot:prepend v-if="turnOnSelection">
           <v-checkbox
@@ -26,7 +29,7 @@
         <template #default>
           <div>
             <v-chip
-              class="dataset-name-chip my-2"
+              class="dataset-name-chip my-1"
               size="small" 
               variant="flat"
               elevation="1"
@@ -36,28 +39,38 @@
               {{ dataset.name ?? dataset.region.name }}
             </v-chip>
             <v-expand-transition>
-              <div class="d-flex flex-wrap align-center ga-2 mb-2">
+              <div v-if="showDetails || isHovering" class="d-flex flex-wrap align-center ga-1 mb-1">
                 <v-chip 
                   label
                   size="small" 
                   variant="flat"  
                   :color="dataset.region.color"
                   >
-                  Region: {{ dataset.region.name }}
+                  {{ dataset.region.name }}
                 </v-chip>
                 
                 <v-chip label size="small" >
                   <span class="molecule-label">
-                    <span :class="`mol-label ${dataset.molecule}-mono-svg`"></span>
                     {{ moleculeName(dataset.molecule) }}
                   </span>
                 </v-chip>
                 
-                <div class="d-inline-block text-caption dataset-patttern-chip"
+                <v-tooltip :text="dataset.timeRange.description">
+                  <template #activator="{props}">
+                    <v-chip 
+                      v-bind="props" 
+                      label 
+                      size="small"
+                      >
+                      {{ dataset.timeRange.name }}
+                    </v-chip> 
+                  </template>
+                </v-tooltip>
+                <!-- <div class="d-inline-block text-caption dataset-patttern-chip"
                   v-if="dataset.timeRange" 
                   >
-                  <span>{{ dataset.timeRange.description }}</span>
-                </div>
+                  <span>{{ dataset.timeRange.name }}</span>
+                </div> -->
               </div>
             </v-expand-transition>
           </div>
@@ -128,7 +141,7 @@ function _removeDataset(dataset: UserDataset) {
   delete datasetRowRefs[dataset.id];
 }
 
-
+const showDetails = ref(false);
 </script>
 
 <style scoped lang="less">
