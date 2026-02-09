@@ -218,7 +218,11 @@ function onInnerMapReady(m: Map) {
   promiseResolve(m);
   map.value = m;
   // Attach ESRI source right after base readiness (microtask keeps UI snappy)
-  addEsriSource(m);
+  try {
+    addEsriSource(m);
+  } catch { 
+    console.log(`no ${theEsriLayer}`);
+  }
   emit('esri-layer', theEsriLayer);
   emit('ready', m);
   console.log(m);
