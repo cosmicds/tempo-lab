@@ -81,6 +81,9 @@ export function useEsriImageServiceLayer(
           'raster-resampling': 'nearest',
           'raster-opacity': (options.visible === false) ? 0.0 : (opacityRef.value ?? 0.8),
         },
+        layout: {
+          'visibility': (options.visible === false) ? 'none' : 'visible',
+        }
       });
       let index = -1;
       for (const [idx, layer] of Object.entries(map.getStyle().layers)) {
