@@ -80,7 +80,7 @@
                     :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                     @plot-click="handlePointClick"
                     :layout-options="{
-                      margin: {t: 10, r: 20, b: 80, l: 90,}, 
+                      margin: {t: 10, r: 20, b: 60, l: 90}, 
                       autosize: false, width: 700, height: 400,
                       xaxis: {
                         automargin: false,
@@ -90,7 +90,7 @@
                         },
                       },
                       yaxis: {
-                        automargin: false,
+                        automargin: true,
                         gridcolor: 'rgba(128, 128, 128, 0.3)',
                         title: {
                           standoff: 10,

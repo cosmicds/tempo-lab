@@ -6,6 +6,7 @@ export const DEFAULT_PLOT_LAYOUT: Partial<Layout> = {
     color: "#808080",
     activecolor: "#009ade",  // Smithsonian blue
   },
+  yaxis: {automargin: true}
 };
 
 export const DEFAULT_MODEBAR_BUTTONS_TO_REMOVE: ModeBarDefaultButtons[] = ['sendDataToCloud', 'lasso2d', 'select2d', 'autoScale2d'];

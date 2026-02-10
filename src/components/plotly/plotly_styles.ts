@@ -318,14 +318,14 @@ export function getFoldTypeStyle(foldType: FoldType): Partial<Layout> {
   return foldTypeStyles[foldType];
 }
 
-export function deepMerge(target: object, source: object): object {
-  const result = {...target};
-  for (const key in source) {
+export function deepMerge(base: object, updates: object): object {
+  const result = {...base};
+  for (const key in updates) {
     // if key has a non-array object, iterate recursively
-    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-      result[key] = deepMerge(result[key] || {}, source[key]);
+    if (updates[key] && typeof updates[key] === 'object' && !Array.isArray(updates[key])) {
+      result[key] = deepMerge(result[key] || {}, updates[key]);
     } else {
-      result[key] = source[key];
+      result[key] = updates[key];
     }
   }
   return result;

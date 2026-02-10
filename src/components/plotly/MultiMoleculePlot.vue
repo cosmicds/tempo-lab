@@ -1,17 +1,6 @@
 <template>    
-    <div :class="['multi-plot-container', { 'single-plot': isSingle }]">
-      <div v-if="isSingle" class="multi-plot-container__plot">
-        <UserDatasetPlot
-          :dataset="datasets[0]"
-          :show-errors="true"
-          :data-options="[{mode: 'markers'}]"
-          :layout-options="commonLayoutOptions"
-          :config-options="commonConfigOptions"
-          @plot-click="(value) => emit('plot-click', value)"
-        />
-      </div>
-      
-      <div v-else class="multi-plot-container__plot"  v-for="group in datasetsGroupedByMolecule" :key="group[0]">
+    <div class="multi-plot-container">      
+      <div class="multi-plot-container__plot"  v-for="(group, index) in datasetsGroupedByMolecule" :key="group[0]">
         <MultiDatasetPlot
           :datasets="group[1]"
           :show-errors="true"
@@ -27,16 +16,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import type { UserDataset } from '@/types';
-import type { Config } from 'plotly.js-dist-min';
+import type { Config, Layout } from 'plotly.js-dist-min';
 import MultiDatasetPlot from './MultiDatasetPlot.vue';
-import UserDatasetPlot from './UserDatasetPlot.vue';
 import { DEFAULT_PLOT_CONFIG, DEFAULT_PLOT_LAYOUT } from "@/components/plotly/defaults";
+import { deepMerge } from './plotly_styles';
 
 interface MultiPlotProps {
   datasets: UserDataset[];
 }
 
-const isSingle = computed(() => {return datasets.length === 1;});
+
 
 const { datasets } = defineProps<MultiPlotProps>();
   
@@ -47,36 +36,37 @@ const emit = defineEmits<{
 const _showErrorBands = ref(datasets.map((d) => d.folded ? true : false));
 
 // Common layout options for all plots
-const commonLayoutOptions = {
-  ...DEFAULT_PLOT_LAYOUT,
-  autosize: false,
-  height: 350,
-  width: Math.floor(700 * 350 / 400),
-  xaxis: {
-    automargin: false,
-    gridcolor: 'rgba(128, 128, 128, 0.3)',
-    title: {
-      standoff: 10,
+const commonLayoutOptions: Partial<Layout> = deepMerge(
+  DEFAULT_PLOT_LAYOUT,
+  {
+    autosize: false,
+    height: 350,
+    width: Math.floor(700 * 350 / 400),
+    xaxis: {
+      automargin: false,
+      gridcolor: 'rgba(128, 128, 128, 0.3)',
+      title: {
+        standoff: 10,
+      },
     },
-  },
-  yaxis: {
-    automargin: true,
-    gridcolor: 'rgba(128, 128, 128, 0.3)',
-    title: {
-      standoff: 10,
+    yaxis: {
+      automargin: true,
+      gridcolor: 'rgba(128, 128, 128, 0.3)',
+      title: {
+        standoff: 10,
+      },
     },
-  },
-  legend: {
-    yanchor: 'top',
-    yref: 'paper',
-    y: 1.3,
-    orientation:'h' as |'h' | 'v',
-    bordercolor: '#ccc', 
-    borderwidth:1,
-    entrywidthmode: 'pixels',
-    entrywidth: 0, // fit the text
-  }
-} as Partial<Plotly.Layout>;
+    legend: {
+      yanchor: 'top',
+      yref: 'paper',
+      y: 1.3,
+      orientation:'h' as |'h' | 'v',
+      bordercolor: '#ccc', 
+      borderwidth:1,
+      entrywidthmode: 'pixels',
+      entrywidth: 0, // fit the text
+    }
+  });
 
 // Common config options for all plots
 const commonConfigOptions: Partial<Config> = {
@@ -119,7 +109,4 @@ div.multi-plot-container__plot {
   min-width: 438px;
 }
 
-div.multi-plot-container.isSingle div.multi-plot-container__plot {
-  width: auto;
-}
 </style>

@@ -59,9 +59,10 @@ import type {FoldedPlotlyGraphProps} from '../FoldedPlotlyGraph.vue';
 import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
-import type { Config } from 'plotly.js-dist-min';
+import type { Config, Layout } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
-import { DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
+import { deepMerge } from './plotly_styles';
+import { DEFAULT_PLOT_CONFIG , DEFAULT_PLOT_LAYOUT } from "@/components/plotly/defaults";
 
 
 interface UserDatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
@@ -77,18 +78,20 @@ const emit = defineEmits<{
 
 
 // Common layout options for all plots
-const dlayoutOptions = {
-  margin: { t: 20, r: 30, b: 60, l: 80 },
-  autosize: false,
-  ...(props.layoutOptions ?? {}),
-};
+const dlayoutOptions: Partial<Layout> = deepMerge(
+  DEFAULT_PLOT_LAYOUT,
+  {
+    margin: { t: 20, r: 30, b: 60, l: 80 },
+    autosize: false,
+    ...(props.layoutOptions ?? {}),
+  });
 
 // Common config options for all plots
-const dconfigOptions: Partial<Config> = {
-  ...DEFAULT_PLOT_CONFIG,
-  responsive: true,
-  ...(props.configOptions ?? {}),
-};
+const dconfigOptions: Partial<Config> = deepMerge(DEFAULT_PLOT_CONFIG, 
+  {
+    responsive: true,
+    ...(props.configOptions ?? {}),
+  });
 
 const ddataOptions = computed(() => {
   const defaultOpt = {showlegend: false};
