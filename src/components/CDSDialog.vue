@@ -165,7 +165,9 @@ watch(modelValue, value => {
 .cds-dialog-v-card-text {
 
 }
-
+.v-toolbar-title.cds-dialog-v-toolbar-title > .v-spacer {
+  display: none;
+}
 .v-toolbar-title.cds-dialog-v-toolbar-title > .v-toolbar-title__placeholder {
   padding-bottom: 1px; /* needed for text with unicode subscript text */
 } 
