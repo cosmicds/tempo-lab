@@ -817,10 +817,14 @@ function handleDateTimeRangeSelectionChange(
   // console.log(`Received ${timeRanges.length} time ranges of type ${selectionType} and name ${customName}`);
   const normalized = atleast1d(timeRanges);
   const countTimeRanges = store.timeRanges.length;
+  let name = `Time Range ${countTimeRanges + 1}`;
+  if (selectionType === 'single') {
+    name = customName;
+  }
   // No dedup tracking now
   const tr: TimeRange = {
     id: v4(),
-    name: `Time Range ${countTimeRanges + 1}`,
+    name: name,
     description: customName,
     range: normalized.length === 1 ? normalized[0] : normalized,
     type: selectionType,
