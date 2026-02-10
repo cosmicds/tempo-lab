@@ -15,31 +15,6 @@
               />
           </template>
         </v-tooltip>
-        <!-- switch for preview points -->
-        <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon="mdi-select"
-              :color="selectionActive === 'rectangle' ? 'info' : 'default'"
-              :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
-              :disabled="selectionActive === 'point'"
-              @click="activateRectangleSelectionMode"
-            ></v-btn>
-          </template>
-        </v-tooltip>
-        <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon="mdi-plus"
-              :color="selectionActive === 'point' ? 'info' : 'default'"
-              :variant="selectionActive === 'point' ? 'tonal' : 'text'"
-              :disabled="selectionActive === 'rectangle'"
-              @click="activatePointSelectionMode"
-            ></v-btn>
-          </template>
-        </v-tooltip>
       </v-toolbar>
       <EsriMap
         :mapID="mapID"
