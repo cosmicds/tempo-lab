@@ -5,7 +5,7 @@
         :descriptor="moleculeDescriptor(datasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
+          <details :open="open || (firstOpen && normalDatasets.length === 0 && index===0)" :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="([foldType, datasets], index) in foldedDatasets" :key="foldType">
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
@@ -34,7 +34,7 @@
         :descriptor="moleculeDescriptor(normalDatasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
+          <details :open="open || firstOpen" :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
             <summary>
               <!-- {molecule} timeseries -->
               <div>
@@ -128,8 +128,10 @@ function foldTypeToHumanReadable(ft: FoldType): string {
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
   datasets: UserDataset[];
+  open: boolean;
+  firstOpen: boolean;
 }
-const props = defineProps<DatasetPlotProps>();
+const props = withDefaults(defineProps<DatasetPlotProps>(), {open: false, firstOpen: false});
 const emit = defineEmits<{
   (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
 }>();

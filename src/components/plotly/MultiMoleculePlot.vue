@@ -3,6 +3,8 @@
       <div class="multi-plot-container__plot"  v-for="(group, index) in datasetsGroupedByMolecule" :key="group[0]">
         <MultiDatasetPlot
           :datasets="group[1]"
+          :open="false"
+          :first-open="index === 0"
           :show-errors="true"
           :data-options="[{mode: 'markers'}]"
           :layout-options="commonLayoutOptions"
