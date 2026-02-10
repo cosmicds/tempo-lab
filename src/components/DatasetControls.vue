@@ -44,6 +44,14 @@
           title="Regions"
           class="mt-3 h3-panel-titles"
         >
+          <template #title>
+            My  Regions
+            <popup-info-button
+                info-text="Click the region card to go to that region on the map. Click the pen to rename a region. Click the trash can to delete a region. If an existing dataset is using a region, it cannot be deleted."
+                :width="popupCardWidth"
+              >
+              </popup-info-button>
+          </template>
           <template #text>
             <div id="add-region-buttons">
               <v-btn
@@ -81,15 +89,7 @@
                 </popup-info-button>
               </template>
             </v-checkbox>
-            <div class="my-selections" v-if="regions.length>0" style="margin-top: 1em;">
-            <h4>
-              My Regions
-              <popup-info-button
-                info-text="Click the region card to go to that region on the map. Click the pen to rename a region. Click the trash can to delete a region. If an existing dataset is using a region, it cannot be deleted."
-                :width="popupCardWidth"
-              >
-              </popup-info-button>
-            </h4>                   
+            <div class="my-selections" v-if="regions.length>0" style="margin-top: 1em;">                 
               <v-slider
                 v-model="regionOpacity"
                 :min="0"
@@ -165,7 +165,7 @@
           </template>
         </v-expansion-panel>
         <v-expansion-panel
-          title="Time Ranges"
+          title="My Time Ranges"
           class="mt-3 h3-panel-titles"
         >
           <template #text>
@@ -252,7 +252,7 @@
         </v-divider>
 
         <v-expansion-panel
-          title="Datasets"
+          title="My Datasets"
           class="mt-3 h3-panel-titles"
         >
         <template #text>
@@ -939,7 +939,7 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   display: flex;
 }
 
-.h3-panel-titles .v-expansion-panel-title {
+.h3-panel-titles {
   font-size: 1.17em;
   font-weight: bold;
 }
@@ -1030,7 +1030,10 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   flex-grow: 1;
 }
 
-.region-list-item {
-  
+#user-options-panels :deep(.v-expansion-panel-text__wrapper) {
+    padding: 0px 0.5em;
 }
+
+
+
 </style>
