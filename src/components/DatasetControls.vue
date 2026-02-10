@@ -116,7 +116,7 @@
                   :class="` my-2 rounded-lg region-list-item region-list-item-${index}`"
                   :key="index"
                   :title="region.name"
-                  :style="{ 'background-color': region.color }"
+                  :style="{ 'background-color': region.color, color: contrastingColor(region.color) }"
                   @click="() => focusRegion = region"
                   density="compact"
                   slim
@@ -515,6 +515,7 @@
               :color="accentColor2"
               :disabled="selectedDatasets.length == 0"
               :variant="selectedDatasets.length > 0 ? 'flat' : 'outlined'"
+              size="small"
               @click="showMultiPlot = true">
               Graph Selected Datasets
             </v-btn>
@@ -769,7 +770,8 @@ function openAggregationDialog(selection: UserDataset) {
 }
 function handleAggregationSaved(aggregatedSelection: UserDataset) {
   const n = datasets.value.map(d => d.name).filter(n => n?.startsWith(aggregatedSelection.name + ' ' || 'animpossiblename')).length;
-  aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
+  // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
+  aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
@@ -786,6 +788,7 @@ function handleDatasetCreated(dataset: UserDataset) {
 }
 
 import UserDatasetEditor from "./UserDatasetEditor.vue";
+import { contrastingColor } from "@/utils/color";
 const showDatasetEditor = ref(false);
 const datasetEditorNameOnly = ref(false);
 function handleEditDataset(dataset: UserDataset, nameOnly = false) {
@@ -915,6 +918,8 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 <style scoped lang="less">
 #dataset-sections {
   font-size: 11pt !important;
+  min-width: 250px;
+  overflow-y: auto;
 }
 
 // prevent overflows of the content

@@ -388,6 +388,7 @@ body {
   width: 100%;
   display: flex;
   overflow: hidden;
+  overflow-x: auto;
 }
 
 .panel {

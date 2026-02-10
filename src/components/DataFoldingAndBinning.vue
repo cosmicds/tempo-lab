@@ -13,8 +13,8 @@
               v-model:open="showAggregationControls"
               open-direction="right"
               icon="mdi-calculator"
-              open-tooltip-text="Show stacking and binning controls"
-              closed-tooltip-text="Close stacking and binning controls"
+              closed-tooltip-text="Show stacking and binning controls"
+              open-tooltip-text="Close stacking and binning controls"
               open-arrow-color="surface-variant"
               closed-arrow-color="surface-variant"
               tooltips
@@ -428,7 +428,7 @@ const canSave = computed(() => {
 
 const foldedDatasetName = computed(() => {
   if (!props.selection?.name) return 'Stacked Data';
-  return `Aggregated ${props.selection.name ?? props.selection.region.name}`;// (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}, ${selectedMethod.value})`;
+  return `${props.selection.name ?? props.selection.region.name} (Aggregation)`;// (${selectedTimeBin.value} of ${selectedFoldingPeriod.value}, ${selectedMethod.value})`;
 });
 
 // Aggregated data
