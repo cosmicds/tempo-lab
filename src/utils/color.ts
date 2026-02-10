@@ -22,7 +22,7 @@ export function contrastingColor(hexColor: string): string {
   const lum = 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
 
   // create a console log the previews the color choice as PREVIEW with background color the hexColor and text color the chosen contrasting color
-  console.log(`%c PREVIEW `, `background: ${hexColor}; color: ${lum > 0.179 ? '#000000' : '#FFFFFF'}`);
+  // console.log(`%c PREVIEW `, `background: ${hexColor}; color: ${lum > 0.179 ? '#000000' : '#FFFFFF'}`);
 
   return lum > 0.179 ? '#000000' : '#FFFFFF';
 }

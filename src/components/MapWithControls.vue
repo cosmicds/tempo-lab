@@ -430,13 +430,13 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
   };
 });
 
-watch(currentColorbarOptions, (cc) => {
-  console.log('current colorbar options changed to', cc);
-});
+// watch(currentColorbarOptions, (cc) => {
+//   console.log('current colorbar options changed to', cc);
+// });
 
-watch(colorMap, (value) => {
-  console.log('color map changed to', value);
-});
+// watch(colorMap, (value) => {
+//   console.log('color map changed to', value);
+// });
 
 
 // TODO: Maybe there's a built-in Date function to get this formatting?

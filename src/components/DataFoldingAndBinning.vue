@@ -141,7 +141,7 @@ import type { Prettify, UserDataset, PlotlyGraphDataSet, UnifiedRegion, Molecule
 import type { TimeRangeSelectionType } from '@/types/datetime';
 import type { AggregationMethod, TimeSeriesData, FoldedTimeSeriesData , FoldType, FoldBinContent} from '../esri/services/aggregation';
 import tz_lookup from '@photostructure/tz-lookup';
-import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
 import { moleculeDescriptor } from '@/esri/utils';
@@ -306,7 +306,6 @@ const selectedFoldType = computed<FoldType>(() => {
   const period = selectedFoldingPeriod.value;
     
   const foldType = `${timeBin}Of${period.charAt(0).toUpperCase()}${period.slice(1)}` as FoldType;
-  console.log('Computed FoldType:', foldType, 'from', timeBin, 'and', period);
   return foldType;
 });
 
@@ -570,7 +569,6 @@ function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): O
 
 // Function to update graph data
 function updateGraphData() {
-  console.log("Updating graph data");
   if (!props.selection) {
     graphData.value = [];
     return;
@@ -595,9 +593,7 @@ function updateGraphData() {
     (original as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
     data.push(original as PlotlyGraphDataSet);
   }
-  console.log("Prepared graph data:", data);
   graphData.value = data;
-  console.log("Graph data updated with", data.length, "datasets");
 }
 
 // Create a time range for the folded data
@@ -638,7 +634,7 @@ function selectionToTimeseries(selection: UserDataset): TimeSeriesData {
 
 // Update folded data when parameters change
 function updateAggregatedData() {
-  console.log("Updating folded data with time bin:", selectedTimeBin.value, "folding period:", selectedFoldingPeriod.value, "fold type:", selectedFoldType.value, "method:", selectedMethod.value, "timezone:", selectedTimezone.value);
+  // console.log("Updating folded data with time bin:", selectedTimeBin.value, "folding period:", selectedFoldingPeriod.value, "fold type:", selectedFoldType.value, "method:", selectedMethod.value, "timezone:", selectedTimezone.value);
   if (!props.selection?.samples) {
     foldedData.value = null;
     return;
@@ -669,14 +665,13 @@ function updateAggregatedData() {
   
   // Update graph data after folding
   updateGraphData();
-  console.log("graphData after update:", graphData.value);
 }
 
 function handlePointClick(value: {x: Plotly.Datum, y: number, customdata: unknown}) {
-  console.log("Point clicked:", value);
-  console.log("Custom data Date:", value.customdata ? value.customdata as Date: value.customdata);
+  // console.log("Point clicked:", value);
+  // console.log("Custom data Date:", value.customdata ? value.customdata as Date: value.customdata);
   // the from timezoned time is what we want to to send work with if we go back to esri stuff
-  console.log("fromZonedTime", value.customdata ? fromZonedTime(value.customdata as Date, selectedTimezone.value) : value.customdata);
+  // console.log("fromZonedTime", value.customdata ? fromZonedTime(value.customdata as Date, selectedTimezone.value) : value.customdata);
   emit('plot-click', {
     x: value.x,
     y: value.y,
@@ -736,7 +731,6 @@ function saveFolding() {
       } as PlotlyGraphDataSet
     ].slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
   };
-  console.log(foldedSelection);
   emit('save', foldedSelection);
 
   closeDialog();

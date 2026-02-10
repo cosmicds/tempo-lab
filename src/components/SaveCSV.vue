@@ -50,13 +50,10 @@ import { onMounted, useTemplateRef, onUnmounted, ref, nextTick, watch} from 'vue
 import { csv2FixedWidth, json2Csv, type SampleCSVJsonOutput } from '@/utils/data_converters';
 
 const isLoading = ref(true);
-const startLoading = performance.now();
 const bothReady = ref([false, false]); // [fileCSV ready, clipboardCSV ready]
 watch(bothReady, (newVal) => {
   if (newVal[0] && newVal[1]) {
     isLoading.value = false;
-    const endLoading = performance.now();
-    console.log(`SaveCSV: CSV generation took ${endLoading - startLoading} ms`);
   }
 }, { immediate: true, deep: true });
 export interface OutputOptions {
@@ -127,7 +124,7 @@ function setupFileAndUrls() {
     url.value = '';
   }
   isLoading.value = true;
-  console.log(`SaveCSV: Generating file CSV`);
+
   getfileCSV().then((csv) => {
     fileCSV.value = csv;
   }).then(() => {
@@ -150,7 +147,6 @@ function setupFileAndUrls() {
 }
   
 onMounted(() => {
-  console.log(`SaveCSV: Starting CSV generation`);
   nextTick(setupFileAndUrls);
 });
 

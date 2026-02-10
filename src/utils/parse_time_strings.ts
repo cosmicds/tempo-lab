@@ -78,7 +78,7 @@ export function _normalizeTimes(values: string[], formatter: HMFormatterFunction
     .map(v => String(v).trim())
     .map(v => {
       if (v.includes('-')) {
-        console.log('parsing range', v);
+        // console.log('parsing range', v);
         const range = normalizeTimeRange(v, formatter);
         return range;
       }

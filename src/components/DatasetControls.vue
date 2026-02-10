@@ -814,7 +814,7 @@ function handleDateTimeRangeSelectionChange(
     console.error('No time ranges received from DateTimeRangeSelection');
     return;
   }
-  console.log(`Received ${timeRanges.length} time ranges of type ${selectionType} and name ${customName}`);
+  // console.log(`Received ${timeRanges.length} time ranges of type ${selectionType} and name ${customName}`);
   const normalized = atleast1d(timeRanges);
   const countTimeRanges = store.timeRanges.length;
   // No dedup tracking now
@@ -829,7 +829,7 @@ function handleDateTimeRangeSelectionChange(
   store.addTimeRange(tr);
 
   createTimeRangeActive.value = false;
-  console.log(`Registered ${tr.name}: ${tr.description}`);
+  // console.log(`Registered ${tr.name}: ${tr.description}`);
 }
 
 function editRegionName(region: UnifiedRegionType) {
@@ -886,9 +886,9 @@ watch(allDatasetSelection, (newVal) => {
     selectedDatasets.value = [];
   }
 });
-watch(selectedDatasets, (newVal) => {
-  console.log('Selected datasets changed:', newVal);
-});
+// watch(selectedDatasets, (newVal) => {
+//   console.log('Selected datasets changed:', newVal);
+// });
 
 
 
@@ -898,7 +898,6 @@ const showErrorBands = ref(true);
 const showUserDatasetTable = ref(false);
 watch(tableSelection, (newVal) => {
   if (newVal) {
-    console.log('Table selection changed:', newVal);
     showUserDatasetTable.value = true;
   }
 });

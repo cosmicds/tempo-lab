@@ -36,10 +36,10 @@ function getIndices<T>(arr: T[], order: T[]): number[] {
  * Here, arr is consecutive
  */
 export function isRingConsecutive<T>(arr: T[], order: T[], sorted=false): {consecutive: boolean, start: T, end: T} {
-  console.log('Checking ring consecutiveness for arr:', arr, 'with order:', order);
+  // console.log('Checking ring consecutiveness for arr:', arr, 'with order:', order);
   const newArr = arr.slice();
   if (!sorted) newArr.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  console.log('Sorted arr for ring check:', newArr);
+  // console.log('Sorted arr for ring check:', newArr);
   const indices = getIndices(newArr, order);
   const isL = isLinearConsecutive(indices);
   if (isL) {
