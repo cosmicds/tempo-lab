@@ -17,7 +17,8 @@
       v-bind="cardProps"
     >
       <slot name="info">
-        <v-card-text>{{ infoText }}</v-card-text>
+        <v-card-text v-if="infoHtml"><span style="padding:0;margin:0" v-html="infoHtml"/></v-card-text>
+        <v-card-text v-else>{{ infoText }}</v-card-text>
       </slot>
     </v-card>
   </v-menu>
@@ -26,6 +27,7 @@
 <script setup lang="ts">
 interface Props {
   infoText?: string;
+  infoHtml?: string
   size?: string | number;
   width?: string | number;
 }
