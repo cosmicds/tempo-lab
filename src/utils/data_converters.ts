@@ -149,7 +149,12 @@ interface OutputTimeSeriesFormat {
   utcOffsetHours: number;
 }
 
-const toDate = (date: Date, tz: string) => date.toLocaleDateString(undefined, {dateStyle: 'medium', timeZone: tz}).replace(',', '');
+const toDate = (date: Date, tz: string) => date.toLocaleDateString(undefined, {
+  "year": "numeric",
+  "month": "short",
+  "day": "numeric", 
+  timeZone: tz
+}).replace(',', '');
 const toTime = (date: Date, tz: string) => date.toLocaleTimeString(undefined, {
   hour12:true, hour:'numeric', minute: '2-digit', second:'2-digit',
   timeZone: tz,
@@ -171,23 +176,34 @@ function _dateToStrings(date: Date, tz: string) {
 
 function dateToCODAPStrings(date: Date, tz: string) {
   // CODAP wants MM/DD/YYY, HH:MM:SS AM/PM in UTC, we'll still do utc and local
+  const fmt = {
+    "year": "numeric",
+    "month": "numeric",
+    "day": "numeric",
+    "hour": "numeric",
+    "minute": "numeric",
+    "second": "numeric",
+    "hour12": true
+  } as Intl.DateTimeFormatOptions;
   const utcDateTime = date.toLocaleString('en-US', {
-    "dateStyle": "short",
-    "timeStyle": "medium",
+    ...fmt,
     timeZone: 'UTC',
   }).replace(',', '');
   const localDateTime = date.toLocaleString('en-US', {
-    "dateStyle": "short",
-    "timeStyle": "medium",
+    ...fmt,
     timeZone: tz, 
   }).replace(',', '');
   // const [localDate, localTime] = localDateTime.split(' ');
   const localDate = date.toLocaleDateString('en-US', {
-    "dateStyle": "short",
+    "year": "numeric",
+    "month": "numeric",
+    "day": "numeric",
     timeZone: tz, 
   });
   const localTime = date.toLocaleTimeString('en-US', {
-    "timeStyle": "medium",
+    "hour": "numeric",
+    "minute": "numeric",
+    "second": "numeric",
     "hour12": true,
     timeZone: tz, 
   });

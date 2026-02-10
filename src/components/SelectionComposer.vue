@@ -33,7 +33,7 @@
         bg-color="background"
       >
         <template #item="{ index, props }">
-          <v-list-item v-bind="{ ...props, title: props.value.name }">
+          <v-list-item v-bind="{ ...props, title: (props.value as any).name }">
             <template #title></template>
             <template #default>
               <v-list-item-title>{{ timeRanges[index].name }}</v-list-item-title>

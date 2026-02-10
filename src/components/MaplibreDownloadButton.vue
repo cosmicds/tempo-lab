@@ -20,6 +20,6 @@ const props = defineProps<MaplibreDownloadButtonProps>();
 
 const onClick = () => {
   if (!props.map) return;
-  downloadMap(props.map, props.filename);
+  downloadMap(props.map as Map, props.filename);
 };
 </script>

@@ -10,7 +10,7 @@
           <template #activator="{ props }">
             <MaplibreDownloadButton
               v-bind="props"
-              :map="map" 
+              :map="map as Map | null" 
               filename="tempo-lab"
               />
           </template>
@@ -31,7 +31,7 @@
         :show-field-of-regard="showFieldOfRegard"
         @zoomhome="onZoomhome"
         @ready="onMapReady"
-        @esri-layer="no2Layer = $event"
+        @esri-layer="(no2Layer as unknown as UseEsriTempoLayer) = $event"
         @esri-timesteps-loaded="onEsriTimestepsLoaded"
         ref="maplibreMap"
         width="100%"
@@ -462,6 +462,8 @@ const defaultMapboxOptions = {
   limit: 5,
 };
 async function geocodingInfoForSearchLimited(searchText: string, options?: MapBoxForwardGeocodingOptions): Promise<MapBoxFeatureCollection | null> {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const token = process.env.VUE_APP_MAPBOX_ACCESS_TOKEN;
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const opts = options ?? { ...defaultMapboxOptions, access_token: token ?? "" };
@@ -593,10 +595,12 @@ function createRegion(info: RectangleSelectionInfo | PointSelectionInfo, geometr
     geometryInfo: toRaw(info),
     geometryType: geometryType,
     color,
-  };
+  } as UnifiedRegionType;
 }
 
 function getRegionsDifference(arr1: UnifiedRegionType[], arr2: UnifiedRegionType[]): UnifiedRegionType[] {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const ids2 = arr2.map(r => r.id);
   return arr1.filter(element => !ids2.includes(element.id));
 }
@@ -658,7 +662,8 @@ watch(rectangleInfo, (info: RectangleSelectionInfo | null) => {
   }
 
   const newRegion = createRegion(info, "rectangle");
-  store.addRegion(newRegion);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  store.addRegion(newRegion as any);
   rectangleSelectionActive.value = false;
   
   // do not permit editing a region on a selection
@@ -674,7 +679,8 @@ watch(pointInfo, (info: PointSelectionInfo | null) => {
     return;
   }
   const newRegion = createRegion(info, "point"); 
-  store.addRegion(newRegion);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  store.addRegion(newRegion as any);
   pointSelectionActive.value = false;
 });
 
@@ -723,7 +729,11 @@ watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal)
 // TODO: This may need to be revisited when there are two maps
 watch(focusRegion, region => {
   if (region !== null) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const bounds = regionBounds(region);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     fitBounds(map.value, bounds, true);
     focusRegion.value = null;
   }

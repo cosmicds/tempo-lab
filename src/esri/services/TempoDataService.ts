@@ -443,6 +443,16 @@ export class TempoDataService {
         return undefined;
       });
   }
+  
+  get meta(): EsriImageServiceSpec | undefined {
+    for (const url of this.baseUrlArray) {
+      const meta = this.metas.get(url);
+      if (meta?.metadataCache) {
+        return meta.metadataCache;
+      }
+    }
+    return undefined;
+  }
 
   private _metaForTimeRange(range: MillisecondRange): EsriImageServiceSpec | undefined {
     const url = this.selectBaseUrlForRange(range);
