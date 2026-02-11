@@ -273,6 +273,7 @@
             :backend="backend"
             :time-ranges="timeRanges"
             :regions="regions"
+            :molecule-ready="moleculeReady"
             :disabled="{ region: regions.length === 0, point: selectionActive === 'point', timeRange: timeRanges.length === 0 }"
             @create="handleDatasetCreated"
           >
@@ -730,7 +731,17 @@ const {
   regionOpacity,
   regionVisibility,
   tempoRed,
+  layersReady,
 } = storeToRefs(store);
+
+const moleculeReady = computed(() => {
+  const ready = new Map<string, boolean[] | undefined>();
+  MOLECULE_OPTIONS.forEach( v => {
+    const layername = `tempo-${v.value}`;
+    ready.set(v.value,layersReady.value.get(layername));
+  });
+  return ready;
+});
 
 const cssVars = computed(() => {
   return {
