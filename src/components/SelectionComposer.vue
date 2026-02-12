@@ -33,7 +33,7 @@
         bg-color="background"
       >
         <template #item="{ index, props }">
-          <v-list-item v-bind="{ ...props, title: props.value.name }">
+          <v-list-item v-bind="{ ...props, title: (props.value as any).name }">
             <template #title></template>
             <template #default>
               <v-list-item-title>{{ timeRanges[index].name }}</v-list-item-title>
@@ -57,10 +57,11 @@
         @update:model-value="setDraftSelectionMolecule($event)"
         label="Molecule"
         :disabled="disabled?.molecule"
+        :hint="moleculeHint"
+        :persistent-hint="!!moleculeHint"
         item-title="title"
         item-value="value"
         density="compact"
-        hide-details
         variant="outlined"
         bg-color="background"
       />
@@ -109,6 +110,7 @@ interface SelectionComposerProps {
   backend: MappingBackends;
   timeRanges: TimeRange[];
   regions: RectangleSelectionType[];
+  moleculeReady?: Map<string, boolean[] | undefined>;
   disabled?: { region?: boolean; timeRange?: boolean; molecule?: boolean };
 }
 
@@ -129,6 +131,18 @@ interface DraftUserDataset {
 }
 const draftUserDataset = ref<DraftUserDataset>({ region: null, timeRange: null, molecule: null });
 const availableMolecules = computed(() => MOLECULE_OPTIONS.map(o => ({ key: o.value as MoleculeType, title: o.title })));
+
+const moleculeHint = computed(() => {
+  if (!props.moleculeReady) return '';
+  let msg = '';
+  for (const kv of props.moleculeReady) {
+    if (kv[1] && !kv[1].every(v => !!v)) {
+      msg += MOLECULE_OPTIONS.find(m => m.value === kv[0])?.title || kv[0] + ' ';
+    }
+  }
+  if (msg === '') return '';
+  return `Due to service interruptions, some data may be unvailable for the following molecule(s): ${msg}`;
+});
 
 // Public composition progress
 const creationProgress = computed(() => {

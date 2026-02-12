@@ -266,7 +266,7 @@ export interface EsriSlice {
 }
 
 export interface EsriSliceResponse {
-  slices: EsriSlice[];
+  slices?: EsriSlice[];
 }
 
 
@@ -279,13 +279,20 @@ export async function fetchEsriTimeSteps(esriUrl: string, variableName: Variable
   const params = { f: format, multidimensionalDefinition: JSON.stringify(multidimensionalDefinition) };
   const fetchURL = new URL(url);
   fetchURL.search = new URLSearchParams(params).toString();
-  return fetch(fetchURL).then(res => {
-    return res.json();
+  return fetch(fetchURL).then(async (res) => {
+    const json = await res.json();
+    if ('error' in json) {
+      return {};
+    }
+    return json;
   });
 }
 
 export function extractTimeSteps(data: EsriSliceResponse): number[] {
   const slices = data.slices;
+  if (!slices ) {
+    return [];
+  }
   const timesteps = slices.map(slice => slice.multidimensionalDefinition[0].values[0]);
   // check if timesteps are arrays or numbers. if arrays take first element of each
 

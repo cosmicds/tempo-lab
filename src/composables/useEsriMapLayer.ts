@@ -20,6 +20,7 @@ export interface UseEsriLayer {
   addEsriSource: (map: Map) => void;
   removeEsriSource: () => void;
   renderOptions: Ref<RenderingRuleOptions>;
+  serviceReady: Ref<boolean[]>;
 }
 
 export interface ImageSerivceLayerOptions {
@@ -47,7 +48,14 @@ export function useEsriImageServiceLayer(
   
   const tds = new TempoDataService(serviceUrl, variableRef.value);
   // bind tds to the window
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serviceReady = ref<boolean[]>([]);
+  tds.serviceStatusReady().then((ready) => {
+    const servicesReady: boolean[] = [];
+    for (const kv of ready) {
+      servicesReady.push(kv[1]);
+    }
+    serviceReady.value = servicesReady;
+  });
 
 
   const opacityRef = toRef(opacity);
@@ -213,6 +221,7 @@ export function useEsriImageServiceLayer(
     updateEsriOpacity,
     addEsriSource,
     removeEsriSource,
+    serviceReady,
   } as UseEsriLayer;
 }
 

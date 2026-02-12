@@ -21,6 +21,7 @@ export interface UseEsriTempoLayer {
   removeEsriSource: () => void;
   setVisibility: (visible: boolean) => void;
   renderOptions: Ref<RenderingRuleOptions>;
+  serviceReady: Ref<boolean[]>
 }
 
 export interface UseEsriTempoLayerOptions {
@@ -56,7 +57,15 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     range: stretches[variable.value],
     colormap: ramps[variable.value],
   });
-
+  
+  const serviceReady = ref<boolean[]>([]);
+  tds.value.serviceStatusReady().then((ready) => {
+    const servicesReady: boolean[] = [];
+    for (const kv of ready) {
+      servicesReady.push(kv[1]);
+    }
+    serviceReady.value = servicesReady;
+  });
   
   const options = computed(() => {
     return  {
@@ -111,7 +120,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   function onSourceLoad(e: MapSourceDataEvent) {
     // console.log(`sourcedate event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
-      console.log(`[${esriLayerId}] ESRI source loaded with time`, new Date(timestamp.value ?? 0 ));
+      console.log(`[${esriLayerId}] ESRI source loaded with time`, timestamp.value ? new Date(timestamp.value ) : null);
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
       updateEsriOpacity();
       updateEsriTimeRange();
@@ -149,7 +158,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     map.value = mMap;
 
     const svc = tds.value;
-    const url = timestamp.value 
+    const url = timestamp.value !== null
       ? svc.selectBaseUrlForTimestamp(timestamp.value)
       : svc.baseUrlArray[svc.baseUrlArray.length - 1];
 
@@ -183,7 +192,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     }
 
     const svc = tds.value;
-    const url = svc.selectBaseUrlForRange({ start: nearest, end: nearest });
+    const url = svc.selectBaseUrlForTimestamp(nearest);
 
     const currentUrl = dynamicMapService.value.esriServiceOptions.url;
     if (currentUrl !== url) {
@@ -241,7 +250,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   watch(molecule, (_newMol: MoleculeType) => {
     // refresh() already handled by useEsriTimesteps watch
     const svc = tds.value;
-    const url = timestamp.value
+    const url = timestamp.value !== null
       ? svc.selectBaseUrlForTimestamp(timestamp.value)
       : svc.baseUrlArray[svc.baseUrlArray.length - 1];
     
@@ -302,7 +311,6 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     removeEsriSource,
     renderOptions,
     setVisibility,
+    serviceReady,
   } as UseEsriTempoLayer;
 }
-
-

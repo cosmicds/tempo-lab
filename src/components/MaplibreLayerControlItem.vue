@@ -19,6 +19,7 @@
           {{ displayName ?? layerId }}
         </template>
         <template #append>
+          <slot name="warning"></slot>
           <popup-info-button
             v-if="showInfo"
             width="500px"
@@ -29,7 +30,7 @@
           </popup-info-button>
         </template>
       </v-checkbox>
-
+      <v-spacer />
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
@@ -105,6 +106,7 @@ watch(() => [opacity.value, visible.value], () => {
 
 // NB: If the props update, we need to make sure that the refs that we're using are still tracking the same layer
 // In particular, if the layer ID changes, without this the component can end up manipulating the wrong layer!
+//@ts-expect-error the types are correct
 watch(() => [props.map, props.layerId],
   ([map, layerId]: [Map, string]) => {
     opacity = useMaplibreLayerOpacity(map, layerId).opacity;
@@ -125,7 +127,10 @@ watch(() => [props.map, props.layerId],
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: space-between;
+  
+  
 }
+
 
 .mlc-layer-item-checkbox-opacity-container {
   width: 100%;
@@ -141,6 +146,11 @@ watch(() => [props.map, props.layerId],
 
   .v-slider {
     width: 70px;
+    flex-grow: 1;
+    flex-shrink: 0;
+  }
+  
+  .v-input {
     flex-grow: 0;
   }
 }

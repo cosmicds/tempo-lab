@@ -25,7 +25,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "es6"
+      "es6",
+      "ES2019"
     ]
   },
   "include": [

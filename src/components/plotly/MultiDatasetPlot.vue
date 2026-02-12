@@ -5,7 +5,7 @@
         :descriptor="moleculeDescriptor(datasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="[foldType, datasets] in foldedDatasets" :key="foldType">
+          <details :open="open || (firstOpen && normalDatasets.length === 0 && index===0)" :class="['dataset-plot__plot', 'dataset-plot-details', 'folded-data-details']" v-for="([foldType, datasets], index) in foldedDatasets" :key="foldType">
             <summary>
               <!-- {molecule} folded timeseries -->
               <div>
@@ -34,7 +34,7 @@
         :descriptor="moleculeDescriptor(normalDatasets[0].molecule)"
       >
         <template #default="{ descriptor }">
-          <details :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
+          <details :open="open || firstOpen" :class="['dataset-plot__plot', 'dataset-plot-details', 'normal-data-details']" >
             <summary>
               <!-- {molecule} timeseries -->
               <div>
@@ -69,10 +69,12 @@ import type {FoldedPlotlyGraphProps} from '../FoldedPlotlyGraph.vue';
 import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
-import type { Config } from 'plotly.js-dist-min';
+import type { Config, Layout } from 'plotly.js-dist-min';
 import { moleculeDescriptor } from '@/esri/utils';
+import { deepMerge } from './plotly_styles';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 import type { FoldType } from '@/esri/services/aggregation';
+import { camelToSnake } from '@/utils/text';
 
 function foldTypeToHumanReadable(ft: FoldType): string {
   switch (ft) {
@@ -119,15 +121,17 @@ function foldTypeToHumanReadable(ft: FoldType): string {
     return 'Monthly average';
 
   default:
-    return pascalToSnake(ft);
+    return camelToSnake(ft);
   }
 }
 
 
 interface DatasetPlotProps extends Omit<FoldedPlotlyGraphProps, 'datasets'| 'foldType' | 'timezones'> {
   datasets: UserDataset[];
+  open: boolean;
+  firstOpen: boolean;
 }
-const props = defineProps<DatasetPlotProps>();
+const props = withDefaults(defineProps<DatasetPlotProps>(), {open: false, firstOpen: false});
 const emit = defineEmits<{
   (event: "plot-click", value: {x: number | string | Date | null, y: number, customdata: unknown}): void;
 }>();
@@ -135,19 +139,21 @@ const emit = defineEmits<{
 
 
 // Common layout options for all plots
-const dlayoutOptions = {
-  ...DEFAULT_PLOT_LAYOUT,
-  margin: { t: 20, r: 30, b: 60, l: 80 },
-  autosize: true,
-  ...(props.layoutOptions ?? {}),
-};
+const dlayoutOptions: Partial<Layout> = deepMerge(
+  DEFAULT_PLOT_LAYOUT,
+  {
+    margin: { t: 20, r: 30, b: 60, l: 80 },
+    autosize: true,
+    ...(props.layoutOptions ?? {}),
+  });
 
 // Common config options for all plots
-const dconfigOptions: Partial<Config> = {
-  ...DEFAULT_PLOT_CONFIG,
-  responsive: true,
-  ...(props.configOptions ?? {}),
-};
+const dconfigOptions: Partial<Config> = deepMerge(
+  DEFAULT_PLOT_CONFIG,
+  {
+    responsive: true,
+    ...(props.configOptions ?? {}),
+  });
 
 const ddataOptions = computed(() => {
   const defaultOpt = {showlegend: true};

@@ -61,7 +61,6 @@ export class TimeSeriesResampler {
     errorMethod: 'std' | 'sem' = 'sem',
     includeCalibrationUncertainty = true
   ) {
-    console.log("Creating Grouper with window:", window, "timezone:", timezone, "method:", method);
     this.window = window;
     this.timezone = timezone;
     this.method = method;
@@ -107,7 +106,6 @@ export class TimeSeriesResampler {
   }
   
   groupData(timeseries: Prettify<TimeSeriesData>): TimeSeriesData {
-    console.log("Grouping data with window:", this.window, "and method:", this.method);
     // the data and the error are in the same order
     const data = Object.values(timeseries.values); // AggValue[]
     const error = Object.values(timeseries.errors); // DataPointError[] | undefined

@@ -178,7 +178,7 @@ function setupHandleEvents(params: HandleSetupParams) {
     event.preventDefault();
     handle.setPointerCapture(event.pointerId);
 
-    document.body.classList.add("dragging");
+    document.body.classList.add("panel-size-dragging");
 
     dragging.value = true;
 
@@ -192,7 +192,7 @@ function setupHandleEvents(params: HandleSetupParams) {
       } catch (error) {
         console.error(error);
       }
-      document.body.classList.remove("dragging");
+      document.body.classList.remove("panel-size-dragging");
       dragging.value = false;
 
       window.removeEventListener("pointermove", onMove);
@@ -388,6 +388,7 @@ body {
   width: 100%;
   display: flex;
   overflow: hidden;
+  overflow-x: auto;
 }
 
 .panel {
@@ -425,7 +426,7 @@ body {
   box-shadow: -6px 0 0 rgba(255,255,255,0.18), 6px 0 0 rgba(255,255,255,0.18);
 }
 
-.dragging, .dragging * {
+.panel-size-dragging, .panel-size-dragging * {
   cursor: col-resize !important;
 }
 </style>

@@ -370,6 +370,9 @@ const possibleYears = computed(() => {
 function formatDateDisplay(date: Date | null): string {  
   return date?.toLocaleDateString() || '';
 }
+function formatDateDisplayLong(date: Date | null): string {  
+  return date?.toLocaleDateString(undefined, {month: 'short', day:'numeric', year: 'numeric'}) || '';
+}
 
 
 const currentDateString = computed((): string => {
@@ -378,7 +381,7 @@ const currentDateString = computed((): string => {
   );
 });
 
-const timeSelectionMode = ref<TimeRangeCreationMode>('multiple');
+const timeSelectionMode = ref<TimeRangeCreationMode>(timeSelectionRadio.value === 'tracked' ? 'single' : timeSelectionRadio.value);
 watch(timeSelectionRadio, (newVal) => {
   if (newVal === 'tracked') {
     timeSelectionMode.value = 'single';
@@ -528,8 +531,9 @@ function asRangeOrList<T extends string>(arr: T[], order: T[]): string {
 const customTimeRangeName = computed((): string => {
   
   if (timeSelectionMode.value === 'single') {
-    return `${singleDateObj.value ? formatDateDisplay(singleDateObj.value) : 'No date selected'}`;
+    return `${singleDateObj.value ? formatDateDisplayLong(singleDateObj.value) : 'No date selected'}`;
   }
+  console.error(timeSelectionMode.value);
     
   let dateRangeString = '';
   let monthsString = '';

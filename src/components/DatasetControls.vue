@@ -44,6 +44,14 @@
           title="Regions"
           class="mt-3 h3-panel-titles"
         >
+          <template #title>
+            My  Regions
+            <popup-info-button
+                info-text="Click the region card to go to that region on the map. Click the pen to rename a region. Click the trash can to delete a region. If an existing dataset is using a region, it cannot be deleted."
+                :width="popupCardWidth"
+              >
+              </popup-info-button>
+          </template>
           <template #text>
             <div id="add-region-buttons">
               <v-btn
@@ -61,7 +69,7 @@
                 {{ selectionActive === 'rectangle' ? "Cancel" : "New Region" }}
               </v-btn>
               <popup-info-button
-                info-text="To select a region, click and drag a rectangle across the map. When a large region is selected, we sample an evenly-spaced subset of approximately 30 pixels to shorten the data loading time. For each available time step, all the sampled data across the region will be averaged together."
+                info-text="To select a region, click and drag a rectangle across the map. "
                 :width="popupCardWidth"
               >
               </popup-info-button>
@@ -75,21 +83,13 @@
             >
               <template #append>
                 <popup-info-button
-                  info-text="Checking this box will display the pixels of your selected region where data will be requested from the server."
+                  info-html="Checking this box will display the pixels of your selected region where data will be requested from the server. <p> When a large region is selected, we sample an evenly-spaced subset of approximately 30 pixels to shorten the data loading time. For each available time step, all the sampled data across the region will be averaged together.</p>"
                   :width="popupCardWidth"
                 >
                 </popup-info-button>
               </template>
             </v-checkbox>
-            <div class="my-selections" v-if="regions.length>0" style="margin-top: 1em;">
-            <h4>
-              My Regions
-              <popup-info-button
-                info-text="Click the region card to go to that region on the map. Click the pen to rename a region. Click the trash can to delete a region. If an existing dataset is using a region, it cannot be deleted."
-                :width="popupCardWidth"
-              >
-              </popup-info-button>
-            </h4>                   
+            <div class="my-selections" v-if="regions.length>0" style="margin-top: 1em;">                 
               <v-slider
                 v-model="regionOpacity"
                 :min="0"
@@ -116,7 +116,7 @@
                   :class="` my-2 rounded-lg region-list-item region-list-item-${index}`"
                   :key="index"
                   :title="region.name"
-                  :style="{ 'background-color': region.color }"
+                  :style="{ 'background-color': region.color, color: contrastingColor(region.color) }"
                   @click="() => focusRegion = region"
                   density="compact"
                   slim
@@ -165,7 +165,7 @@
           </template>
         </v-expansion-panel>
         <v-expansion-panel
-          title="Time Ranges"
+          title="My Time Ranges"
           class="mt-3 h3-panel-titles"
         >
           <template #text>
@@ -252,7 +252,7 @@
         </v-divider>
 
         <v-expansion-panel
-          title="Datasets"
+          title="My Datasets"
           class="mt-3 h3-panel-titles"
         >
         <template #text>
@@ -273,6 +273,7 @@
             :backend="backend"
             :time-ranges="timeRanges"
             :regions="regions"
+            :molecule-ready="moleculeReady"
             :disabled="{ region: regions.length === 0, point: selectionActive === 'point', timeRange: timeRanges.length === 0 }"
             @create="handleDatasetCreated"
           >
@@ -515,6 +516,7 @@
               :color="accentColor2"
               :disabled="selectedDatasets.length == 0"
               :variant="selectedDatasets.length > 0 ? 'flat' : 'outlined'"
+              size="small"
               @click="showMultiPlot = true">
               Graph Selected Datasets
             </v-btn>
@@ -729,7 +731,17 @@ const {
   regionOpacity,
   regionVisibility,
   tempoRed,
+  layersReady,
 } = storeToRefs(store);
+
+const moleculeReady = computed(() => {
+  const ready = new Map<string, boolean[] | undefined>();
+  MOLECULE_OPTIONS.forEach( v => {
+    const layername = `tempo-${v.value}`;
+    ready.set(v.value,layersReady.value.get(layername));
+  });
+  return ready;
+});
 
 const cssVars = computed(() => {
   return {
@@ -769,7 +781,8 @@ function openAggregationDialog(selection: UserDataset) {
 }
 function handleAggregationSaved(aggregatedSelection: UserDataset) {
   const n = datasets.value.map(d => d.name).filter(n => n?.startsWith(aggregatedSelection.name + ' ' || 'animpossiblename')).length;
-  aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
+  // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
+  aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
@@ -786,6 +799,7 @@ function handleDatasetCreated(dataset: UserDataset) {
 }
 
 import UserDatasetEditor from "./UserDatasetEditor.vue";
+import { contrastingColor } from "@/utils/color";
 const showDatasetEditor = ref(false);
 const datasetEditorNameOnly = ref(false);
 function handleEditDataset(dataset: UserDataset, nameOnly = false) {
@@ -811,13 +825,17 @@ function handleDateTimeRangeSelectionChange(
     console.error('No time ranges received from DateTimeRangeSelection');
     return;
   }
-  console.log(`Received ${timeRanges.length} time ranges of type ${selectionType} and name ${customName}`);
+  // console.log(`Received ${timeRanges.length} time ranges of type ${selectionType} and name ${customName}`);
   const normalized = atleast1d(timeRanges);
   const countTimeRanges = store.timeRanges.length;
+  let name = `Time Range ${countTimeRanges + 1}`;
+  if (selectionType === 'single') {
+    name = customName;
+  }
   // No dedup tracking now
   const tr: TimeRange = {
     id: v4(),
-    name: `Time Range ${countTimeRanges + 1}`,
+    name: name,
     description: customName,
     range: normalized.length === 1 ? normalized[0] : normalized,
     type: selectionType,
@@ -826,7 +844,7 @@ function handleDateTimeRangeSelectionChange(
   store.addTimeRange(tr);
 
   createTimeRangeActive.value = false;
-  console.log(`Registered ${tr.name}: ${tr.description}`);
+  // console.log(`Registered ${tr.name}: ${tr.description}`);
 }
 
 function editRegionName(region: UnifiedRegionType) {
@@ -883,9 +901,9 @@ watch(allDatasetSelection, (newVal) => {
     selectedDatasets.value = [];
   }
 });
-watch(selectedDatasets, (newVal) => {
-  console.log('Selected datasets changed:', newVal);
-});
+// watch(selectedDatasets, (newVal) => {
+//   console.log('Selected datasets changed:', newVal);
+// });
 
 
 
@@ -895,7 +913,6 @@ const showErrorBands = ref(true);
 const showUserDatasetTable = ref(false);
 watch(tableSelection, (newVal) => {
   if (newVal) {
-    console.log('Table selection changed:', newVal);
     showUserDatasetTable.value = true;
   }
 });
@@ -915,6 +932,8 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
 <style scoped lang="less">
 #dataset-sections {
   font-size: 11pt !important;
+  min-width: 250px;
+  overflow-y: auto;
 }
 
 // prevent overflows of the content
@@ -939,7 +958,7 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   display: flex;
 }
 
-.h3-panel-titles .v-expansion-panel-title {
+.h3-panel-titles {
   font-size: 1.17em;
   font-weight: bold;
 }
@@ -1030,7 +1049,10 @@ function handlePlotClick(value: {x: number | string | Date | null, y: number, cu
   flex-grow: 1;
 }
 
-.region-list-item {
-  
+#user-options-panels :deep(.v-expansion-panel-text__wrapper) {
+    padding: 0px 0.5em;
 }
+
+
+
 </style>

@@ -10,7 +10,7 @@
       <v-list-item
         v-bind="props"
         :ref="(el) => datasetRowRefs[dataset.id] = el"
-        class="selection-item my-2 rounded-lg"
+        class="selection-item my-2 rounded-lg px-2"
         :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000' }"
         :ripple="touchscreen"
         density="compact"
@@ -35,6 +35,7 @@
               elevation="1"
               :color="dataset.customColor ?? dataset.region.color"
               @click="emit('editRegion', dataset)"
+              :title="dataset.name ?? dataset.region.name"
               >
               {{ dataset.name ?? dataset.region.name }}
             </v-chip>
@@ -159,6 +160,13 @@ const showDetails = ref(false);
 .dataset-name-chip {
   cursor:text;
 }
+
+.dataset-name-chip > :deep(.v-chip__content) {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
 
 .v-list-item--density-compact.v-list-item--one-line {
   min-height: unset;

@@ -99,14 +99,22 @@ const errorMessage = computed(() => {
   return null;
 });
 
-const toDate = (date: Date) => date.toLocaleDateString(undefined, {dateStyle: 'medium'});
+const toDate = (date: Date) => date.toLocaleDateString(undefined, {
+  "year": "numeric",
+  "month": "short",
+  "day": "numeric"
+});
 const toTime = (date: Date) => date.toLocaleTimeString(undefined, {
   hour12:true, hour:'numeric', minute: '2-digit', second:'2-digit',
   timeZone: tz,
 });
 const toDateTime = (date: Date) => date.toLocaleString(undefined, {
-  "dateStyle": "medium",
-  "timeStyle": "short",
+  "year": "numeric",
+  "month": "short",
+  "day": "numeric",
+  "hour": "numeric",
+  "minute": "numeric",
+  "hour12": true,
   timeZone: tz,
 });
 

@@ -127,7 +127,6 @@ export class MaplibreLayersControl implements IControl {
   }
 
   private _createLayerItem(layer: LayerSpecification): HTMLElement {
-    // console.log('Creating layer item for', layer.id);
     if (!this._map || !this._map.getLayer(layer.id)) return document.createElement('div');
     
     // container

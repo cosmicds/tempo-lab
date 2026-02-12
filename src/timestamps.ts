@@ -32,7 +32,7 @@ export interface LAManifest {
 }
 
 export async function fetchManifest(): Promise<Manifest> {
-  console.log("fetching manifest");
+
   const url = "https://raw.githubusercontent.com/johnarban/tempo-data-holdings/main/manifest.json";
   // try to use cache busting, but if that fails try with plain url
   return fetch(`${url}?version=${Date.now()}}`)
@@ -42,7 +42,7 @@ export async function fetchManifest(): Promise<Manifest> {
 }
 
 export async function fetchLaFireManifest(): Promise<LAManifest> {
-  console.log("fetching la fire manifest");
+
   const url = "https://raw.githubusercontent.com/johnarban/tempo-data-holdings/main/manifest_la_fire.json";
   // try to use cache busting, but if that fails try with plain url
   return fetch(`${url}?version=${Date.now()}}`)

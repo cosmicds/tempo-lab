@@ -61,6 +61,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const timezoneOptions = computed(() => tzOptions(singleDateSelected.value));
   
   const shownLayers = ref<string[]>([]);
+  const layersReady = ref<globalThis.Map<string, boolean[]>>(new globalThis.Map<string, boolean[]>());
 
   // This part is still assuming that multiple maps will be temporally linked
   // If/when we want to make that not the case, we'll need to rethink this
@@ -220,6 +221,21 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     if (index >= 0) {
       datasets.value[index] = { ...dataset };
     }
+  }
+
+  function setLayerReady(layerName: string, serviceReady: boolean[]) {
+    const next = new globalThis.Map(layersReady.value);
+    next.set(layerName, [...serviceReady]);
+    layersReady.value = next;
+  }
+
+  function clearLayerReady(layerName: string) {
+    if (!layersReady.value.has(layerName)) {
+      return;
+    }
+    const next = new globalThis.Map(layersReady.value);
+    next.delete(layerName);
+    layersReady.value = next;
   }
 
   function setRegionName(region: UnifiedRegion, newName: string) {
@@ -434,6 +450,9 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     setNearestTime,
     
     shownLayers,
+    layersReady,
+    setLayerReady,
+    clearLayerReady,
 
     reset,
   };
@@ -478,7 +497,7 @@ export function deserializeTempoStore(value: string): StateTree {
   return parsed;
 }
 
-const OMIT = new Set(["debugMode", "selectionActive", "maps"]);
+const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady"]);
 export function serializeTempoStore(store: TempoStore): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const state: Record<string, any> = {};
