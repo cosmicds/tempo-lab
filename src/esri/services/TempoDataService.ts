@@ -136,6 +136,10 @@ export interface TimeSeriesDataWithStats extends TimeSeriesData {
 // UTILITY FUNCTIONS
 // ============================================================================
 
+function abbrevSerivceUrl(url: string): string {
+  return (new URL(url)).pathname.split('/').slice(-2).join('/');
+}
+
 function safeParseNumber(value: string | null | undefined): number | null {
   if (value === null || value === '' || value === undefined) return null;
   const parsed = parseFloat(value);
@@ -199,7 +203,7 @@ function stringifyEsriGetSamplesParameters(params: {
 
 class ImageServiceServiceMetadata {
   url: string;
-  metadataCache: EsriImageServiceSpec | null = null;
+  metadataCache: EsriImageServiceSpec | undefined;
   private _loadingMetadata: boolean = false;
   
   constructor(url: string) {
@@ -209,14 +213,15 @@ class ImageServiceServiceMetadata {
   private async _getServiceMetadata(): Promise<EsriImageServiceSpec> {
     const url = `${this.url}?f=json`;
     return fetch(url)
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-      })
-      .catch((error) => {
-        console.error('Error fetching service metadata:', error);
-        throw error;
+        const json = await response.json();
+        if ('error' in json) {
+          throw new Error(json['error']['message']);
+        }
+        return json;
       });
+    // we will catch errors in updateMetadataCache
   }
   
   async updateMetadataCache() {
@@ -226,9 +231,18 @@ class ImageServiceServiceMetadata {
     // available. 
     // this.metadataCache = null; // Invalidate cache
     this._loadingMetadata = true;
-    this.metadataCache = await this._getServiceMetadata();
-    this._loadingMetadata = false;
-    return this.metadataCache;
+    return this._getServiceMetadata()
+      .then(metadata => {
+        this.metadataCache = metadata;
+        return metadata;
+      })
+      .catch(error => {
+        this.metadataCache = undefined;
+        throw error;
+      })
+      .finally(() => {
+        this._loadingMetadata = false;
+      });
   }
   
   getMetadata(): EsriImageServiceSpec {
@@ -241,9 +255,7 @@ class ImageServiceServiceMetadata {
     return this.metadataCache;
   }
   
-  get meta(): EsriImageServiceSpec | null {
-    return this.metadataCache;
-  }
+
   
   async withMetadataCache(): Promise<EsriImageServiceSpec> {
     if (this.metadataCache) {
@@ -257,7 +269,8 @@ class ImageServiceServiceMetadata {
       if (this.metadataCache) {
         return this.metadataCache;
       } else {
-        throw new Error('Failed to load metadata.');
+        /* This error will be seen if withMetadataCache is called right after updateMetadataCache */
+        throw new Error(`Called while attemping to load service metadata. Failed to load metadata for ${abbrevSerivceUrl(this.url)}`);
       }
     }
     return this.updateMetadataCache();
@@ -329,15 +342,16 @@ export class TempoDataService {
   private dryRun: boolean = false; //  run mode
   private timestepsCache = new Map<string, number[]>();
   private _boundaries: Array<{ url: string; start: number; end: number }> | null = null; // Cached version boundaries
+  private _serviceActive = new Map<string, boolean>(); // whether or not the serivce is avaialble. set when we check the cache
   
   constructor(baseUrl: string | string[], variable: Variables | string = "NO2_Troposphere", rateLimitMs: number = 50, maxRetries503: number = 1) {
-    // console.error(`TemoiDataService constructor called with variable: ${variable} and baseUrl: ${baseUrl}`);
     this._baseUrls = baseUrl;
     this.rateLimitMs = rateLimitMs;
     this.maxRetries503 = maxRetries503;
     
     this.variable = variable;
     this.updateMetadataCache();
+    this.serviceStatusReady();
   }
 
   
@@ -345,20 +359,42 @@ export class TempoDataService {
     return Array.isArray(this._baseUrls) ? this._baseUrls : [this._baseUrls];
   }
   
-  async updateMetadataCache(): Promise<void> {
+  updateMetadataCache(): Promise<void> {
     // Load metadata for all URLs in parallel
-    const metadataPromises = this.baseUrlArray.map(url => 
-      this.metaForUrl(url).catch(err => {
-        console.warn(`Failed to load metadata for ${url}:`, err);
-        return null;
-      })
+    const metadataPromises = this.baseUrlArray.map(async (url) => {
+      return this.metaForUrl(url)
+        .then(m => {
+          this._serviceActive.set(url, !!(m && m.metadataCache));
+        })
+        .catch(err => {
+          console.warn(`Failed to load metadata for ${abbrevSerivceUrl(url)}:`, err);
+          this._serviceActive.set(url, false); // if it fails, let us know
+        });
+    }
     );
     
-    await Promise.all(metadataPromises);
-    
-    if (this.baseUrlArray.length > 1) {
-      console.log(`Loaded metadata for ${this.baseUrlArray.length} TEMPO service URL(s)`);
+    return Promise.all(metadataPromises) as unknown as Promise<void>;
+  }
+  
+  async serviceStatusReady() {
+    let i = 0;
+    while (this._serviceActive.size < this.baseUrlArray.length && i < 1_000) {
+      await new Promise((resolve) => setTimeout(() => {
+        i = i + 1;
+        resolve(null);
+        return;
+      }, 100));
     }
+    for (const url of this.baseUrlArray) {
+      if (this._serviceActive.has(url) && this._serviceActive.get(url)) {
+        console.log(`%c service for ${abbrevSerivceUrl(url)} is active`, 'font-size: 10pt; color: white; background-color: green;');
+      } else if (this._serviceActive.has(url) && !this._serviceActive.get(url)) {
+        console.log(`%c service for ${abbrevSerivceUrl(url)} is not active`, 'font-size: 10pt; color: white; background-color: red;');
+      } else {
+        console.log(`%c something else for ${abbrevSerivceUrl(url)}`, 'font-size: 10pt; color: white; background-color: orange;');
+      }
+    }
+    return this._serviceActive;
   }
 
   /**
@@ -372,18 +408,20 @@ export class TempoDataService {
 
     const boundaries: Array<{ url: string; start: number; end: number }> = [];
     
-    for (const url of this.baseUrlArray) {
-      const meta = await this.metaForUrl(url);
-      if (!meta || !meta.metadataCache) {
-        console.error(`Metadata not loaded for ${url}, cannot determine time boundaries`);
-        continue;
-      }
-      const timeRange = meta.timeRange;
-      if (timeRange) {
-        boundaries.push({ url, start: timeRange[0], end: timeRange[1] });
-      }
-    }
-
+    const promises = this.baseUrlArray.map(url => {
+      // get the meta for the url. promi
+      return this.metaForUrl(url)
+        .then(meta => {
+          if (!meta || !meta.metadataCache) {
+            return;
+          }
+          const timeRange = meta.timeRange;
+          if (timeRange) {
+            boundaries.push({ url, start: timeRange[0], end: timeRange[1] });
+          }
+        });
+    });
+    await Promise.all(promises);
     // Sort boundaries by start time for easier processing
     boundaries.sort((a, b) => a.start - b.start);
     this._boundaries = boundaries;
@@ -391,13 +429,29 @@ export class TempoDataService {
   }
 
   
-  private async metaForUrl(url: string): Promise<ImageServiceServiceMetadata> {
+  /**
+   * This is where we are actually loading the service metadata
+   */
+  private metaForUrl(url: string): Promise<ImageServiceServiceMetadata | undefined> {
     if (!this.metas.has(url)) {
       this.metas.set(url, new ImageServiceServiceMetadata(url));
     }
     const meta = this.metas.get(url)!;
-    await meta.withMetadataCache();
-    return meta;
+    return meta.waitForCache()
+      .catch((error) => {
+        console.error(`${error}`);
+        return undefined;
+      });
+  }
+  
+  get meta(): EsriImageServiceSpec | undefined {
+    for (const url of this.baseUrlArray) {
+      const meta = this.metas.get(url);
+      if (meta?.metadataCache) {
+        return meta.metadataCache;
+      }
+    }
+    return undefined;
   }
 
   private _metaForTimeRange(range: MillisecondRange): EsriImageServiceSpec | undefined {
@@ -422,12 +476,13 @@ export class TempoDataService {
     for (const url of this.baseUrlArray) {
       const meta = this.metas.get(url);
       if (!meta?.metadataCache) {
-        console.error(`Metadata not loaded for ${url}, cannot select URL for range`);
+        console.error(`Metadata not loaded for ${abbrevSerivceUrl(url)}, cannot select URL for range`);
         continue;
       }
       const timeRange = meta.timeRange;
       if (!timeRange) {
-        throw new Error(`Missing timeInfo for ${url}`);
+        console.error(`Missing timeInfo for ${abbrevSerivceUrl(url)}`);
+        continue;
       }
       const [start, end] = timeRange;
       const overlaps = range.start <= end && range.end >= start;
@@ -456,9 +511,13 @@ export class TempoDataService {
   async getMergedTimesteps(): Promise<number[]> {
     const allTimesteps: number[][] = [];
     for (const url of this.baseUrlArray) {
-      await this.metaForUrl(url); // Ensure metadata is loaded
-      const steps = await this.fetchTimestepsForUrl(url);
-      allTimesteps.push(steps);
+      try {
+        await this.metaForUrl(url); // Ensure metadata is loaded
+        const steps = await this.fetchTimestepsForUrl(url);
+        allTimesteps.push(steps);
+      } catch (error) {
+        console.error(error);
+      }
     }
     return Array.from(new Set(allTimesteps.flat())).sort((a, b) => a - b);
   }
@@ -470,11 +529,25 @@ export class TempoDataService {
    */
   async withMetadataCache(): Promise<EsriImageServiceSpec> {
     await this.updateMetadataCache();
-    const meta = this.metas.get(this.baseUrlArray[0])?.meta ?? null;
-    if (!meta) {
-      throw new Error('Failed to load metadata for TEMPO service');
+    const urls = this.baseUrlArray;
+    if (urls.length === 0) {
+      throw new Error('No TEMPO service URLs configured');
     }
-    return meta;
+
+    // Prefer the first configured URL, but fall back to any available URL.
+    const preferredMeta = this.metas.get(urls[0])?.metadataCache;
+    if (preferredMeta) {
+      return preferredMeta;
+    }
+
+    for (let i = 1; i < urls.length; i++) {
+      const fallbackMeta = this.metas.get(urls[i])?.metadataCache;
+      if (fallbackMeta) {
+        return fallbackMeta;
+      }
+    }
+
+    throw new Error('Failed to load metadata for TEMPO service');
   }
 
   // ============================================================================

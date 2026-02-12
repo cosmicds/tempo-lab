@@ -28,6 +28,7 @@
       >
       </v-btn>
       <v-checkbox
+        v-if="showAdvancedLayers"
         v-model="showRGBMode"
         label="Use single-color TEMPO layers"
         density="compact"
@@ -35,6 +36,7 @@
       >
       </v-checkbox>
       <v-checkbox
+        v-if="showAdvancedLayers"
         v-model="showFieldOfRegard"
         label="Show TEMPO field of regard"
         density="compact"

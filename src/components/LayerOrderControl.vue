@@ -16,6 +16,15 @@
           :display-name="displayNameTransform(element)"
           :synced-items="getConnectedItems(element)"
         >
+          <template #warning
+            v-if="warningMessage(element)"
+          >
+            <v-tooltip :text="warningMessage(element)!">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" color="error">mdi-alert</v-icon>
+              </template>
+            </v-tooltip>
+          </template>
           <template #info
             v-if="layerInfo[element]"
           >
@@ -81,7 +90,7 @@ import PopDensLegend from './PopDensLegend.vue';
 
 
 const store = useTempoStore();
-const { showRGBMode } = storeToRefs(store);
+const { showRGBMode, layersReady } = storeToRefs(store);
 
 interface Props {
   mapRef: M.Map | null;
@@ -185,9 +194,21 @@ const layerInfo: Record<string, string | undefined> = {
 };
 
 const hasLegend = ['land-use', 'aqi-layer-aqi', 'power-plants-layer', 'pop-dens'];
+const serviceWarning = "The service supporting this layer is down, all or some data may be unavailable.";
 
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
+}
+
+function warningMessage(layerId: string): string | null {
+  const readiness = layersReady.value.get(layerId);
+  if (!readiness || readiness.length === 0) {
+    return null;
+  }
+  if (readiness.every(ready => ready)) {
+    return null;
+  }
+  return serviceWarning;
 }
 
 function cbarLabel(cbarScale: number, unit: string) {

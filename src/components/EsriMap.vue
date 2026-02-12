@@ -181,7 +181,7 @@ watch(esriTimesteps, (newSteps, old) => {
   }
 });
 
-watch(() => renderOptions.value.colormap, cmap => emit("colormap", cmap));
+watch(() => renderOptions.value.colormap, cmap => emit("colormap", cmap as AvailableColorMaps));
 
 watch(map, (newMap, oldMap) => {
   if (oldMap) {
@@ -221,7 +221,6 @@ function onInnerMapReady(m: Map) {
   addEsriSource(m);
   emit('esri-layer', theEsriLayer);
   emit('ready', m);
-  console.log(m);
 }
 
 onMounted(() => {

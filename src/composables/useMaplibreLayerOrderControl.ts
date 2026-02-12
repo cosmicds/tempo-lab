@@ -198,12 +198,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   private _applyLinkedLayers() {
     if (!this._linked.length) return;
-    console.log('Applying linked layers', this._linked);
+    // console.log('Applying linked layers', this._linked);
     
     const mapOrder = new Map<string, number>(
       this._map.getLayersOrder().map((layer, index) => [layer, index])
     );
-    console.log('Current map layer order', mapOrder.size);
+    // console.log('Current map layer order', mapOrder.size);
     
     for (const linked of this._linked) {
       const { primary } = linked;

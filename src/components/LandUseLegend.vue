@@ -50,7 +50,7 @@ const data = [
   },
   
   { name: "clouds",
-    label: "Clouds",
+    label: "No Data",
     color: "#c8c8c8",
     text: "No land cover information due to persistent cloud cover.",
   }

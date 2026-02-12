@@ -39,6 +39,10 @@
                 The times you pick will be used for each region and corrected for timezone differences. For example, creating
                 a time range of 9:00-11:00 would pull data from 9:00-11:00 Eastern Time for New York, and 9:00-11:00 Pacific Time for Los Angeles.
               </p>
+              <br />
+              <p>
+                If the region you request data from happens to span multiple timezones, we will use the timezone in the center of the region.
+              </p>
             </div>
           </info-button>
           </div>
@@ -55,8 +59,7 @@
       closable-chips
       density="compact"
       variant="outlined"
-      hide-details
-      hint="24h format HH:MM (e.g., 09:00, 14:30)"
+      hint="Times selected or entered will be local to each region"
       persistent-hint
       @update:model-value="normalizeTimes"
     />

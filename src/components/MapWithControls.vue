@@ -10,34 +10,9 @@
           <template #activator="{ props }">
             <MaplibreDownloadButton
               v-bind="props"
-              :map="map" 
+              :map="map as Map | null" 
               filename="tempo-lab"
               />
-          </template>
-        </v-tooltip>
-        <!-- switch for preview points -->
-        <v-tooltip :text="selectionActive === 'rectangle' ? 'Cancel selection' : 'Select a region'">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon="mdi-select"
-              :color="selectionActive === 'rectangle' ? 'info' : 'default'"
-              :variant="selectionActive === 'rectangle' ? 'tonal' : 'text'"
-              :disabled="selectionActive === 'point'"
-              @click="activateRectangleSelectionMode"
-            ></v-btn>
-          </template>
-        </v-tooltip>
-        <v-tooltip :text="selectionActive === 'point' ? 'Cancel selection' : 'Select a point'">
-          <template #activator="{ props }">
-            <v-btn
-              v-bind="props"
-              icon="mdi-plus"
-              :color="selectionActive === 'point' ? 'info' : 'default'"
-              :variant="selectionActive === 'point' ? 'tonal' : 'text'"
-              :disabled="selectionActive === 'rectangle'"
-              @click="activatePointSelectionMode"
-            ></v-btn>
           </template>
         </v-tooltip>
       </v-toolbar>
@@ -56,7 +31,7 @@
         :show-field-of-regard="showFieldOfRegard"
         @zoomhome="onZoomhome"
         @ready="onMapReady"
-        @esri-layer="no2Layer = $event"
+        @esri-layer="(no2Layer as unknown as UseEsriTempoLayer) = $event"
         @esri-timesteps-loaded="onEsriTimestepsLoaded"
         ref="maplibreMap"
         width="100%"
@@ -286,6 +261,14 @@ const ozoneLayer = useTempoLayer({
 });
 const no2Layer = ref<UseEsriTempoLayer | null>(null);
 
+function syncLayerReady(layerName: string, serviceReady: boolean[] | undefined) {
+  if (!serviceReady || serviceReady.length === 0) {
+    store.clearLayerReady(layerName);
+    return;
+  }
+  store.setLayerReady(layerName, serviceReady);
+}
+
 function addAdvancedLayers(m: Map | null) {
   if (m === null) {
     throw new Error('Tried to addAdvancedLayers but map was null');
@@ -298,6 +281,10 @@ function addAdvancedLayers(m: Map | null) {
   hmsFire.addToMap(m);
   hchoLayer.addEsriSource(m);
   ozoneLayer.addEsriSource(m);
+  syncLayerReady('tempo-hcho', hchoLayer.serviceReady.value);
+  syncLayerReady('tempo-o3', ozoneLayer.serviceReady.value);
+  syncLayerReady('pop-dens', popLayer.serviceReady.value);
+  syncLayerReady('land-use', sentinalLandUseLayer.serviceReady.value);
   // Only move if target layer exists (avoid errors if initial KML load failed)
   try {
     if (m.getLayer('kml-layer-aqi')) {
@@ -322,6 +309,10 @@ function removeAdvancedLayers(m: Map | null) {
   hchoLayer.removeEsriSource();
   ozoneLayer.removeEsriSource();
   pp.removeLayer();
+  store.clearLayerReady('tempo-hcho');
+  store.clearLayerReady('tempo-o3');
+  store.clearLayerReady('pop-dens');
+  store.clearLayerReady('land-use');
 }
 
 const onMapReady = (m: Map) => {
@@ -351,6 +342,29 @@ watch(molecule, (newMolecule) => {
 });
 
 const activeLayer = computed(() => `tempo-${molecule.value}`);
+
+watch(() => [
+  no2Layer.value?.serviceReady,
+  hchoLayer.serviceReady.value,
+  ozoneLayer.serviceReady.value,
+  popLayer.serviceReady.value,
+  sentinalLandUseLayer.serviceReady.value,
+], ([no2Ready, hchoReady, ozoneReady, popReady, landUseReady]) => {
+  syncLayerReady('tempo-no2', no2Ready);
+
+  if (showAdvancedLayers.value) {
+    syncLayerReady('tempo-hcho', hchoReady);
+    syncLayerReady('tempo-o3', ozoneReady);
+    syncLayerReady('pop-dens', popReady);
+    syncLayerReady('land-use', landUseReady);
+    return;
+  }
+
+  store.clearLayerReady('tempo-hcho');
+  store.clearLayerReady('tempo-o3');
+  store.clearLayerReady('pop-dens');
+  store.clearLayerReady('land-use');
+}, { deep: true, immediate: true });
 
 import { stretches, colorramps, rgbstretches, rgbcolorramps, type ColorRamps } from "@/esri/ImageLayerConfig";
   
@@ -416,13 +430,13 @@ const currentColorbarOptions = computed<typeof colorbarOptions[ColorbarOptionsKe
   };
 });
 
-watch(currentColorbarOptions, (cc) => {
-  console.log('current colorbar options changed to', cc);
-});
+// watch(currentColorbarOptions, (cc) => {
+//   console.log('current colorbar options changed to', cc);
+// });
 
-watch(colorMap, (value) => {
-  console.log('color map changed to', value);
-});
+// watch(colorMap, (value) => {
+//   console.log('color map changed to', value);
+// });
 
 
 // TODO: Maybe there's a built-in Date function to get this formatting?
@@ -448,6 +462,8 @@ const defaultMapboxOptions = {
   limit: 5,
 };
 async function geocodingInfoForSearchLimited(searchText: string, options?: MapBoxForwardGeocodingOptions): Promise<MapBoxFeatureCollection | null> {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const token = process.env.VUE_APP_MAPBOX_ACCESS_TOKEN;
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const opts = options ?? { ...defaultMapboxOptions, access_token: token ?? "" };
@@ -579,10 +595,12 @@ function createRegion(info: RectangleSelectionInfo | PointSelectionInfo, geometr
     geometryInfo: toRaw(info),
     geometryType: geometryType,
     color,
-  };
+  } as UnifiedRegionType;
 }
 
 function getRegionsDifference(arr1: UnifiedRegionType[], arr2: UnifiedRegionType[]): UnifiedRegionType[] {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const ids2 = arr2.map(r => r.id);
   return arr1.filter(element => !ids2.includes(element.id));
 }
@@ -644,7 +662,8 @@ watch(rectangleInfo, (info: RectangleSelectionInfo | null) => {
   }
 
   const newRegion = createRegion(info, "rectangle");
-  store.addRegion(newRegion);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  store.addRegion(newRegion as any);
   rectangleSelectionActive.value = false;
   
   // do not permit editing a region on a selection
@@ -660,7 +679,8 @@ watch(pointInfo, (info: PointSelectionInfo | null) => {
     return;
   }
   const newRegion = createRegion(info, "point"); 
-  store.addRegion(newRegion);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  store.addRegion(newRegion as any);
   pointSelectionActive.value = false;
 });
 
@@ -681,6 +701,8 @@ const samplingPreviewMarkers = useMultiMarker(map as MapTypeRef , {
 const sampler = ref<EsriSampler>(null);
 currentTempoDataService.value.withMetadataCache().then(meta => {
   sampler.value = new EsriSampler(meta);
+}).catch((error) => {
+  console.log("could not create sampler because there is no metada");
 });
 
 watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal) => {
@@ -707,7 +729,11 @@ watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal)
 // TODO: This may need to be revisited when there are two maps
 watch(focusRegion, region => {
   if (region !== null) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const bounds = regionBounds(region);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     fitBounds(map.value, bounds, true);
     focusRegion.value = null;
   }

@@ -6,7 +6,7 @@
 </template>
   
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, defineModel } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount } from "vue";
 import { LatLngPair, InitMapOptions } from "@/types";
 import type { PropType } from 'vue';
 import type { Map, MapEventType, Listener } from 'maplibre-gl';
@@ -123,7 +123,7 @@ const whenMapReady: Promise<Map> = new Promise((resolve, _reject) => {
 });
 
 const onMapReady = (m: Map) => {
-  console.log("Map is ready", m);
+  console.log("Map is ready - Map ID: ", m._getMapId());
   mapReady.value = true;
   emit('ready', m);
   promiseResolve(m);
