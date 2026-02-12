@@ -56,6 +56,7 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
           'id': 'coastline-custom',
           'type': 'line',
           'source': 'coastline-custom',
+          'maxzoom': 5,
           'paint': {
             'line-color': 'black',
             'line-width': 1,
@@ -64,7 +65,26 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
         });
       });
   }
-  
+
+  function addRoads(map: M.Map) {
+    map.addSource('stamen-toner-lines', {
+      type: 'raster',
+      tiles: [`https://tiles.stadiamaps.com/tiles/stamen_toner_lines/{z}/{x}/{y}${retinaParam}.png`],
+      tileSize: 256,
+    });
+    
+    map.addLayer({
+      id: 'stamen-toner-lines',
+      type: 'raster',
+      source: 'stamen-toner-lines',
+      minzoom: 0,
+      maxzoom: 20,
+      
+    });
+    
+    // Ensure labels are on top
+    map.moveLayer('stamen-toner-lines');
+  } 
   
   
   function addLabels(map: M.Map) {
@@ -92,8 +112,15 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
     // Type instantiation is excessively deep and possibly infinite.ts(2589)
     // See discussion here https://github.com/mapbox/mapbox-gl-js/issues/13203#issuecomment-2634013147
     const libreMap = map.value as unknown as M.Map;
+    
+
+    // libreMap.setProjection({
+    //   type: 'globe' // This activates the 3D globe view
+    // });
+
     addCoastlines(libreMap);
     addStates(libreMap);
+    addRoads(libreMap);
     addLabels(libreMap);
     
     
@@ -138,7 +165,8 @@ export function useMap(id="map", options: InitMapOptions, _showRoads: Ref<boolea
       style: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
       center: options.loc ? [options.loc[1], options.loc[0]] : [0, 0], // starting position [lng, lat]
       zoom: options.zoom ?? 1, // starting zoom,
-      attributionControl: false
+      attributionControl: false,
+      
     }).addControl(new AttributionControl({
       compact: true,
     }));

@@ -57,7 +57,7 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-import { MapBoxFeatureCollection, MapBoxFeature, textForMapboxFeature } from "../mapbox";
+import { MapBoxFeatureCollection, MapBoxFeature, textForMapboxFeature } from "@/mapbox";
 
 type SearchProvider = (searchText: string) => Promise<MapBoxFeatureCollection | null>;
 

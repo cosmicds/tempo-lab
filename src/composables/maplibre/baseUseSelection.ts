@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, toRef, watch } from "vue";
 import { Map, MapMouseEvent } from "maplibre-gl";
 
 import { UseSelectionOptions } from "../../types";
@@ -7,8 +7,8 @@ export function baseUseSelection<SelectionInfo>(
   options: UseSelectionOptions<Map, MapMouseEvent, SelectionInfo>,
 ) {
 
-  const { map, handler, startActive } = options;
-  const active = ref(startActive ?? false);
+  const { map, handler } = options;
+  const active = toRef(options.active ?? false);
 
   onMounted(() => {
     const mMap = map.value;

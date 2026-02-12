@@ -1,10 +1,20 @@
 // Types
 
 import M, { GeoJSONSource, } from 'maplibre-gl';
-import { Ref, toValue } from 'vue';
+import { type MaybeRef, type Ref, toValue } from 'vue';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type Prettify<T> = { [K in keyof T]: T[K]; } & {};
+
+// https://stackoverflow.com/a/64932909/11594175
+export type AnyCase<T extends string> =
+    string extends T ? string :
+    T extends `${infer F1}${infer F2}${infer R}` ? (
+        `${Uppercase<F1> | Lowercase<F1>}${Uppercase<F2> | Lowercase<F2>}${AnyCase<R>}`
+    ) :
+    T extends `${infer F}${infer R}` ? `${Uppercase<F> | Lowercase<F>}${AnyCase<R>}` :
+    "";
+
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type LocationOrderedPair<T extends string> = [number, number] & {_order: T};
@@ -93,24 +103,22 @@ export interface PointSelectionInfo {
 // Unified selection types
 export type SelectionGeometry = RectangleSelectionInfo | PointSelectionInfo;
 
-export interface RectangleSelection<T extends MappingBackends> {
+export interface RectangleSelection {
   id: string;
   name: string;
   geometryInfo: RectangleSelectionInfo; // renamed from rectangle for future shape generalization
   geometryType: 'rectangle';
   color: string;
-  layer: RegionType<T>;
   source?: GeoJSONSource;
 }
 
 // Add to types.ts
-export interface PointSelection<T extends MappingBackends> {
+export interface PointSelection {
   id: string;
   name: string;
   geometryInfo: PointSelectionInfo;
   geometryType: 'point';
   color: string;
-  layer: RegionType<T>; // Reuse the same layer type
   source?: GeoJSONSource;
 }
 
@@ -124,28 +132,75 @@ export interface DataPointError {
   upper: number | null;
 }
 
+// Dataset shape for PlotlyGraph (date-less or numeric x values allowed)
+export interface PlotlyGraphDataSet {
+  x: (number | Date | string | null)[]; // Plotly Datum subset
+  y: (number | null)[];
+  lower?: (number | null)[];
+  upper?: (number | null)[];
+  errorType?: 'bar' | 'band';
+  name: string;
+  datasetOptions?: {
+    mode?: string;
+    hovertemplate?: string;
+    customdata?: (number | Date | string | null)[];
+    [key: string]: unknown;
+  }; // Options that get folded into the Plotly dataset
+}
+
 export interface MillisecondRange {
   start: number;
   end: number;
 }
 
+import { type TimeRangeSelectionType} from '@/types/datetime';
+import { type TimeRangeConfig } from '@/date_time_range_selection/date_time_range_generators';
 export interface TimeRange {
   id: string;
   name: string; // user editable
   description: string; // not editable
   range: MillisecondRange | MillisecondRange[];
+  type: TimeRangeSelectionType; 
+  config?: TimeRangeConfig;
+  source?: TimeRange
 }
 
-export interface UserSelection {
+export type MoleculeType = 'no2' | 'o3' | 'hcho';
+
+export type TimeBinOptions = 'none' | 'hour' | 'day' | 'week' | 'month';
+export type FoldingPeriodOptions = 'none' | 'day' | 'week' | 'month' | 'year' | 'weekdayWeekend';
+
+export interface UserDataset {
   id: string;
   loading?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   region: any;
   timeRange: TimeRange;
-  molecule: string;
+  molecule: MoleculeType;
   samples?: Record<number, AggValue>;
   errors?: Record<number, DataPointError>;
   locations?: {x: number, y: number}[];
+  // Optional folded data payload (stored raw so we avoid circular import with aggregation.ts)
+  // Shape expected: { foldType: string; values: Record<number, {value: number|null; bin: number}>; errors: Record<number, DataPointError>; bins?: unknown }
+  // Used when timeRange.type === 'folded'
+  folded?: {
+    timeBin: TimeBinOptions,
+    foldingPeriod: FoldingPeriodOptions,
+    foldType: string,
+    method: string,
+    timezone: string,
+    useSEM: boolean,
+    includeBinPhase: boolean,
+    alignToBinCenter: boolean,
+    useErrorBars: boolean,
+    raw: unknown,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } | any,
+  // Direct plotly datasets (preferred for folded or synthetic selections)
+  plotlyDatasets?: PlotlyGraphDataSet[];
+  // add two user editable properties
+  name?: string; // user editable
+  customColor?: string; // user editable
 }
 
 export interface SelectionHandler<EventType, SelectionInfo> {
@@ -158,7 +213,9 @@ export interface SelectionHandler<EventType, SelectionInfo> {
 export interface UseSelectionOptions<MapType, EventType, SelectionInfo> {
   map: Ref<MapType | null>;
   handler: SelectionHandler<EventType, SelectionInfo>;
-  startActive?: boolean;
+  active?: MaybeRef<boolean>;
 }
 
-export type UnifiedRegion<T extends MappingBackends> = RectangleSelection<T> | PointSelection<T>;
+export type UnifiedRegion = RectangleSelection | PointSelection;
+
+export type SelectionType = "rectangle" | "point" | null;

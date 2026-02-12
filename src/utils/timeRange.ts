@@ -1,5 +1,5 @@
 import { getTimezoneOffset } from "date-fns-tz";
-import type { MillisecondRange, TimeRange, UserSelection } from "../types";
+import type { MillisecondRange, TimeRange, UserDataset } from "../types";
 
 export function formatSingleRange(range: MillisecondRange): string {
   const startString = new Date(range.start).toLocaleDateString();
@@ -31,7 +31,7 @@ export function formatTimeRange(ranges: MillisecondRange | MillisecondRange[]): 
   }
 }
 
-export function getTimeRangeDisplay(sel: UserSelection): string {
+export function getTimeRangeDisplay(sel: UserDataset): string {
   if (!sel.timeRange || !sel.timeRange.range) {
     return `No time range set for selection ${sel.id}`;
   }
@@ -51,7 +51,6 @@ export function areEquivalentMsRanges(first: MillisecondRange, second: Milliseco
 }
 
 export function areEquivalentTimeRanges(first: TimeRange, second: TimeRange): boolean {
-  console.log(first, second);
   if (first.id === second.id) {
     return true;
   }

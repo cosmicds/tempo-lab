@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { ref, type MaybeRef, type Ref } from "vue";
 import { GeoJSONSource, LngLat, Map, MapMouseEvent } from "maplibre-gl";
 import { v4 } from "uuid";
 
@@ -10,7 +10,7 @@ import { baseUseSelection } from "./baseUseSelection";
 export function useRectangleSelection(
   map: Ref<Map | null>,
   interactColor: string = "yellow",
-  startActive: boolean = false,
+  active: MaybeRef<boolean>,
 ) {
 
   let rectangleSource: GeoJSONSource | null = null;
@@ -127,6 +127,6 @@ export function useRectangleSelection(
     }
   };
 
-  return baseUseSelection({ map, handler, startActive });
+  return baseUseSelection({ map, handler, active });
 
 }

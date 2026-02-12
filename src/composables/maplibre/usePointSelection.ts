@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { ref, type MaybeRef, type Ref } from "vue";
 import { Map, MapMouseEvent } from "maplibre-gl";
 
 import type { PointSelectionInfo, SelectionHandler } from "../../types";
@@ -6,7 +6,7 @@ import { baseUseSelection } from "./baseUseSelection";
 
 export function usePointSelection(
   map: Ref<Map | null>,
-  startActive: boolean = false,
+  active: MaybeRef<boolean>,
 ) {
   
   const handler: SelectionHandler<MapMouseEvent, PointSelectionInfo> = {
@@ -20,5 +20,5 @@ export function usePointSelection(
     },
   };
 
-  return baseUseSelection({ map, handler, startActive });
+  return baseUseSelection({ map, handler, active });
 }

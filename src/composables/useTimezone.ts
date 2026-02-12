@@ -1,6 +1,17 @@
 import { computed, type Ref } from 'vue';
-import { toZonedTime, fromZonedTime, format as formatTz } from 'date-fns-tz';
+import { toZonedTime, fromZonedTime, format as formatTz, getTimezoneOffset } from 'date-fns-tz';
 import type { MillisecondRange } from '../types/datetime';
+
+export type Timezone = 
+  "US/Eastern" |
+  "US/Central" |
+  "US/Mountain" |
+  "US/Arizona" |
+  "US/Pacific" |
+  "US/Alaska" |
+  "UTC";
+
+type TimezoneOption = { tz: Timezone, name: string };
 
 /**
  * Composable for centralized timezone handling and formatting
@@ -157,6 +168,28 @@ export function useTimezone(selectedTimezone: Ref<string>) {
     }).split(' ').pop() || ''
   }));
 
+  function isDST(date: Date): boolean {
+    const standardOffset = getTimezoneOffset(selectedTimezone.value, new Date(date.getUTCFullYear(), 0, 1));
+    const currentOffset = getTimezoneOffset(selectedTimezone.value, date);
+    if (standardOffset === currentOffset) {
+      return false;
+    }
+    return true;
+  }
+
+  function timezoneOptions(date: Date): TimezoneOption[] {
+    const dateIsDST = isDST(date);
+    return [
+      { tz: 'US/Eastern', name: dateIsDST ? 'Eastern Daylight' : 'Eastern Standard' },
+      { tz: 'US/Central', name: dateIsDST ? 'Central Daylight' : 'Central Standard' },
+      { tz: 'US/Mountain', name: dateIsDST ? 'Mountain Daylight' : 'Mountain Standard' },
+      { tz: 'US/Arizona', name: 'Mountain Standard (AZ)' },
+      { tz: 'US/Pacific', name: dateIsDST ? 'Pacific Daylight' : 'Pacific Standard' },
+      { tz: 'US/Alaska', name: dateIsDST ? 'Alaska Daylight' : 'Alaska Standard' },
+      { tz: 'UTC', name: 'UTC' },
+    ];
+  }
+
   return {
     // Core timezone operations
     toTimezone,
@@ -171,8 +204,12 @@ export function useTimezone(selectedTimezone: Ref<string>) {
     formatUTCRange,
     formatTime,
     formatDateDisplay,
+
+    // Utility functions
+    isDST,
+    timezoneOptions,
     
     // Computed properties
-    timezoneInfo
+    timezoneInfo,
   };
 }

@@ -1,6 +1,10 @@
 
 <template>
-<div :id="id" class="colorbar-container-horizontal">
+<div
+  :id="id" 
+  class="colorbar-container-horizontal"
+  :style="cssVars"
+>
   <div class="colorbar-labels"> 
     <div><slot name="start">{{ startValue }}</slot></div>
     <div>
@@ -71,7 +75,17 @@ export default defineComponent({
     extend: {
       type: (Boolean || String) as PropType<ExtendType>,
       default: () => 'both'
-    }
+    },
+
+    height: {
+      type: String,
+      default: "1.25em",
+    },
+
+    fontSize: {
+      type: String,
+      default: "10pt",
+    },
     
   },
   
@@ -96,7 +110,14 @@ export default defineComponent({
     
     showEndTriangle() {
       return this.extend === 'both' || this.extend === 'end' || this.extend;
-    }
+    },
+
+    cssVars() {
+      return {
+        "--height": this.height,
+        "--font-size": this.fontSize,
+      };
+    },
   },
   
   
@@ -236,8 +257,8 @@ export default defineComponent({
 .colorbar-container-horizontal {
   position: relative;
   display: block;
-  --height: 1.25em;
   width: 100%;
+  font-size: var(--font-size);
 }
 .colorbar {
   width: 100%;
@@ -257,17 +278,10 @@ export default defineComponent({
 
 .colorbar-labels {
   
-  width: calc(100% - 2*var(--height));
+  width: 100%;
   height: -webkit-max-content;
   height: -moz-max-content;
   height: max-content;
-  /* left: 50%; */
-  -webkit-transform-origin: top center;
-      -ms-transform-origin: top center;
-          transform-origin: top center;
-  -webkit-transform: translate(var(--height), 0);
-      -ms-transform: translate(var(--height), 0);
-          transform: translate(var(--height), 0);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;

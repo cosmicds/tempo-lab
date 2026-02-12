@@ -21,8 +21,10 @@ export function addRectangleLayer(
   map: Map,
   info: RectangleSelectionInfo,
   color: string,
+  opacity=0.7,
+  visible=true,
 ) {
-  
+
   const uuid = v4();
   const geoJson: GeoJSON.FeatureCollection = {
     type: "FeatureCollection",
@@ -50,7 +52,10 @@ export function addRectangleLayer(
     source: uuid,
     paint: {
       "fill-color": color,
-      "fill-opacity": 0.7,
+      "fill-opacity": opacity,
+    },
+    layout: {
+      visibility: visible ? "visible" : "none",
     }
   });
 
@@ -88,6 +93,7 @@ export function addPointLayer(
   map: Map,
   info: PointSelectionInfo,
   color: string,
+  visible=true,
 ) {
   const uuid = v4();
   const geoJson: GeoJSON.FeatureCollection = {
@@ -117,6 +123,9 @@ export function addPointLayer(
       "circle-color": color,
       "circle-stroke-color": "white",
       "circle-stroke-width": 2,
+    },
+    layout: {
+      visibility: visible ? "visible" : "none",
     }
   });
 
@@ -148,7 +157,7 @@ export function removePointLayer(
   map.removeSource(layer.id);
 }
 
-export function regionBounds(region: UnifiedRegion<"maplibre">): [[number, number], [number, number]] {
+export function regionBounds(region: UnifiedRegion): [[number, number], [number, number]] {
   const pointPadding = 1;
   return region.geometryType == "rectangle" ?
     [[region.geometryInfo.xmin, region.geometryInfo.ymin], [region.geometryInfo.xmax, region.geometryInfo.ymax]] :

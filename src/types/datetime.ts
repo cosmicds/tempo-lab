@@ -16,10 +16,10 @@ export interface DateRangeSelection {
   endDate: Date;
 }
 
-export type SelectionType = 'weekday' | 'daterange';
+export type TimeRangeSelectionType =  'single' | 'multiple' | 'folded';
 
 export interface DateTimeSelection {
-  type: SelectionType;
+  type: TimeRangeSelectionType;
   weekdaySelection?: WeekdaySelection;
   dateRangeSelection?: DateRangeSelection;
   startDate?: Date; // For daterange selection

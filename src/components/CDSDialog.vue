@@ -1,37 +1,41 @@
 <template>
   <v-dialog 
     :class="['cds-dialog', `${displayedShortTitle.toLowerCase().replace(/ /g, '-')}-cds-dialog`, !modal ? 'nonmodal' : '']" 
-    v-model="showDialog" 
+    v-model="modelValue" 
     :scrim="scrim"
     :persistent="persistent"
     :no-click-animation="!modal"
     >
     <!-- add the activator slot, but only use it if the appropriate value is given for activator -->
-     <template v-slot:activator="$attrs">
+    <template v-slot:activator="$attrs">
       <slot name="activator" v-bind="$attrs">
         <v-btn
           v-if="button"
           :color="color"
           :title="displayedShortTitle"
           class="cds-dialog-button"
-          @click="showDialog = true"
-          @keyup.enter="showDialog = true"
+          @click="modelValue = true"
+          @keyup.enter="modelValue = true"
           tabindex="0"
           >
           Open {{ displayedShortTitle }}
         </v-btn>
       </slot>
     </template>
-     
+    
     <v-card
       ref="card"
       class="cds-dialog-card"
+      :width="width"
+      :max-width="maxWidth"
+      :height="height"
+      :max-height="maxHeight"
     >
         <v-toolbar
           density="compact"
           :color="titleColor"
         >
-          <v-toolbar-title :text="title"></v-toolbar-title>
+          <v-toolbar-title class="cds-dialog-v-toolbar-title" :text="title"></v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn
             class="cds-dialog-close-icon"
@@ -42,12 +46,10 @@
           </v-btn>
         </v-toolbar>
       
-      <v-card-text>
-        
+      <v-card-text class="cds-dialog-v-card-text" >
         <slot>
           Add content to the default slot
         </slot>
-        
       </v-card-text>
     </v-card>
   </v-dialog>
@@ -61,7 +63,6 @@ import { UseDraggableDialogOptions, useDraggableDialog } from "../composables/us
 
 interface CDSDialogProps {
   title: string;
-  modelValue?: boolean;
   color?: string;
   titleColor?: string;
   shortTitle?: string;
@@ -70,10 +71,15 @@ interface CDSDialogProps {
   scrim?: boolean;
   persistent?: boolean;
   modal?: boolean;
+  maxHeight?: string;
+  maxWidth?: string;
+  width?: string;
+  height?: string;
 }
 
+const modelValue = defineModel<boolean>();
+
 const props = withDefaults(defineProps<CDSDialogProps>(), {
-  modelValue: false,
   color: "red",
   shortTitle: "",
   draggable: false,
@@ -84,12 +90,8 @@ const props = withDefaults(defineProps<CDSDialogProps>(), {
   modal: true,
 });
 
-const emit = defineEmits<{
-  (event: "update:modelValue", value: boolean): void;
-}>();
 
 const card = useTemplateRef<InstanceType<typeof VCard>>("card");
-const showDialog = ref(props.modelValue);
 const displayedShortTitle = computed(() => props.shortTitle || props.title);
 const cardRoot = ref<HTMLElement | null>(null);
 
@@ -115,22 +117,18 @@ function updateRoot() {
 }
 
 function close(event: PointerEvent) {
-  showDialog.value = false;
+  modelValue.value = false;
   event.stopPropagation();
 }
 
 onMounted(() => {
-  if (props.draggable && props.modelValue) {
+  if (props.draggable && modelValue.value) {
     updateRoot();
   }
 });
 
-watch(showDialog, value => {
-  emit("update:modelValue", value);
-});
 
-watch(() => props.modelValue, value => {
-  showDialog.value = value;
+watch(modelValue, value => {
   if (value && props.draggable) {
     updateRoot();
   }
@@ -142,11 +140,15 @@ watch(() => props.modelValue, value => {
 
 .cds-dialog {
   display: flex;
-  width: calc(100% - 1rem);
+  width: calc(100%);
 }
 .cds-dialog-card {
   align-self: center;
-  max-width: 80%;
+  outline: 1px solid rgb(var(--v-theme-surface-variant)); 
+
+  .v-toolbar, .v-toolbar__content {
+    height: 40px !important;
+  }
 }
 
 .cds-dialog-close-icon {
@@ -154,14 +156,19 @@ watch(() => props.modelValue, value => {
 }
 
 .v-dialog.cds-dialog > .v-overlay__content {
-  align-self: center;
   margin: unset;
 }
 
 .cds-dialog .v-card-text {
-  height: fit-content;
-  max-height: 60vh;
+  contain: layout;
 }
+.cds-dialog-v-card-text {
+
+}
+
+.v-toolbar-title.cds-dialog-v-toolbar-title > .v-toolbar-title__placeholder {
+  padding-bottom: 1px; /* needed for text with unicode subscript text */
+} 
 
 .cds-dialog.nonmodal {
 
