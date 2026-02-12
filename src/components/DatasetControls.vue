@@ -787,7 +787,16 @@ function openAggregationDialog(selection: UserDataset) {
   showAggregationDialog.value = true;
 }
 function handleAggregationSaved(aggregatedSelection: UserDataset) {
-  const n = datasets.value.map(d => d.name).filter(n => n?.startsWith(aggregatedSelection.name + ' ' || 'animpossiblename')).length;
+  const n = datasets.value
+    .filter(d => !!d.folded) // only count folded datasets
+    .filter(d => {
+      // make sure they all have the same parent
+      if (d.folded.parent && aggregatedSelection.folded.parent) {
+        // check the id (this is stable and always unique)
+        return (aggregatedSelection.folded.parent as UserDataset).id === (d.folded.parent as UserDataset).id;
+      }
+      return false;
+    }).length;
   // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
   aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
