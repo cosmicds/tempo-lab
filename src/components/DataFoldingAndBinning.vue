@@ -712,7 +712,8 @@ function saveFolding() {
       includeBinPhase: includeBinPhase.value,
       alignToBinCenter: alignToBinCenter.value,
       useErrorBars: useErrorBars.value,
-      raw: foldedData.value
+      raw: foldedData.value,
+      parent: props.selection
     },
     plotlyDatasets: [
       {

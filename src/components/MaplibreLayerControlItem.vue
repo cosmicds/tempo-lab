@@ -20,17 +20,20 @@
         </template>
         <template #append>
           <slot name="warning"></slot>
-          <popup-info-button
-            v-if="showInfo"
-            width="500px"
-          >
-            <template #info>
-              <slot name="info"></slot>
-            </template>
-          </popup-info-button>
+          
         </template>
       </v-checkbox>
-      <v-spacer />
+      <div class="d-flex flex-grow-1 justify-end">
+        <popup-info-button
+          v-if="showInfo"
+          width="500px"
+          class="flex-1-1-auto"
+        >
+          <template #info>
+            <slot name="info"></slot>
+          </template>
+        </popup-info-button>
+      </div>
       <v-slider
         v-model.number="opacity"
         :id="`mlc-${layerId}-opacity-slider`"
