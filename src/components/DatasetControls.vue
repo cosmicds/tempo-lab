@@ -17,13 +17,13 @@
         <v-card-actions>
           <v-btn
             color="error"
-            @click="showConfirmReset = false"
+            @click.stop="showConfirmReset = false"
           >
             No
           </v-btn>
           <v-btn
             color="success"
-            @click="() => {
+            @click.stop="() => {
               store.reset();
               serializeTempoStore(store);
               showConfirmReset = false;
@@ -59,7 +59,7 @@
                 :active="selectionActive === 'rectangle'"
                 :disabled="selectionActive === 'point'"
                 :color="accentColor2"
-                @click="() => {
+                @click.stop="() => {
                   selectionActive = (selectionActive === 'rectangle') ? null : 'rectangle';
                 }"
               >
@@ -117,7 +117,7 @@
                   :key="index"
                   :title="region.name"
                   :style="{ 'background-color': region.color, color: contrastingColor(region.color) }"
-                  @click="() => focusRegion = region"
+                  @click.stop="() => focusRegion = region"
                   density="compact"
                   slim
                 >
@@ -139,9 +139,8 @@
                       color="white"
                       size="small"
                       density="compact"
-                      @click="(event: MouseEvent | KeyboardEvent) => {
+                      @click.stop="(event: MouseEvent | KeyboardEvent) => {
                         editRegionName(region as UnifiedRegionType);
-                        event.stopPropagation();
                       }"
                     ></v-btn>
                     <v-btn
@@ -152,9 +151,8 @@
                       color="white"
                       size="small"
                       density="compact"
-                      @click="(event: MouseEvent | KeyboardEvent) => {
+                      @click.stop="(event: MouseEvent | KeyboardEvent) => {
                         store.deleteRegion(region as UnifiedRegionType);
-                        event.stopPropagation();
                       }"
                     ></v-btn>
                     </div>
@@ -180,7 +178,7 @@
               size="small"
               :active="createTimeRangeActive"
               :color="accentColor2"
-              @click="createTimeRangeActive = !createTimeRangeActive"
+              @click.stop="createTimeRangeActive = !createTimeRangeActive"
             >
               <template #prepend>
                 <v-icon v-if="!createTimeRangeActive" icon="mdi-plus"></v-icon>
@@ -227,7 +225,7 @@
                       v-tooltip="'Edit Name'"
                       icon="mdi-pencil"
                       color="white"
-                      @click="(event) => {
+                      @click.stop="(event) => {
                         editTimeRangeName(timeRange);
                         event.stopPropagation();
                       }"
@@ -240,7 +238,7 @@
                       v-tooltip="'Delete'"
                       icon="mdi-delete"
                       color="white"
-                      @click="() => store.deleteTimeRange(timeRange)"
+                      @click.stop="() => store.deleteTimeRange(timeRange)"
                     >
                     </v-btn>
                   </div>
@@ -267,7 +265,7 @@
             size="small"
             :active="createDatasetActive"
             :color="accentColor2"                    
-            @click="createDatasetActive = !createDatasetActive"
+            @click.stop="createDatasetActive = !createDatasetActive"
             class="mt-3"
           >
             <template #prepend>
@@ -329,7 +327,7 @@
                             size="x-small"
                             icon="mdi-trash-can"
                             variant="plain"
-                            @click="() => removeDataset(dataset)"
+                            @click.stop="() => removeDataset(dataset)"
                           ></v-btn>
                         </template>
                       </v-tooltip>
@@ -346,7 +344,7 @@
                               size="x-small"
                               icon="mdi-help-circle"
                               variant="plain"
-                              @click="() => sampleErrorID = dataset.id"
+                              @click.stop="() => sampleErrorID = dataset.id"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -360,7 +358,7 @@
                               size="x-small"
                               icon="mdi-trash-can"
                               variant="plain"
-                              @click="() => removeDataset(dataset)"
+                              @click.stop="() => removeDataset(dataset)"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -384,7 +382,7 @@
                               icon="mdi-chart-line"
                               :disabled="!(dataset.samples || dataset.plotlyDatasets)"
                               variant="plain"
-                              @click="() => openGraphs[dataset.id] = true"
+                              @click.stop="() => openGraphs[dataset.id] = true"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -400,7 +398,7 @@
                               icon="mdi-chart-line"
                               :disabled="!dataset.samples"
                               variant="plain"
-                              @click="() => openAggregationDialog(dataset)"
+                              @click.stop="() => openAggregationDialog(dataset)"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -415,7 +413,7 @@
                               icon="mdi-table"
                               :disabled="!dataset.samples && !dataset.folded"
                               variant="plain"
-                              @click="() => tableSelection = dataset"
+                              @click.stop="() => tableSelection = dataset"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -430,7 +428,7 @@
                               size="x-small"
                               icon="mdi-pencil"
                               variant="plain"
-                              @click="() => handleEditDataset(dataset)"
+                              @click.stop="() => handleEditDataset(dataset)"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -445,7 +443,7 @@
                               size="x-small"
                               icon="mdi-trash-can"
                               variant="plain"
-                              @click="() => removeDataset(dataset)"
+                              @click.stop="() => removeDataset(dataset)"
                             ></v-btn>
                           </template>
                         </v-tooltip>
@@ -492,7 +490,7 @@
                 <v-btn
                   variant="outlined"
                   size="small"
-                  @click="selectedDatasets = datasets.map(d => d.id)"
+                  @click.stop="selectedDatasets = datasets.map(d => d.id)"
                 >
                   <template #prepend>
                     <v-icon icon="mdi-check-circle" color="success"/>
@@ -503,7 +501,7 @@
                   variant="outlined"
                   size="small"
                   class="ml-2"
-                  @click="selectedDatasets = []"
+                  @click.stop="selectedDatasets = []"
                 >
                   <template #prepend>
                     <v-icon icon="mdi-close-circle" color="error"/>
@@ -515,7 +513,7 @@
                 <v-btn 
                 v-if="datasets.length > 1"
                 :disabled="datasets.length === 0 || !datasets.every(d => d.samples || d.plotlyDatasets)"
-                color="#ffcc33" size="small" :block="false" @click="allDatasetSelection = !allDatasetSelection">
+                color="#ffcc33" size="small" :block="false" @click.stop="allDatasetSelection = !allDatasetSelection">
                 {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
               </v-btn>
               <v-btn 
@@ -524,7 +522,7 @@
               :disabled="selectedDatasets.length == 0"
               :variant="selectedDatasets.length > 0 ? 'flat' : 'outlined'"
               size="small"
-              @click="showMultiPlot = true">
+              @click.stop="showMultiPlot = true">
               Graph Selected Datasets
             </v-btn>
           </div>
@@ -542,7 +540,7 @@
     <v-btn
     v-if="regions.length > 0 || timeRanges.length > 1"
       color="#a63a3f"
-      @click="showConfirmReset = true"
+      @click.stop="showConfirmReset = true"
       >
       Delete ALL selections
     </v-btn>
@@ -583,7 +581,7 @@
           <v-spacer></v-spacer>
           <v-btn
             icon="mdi-close"
-            @click="sampleErrorID = null"
+            @click.stop="sampleErrorID = null"
           >
           </v-btn>
         </v-toolbar>
@@ -653,7 +651,7 @@
           <v-spacer></v-spacer>
           <v-btn
             icon="mdi-close"
-            @click="showUserDatasetTable = false; tableSelection = null"
+            @click.stop="showUserDatasetTable = false; tableSelection = null"
           >
           </v-btn>
         </v-toolbar>
@@ -761,6 +759,9 @@ const touchscreen = supportsTouchscreen();
 
 const openPanels = ref<number[]>([0, 1, 2]);
 const openGraphs = ref<Record<string,boolean>>({});
+watch(openGraphs, (og) => {
+  console.log(og);
+}, {deep: true, immediate: true});
 const openSelection = ref<string | null>(null);
 const tableSelection = ref<UserDataset | null>(null);
 const currentlyEditingDataset = ref<UserDataset | null>(null);
@@ -799,6 +800,7 @@ function handleAggregationSaved(aggregatedSelection: UserDataset) {
     }).length;
   // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
   aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
+  aggregatedSelection.plotlyDatasets[1].name = aggregatedSelection.name;
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
