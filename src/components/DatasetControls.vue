@@ -786,16 +786,6 @@ function openAggregationDialog(selection: UserDataset) {
   aggregationDataset.value = selection;
   showAggregationDialog.value = true;
 }
-
-function easyNames(short: FoldType) {
-  if (short.toLowerCase().endsWith('none')) {
-    return 'Binned ' + short.toLowerCase().split('of')[0] + 'ly';
-  }
-  if (short.toLowerCase().startsWith('none')) {
-    return 'Stacked by ' + short.toLowerCase().split('of')[1];
-  }
-  return camelToSentance(short);
-}
 function handleAggregationSaved(aggregatedSelection: UserDataset) {
   const n = datasets.value
     .filter(d => !!d.folded) // only count folded datasets
@@ -803,16 +793,12 @@ function handleAggregationSaved(aggregatedSelection: UserDataset) {
       // make sure they all have the same parent
       if (d.folded.parent && aggregatedSelection.folded.parent) {
         // check the id (this is stable and always unique)
-        if ((aggregatedSelection.folded.parent as UserDataset).id === (d.folded.parent as UserDataset).id) {
-          if (aggregatedSelection.folded.foldType === d.folded.foldType) {
-            return true;
-          }
-        }
+        return (aggregatedSelection.folded.parent as UserDataset).id === (d.folded.parent as UserDataset).id;
       }
       return false;
     }).length;
   // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
-  aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `${easyNames(aggregatedSelection.folded.foldType)} ${String.fromCharCode(97 + n)}`);
+  aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
@@ -830,8 +816,6 @@ function handleDatasetCreated(dataset: UserDataset) {
 
 import UserDatasetEditor from "./UserDatasetEditor.vue";
 import { contrastingColor } from "@/utils/color";
-import { FoldType } from "@/esri/services/aggregation";
-import { camelToSentance } from "@/utils/text";
 const showDatasetEditor = ref(false);
 const datasetEditorNameOnly = ref(false);
 function handleEditDataset(dataset: UserDataset, nameOnly = false) {
