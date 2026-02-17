@@ -676,7 +676,7 @@ function saveFolding() {
   // (rawDataset as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
   // const summaryDataset = foldedTimesSeriesToDataSet(foldedData.value);
   // (summaryDataset as PlotlyGraphDataSet).name = foldedDatasetName.value;
-  const secondPlotlyDataset = isFoldWithNoBin.value ? graphData.value[0] : graphData.value[1]
+  const secondPlotlyDataset = isFoldWithNoBin.value ? graphData.value[0] : graphData.value[1];
   const foldedSelection: UserDataset = {
     id: v4(),
     region: { ...props.selection.region, name: props.selection.region.name } as typeof props.selection.region,
