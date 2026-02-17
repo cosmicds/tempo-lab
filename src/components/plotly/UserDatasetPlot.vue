@@ -3,8 +3,8 @@
   <h3 class="dataset-plot__title">{{ dataset.name }}</h3>
   <div class="dataset-plot__fold-desc" v-if="datasetIsFolded">
     <ul>
-      <li v-if="dataset.folded?.foldingPeriod">Stacked by {{ dataset.folded?.foldingPeriod }}</li>
-      <li v-if="dataset.folded?.timeBin" >Binned by {{ dataset.folded?.timeBin }}</li>
+      <li v-if="dataset.folded?.foldingPeriod && dataset.folded.foldingPeriod.toLowerCase()!== 'none'">Stacked by {{ dataset.folded?.foldingPeriod }}</li>
+      <li v-if="dataset.folded?.timeBin && dataset.folded?.timeBin.toLowerCase() !== 'none'" >Binned by {{ dataset.folded?.timeBin }}</li>
     </ul>
   </div>
   <div class="dataset-plot">

@@ -79,7 +79,7 @@
                     ]"
                     :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                     @plot-click="handlePointClick"
-                    :layout-options="{
+                    :layout-options="withPlotlyDefaults({
                       margin: {t: 10, r: 20, b: 60, l: 90}, 
                       autosize: false, width: 700, height: 400,
                       xaxis: {
@@ -96,19 +96,8 @@
                           standoff: 10,
                           text: descriptor ? moleculeYAxisTitle(descriptor) : 'Molecules / cm<sup>2</sup>',
                         },
-                      },
-                      legend: {
-                        yanchor: 'top',
-                        yref: 'container',
-                        y: .99,
-                        orientation:'h' as |'h' | 'v',
-                        bordercolor: '#ccc', 
-                        borderwidth:1,
-                        // @ts-ignore
-                        entrywidthmode: 'pixels',
-                        entrywidth: 0, // fit the text
                       }
-                      }"
+                      })"
                   />
                 </div>
                 <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
@@ -145,6 +134,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
 import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
+import { withPlotlyDefaults } from './plotly/plotly_styles';
 
 const store = useTempoStore();
 const {
