@@ -94,7 +94,7 @@
                         gridcolor: 'rgba(128, 128, 128, 0.3)',
                         title: {
                           standoff: 10,
-                          text: `${descriptor?.shortName.html ?? ''} Quantity<br>(${descriptor?.unit.html ?? 'Molecules / cm<sup>2</sup>'})`,
+                          text: descriptor ? moleculeYAxisTitle(descriptor) : 'Molecules / cm<sup>2</sup>',
                         },
                       },
                       legend: {
@@ -144,7 +144,7 @@ import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
-import { moleculeDescriptor } from '@/esri/utils';
+import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
 
 const store = useTempoStore();
 const {

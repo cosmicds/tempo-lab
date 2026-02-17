@@ -24,7 +24,7 @@
           :timezones="[dataset.folded.timezone ?? 'UTC']"
           :config-options="dconfigOptions"
           :xaxis-title="`Time: ${dataset.folded.foldType}`"
-          :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+          :yaxis-title="moleculeYAxisTitle(descriptor)"
           @plot-click="(value) => emit('plot-click', value)"
         />
         </div>
@@ -41,7 +41,7 @@
           }"
           :config-options="dconfigOptions"
           xaxis-title="Time"
-          :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+          :yaxis-title="moleculeYAxisTitle(descriptor)"
           @click="(value) => emit('plot-click', value)"
         />
         </div>
@@ -60,7 +60,7 @@ import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config, Layout } from 'plotly.js-dist-min';
-import { moleculeDescriptor } from '@/esri/utils';
+import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
 import { deepMerge } from './plotly_styles';
 import { DEFAULT_PLOT_CONFIG , DEFAULT_PLOT_LAYOUT } from "@/components/plotly/defaults";
 
