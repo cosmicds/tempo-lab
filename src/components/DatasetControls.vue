@@ -800,7 +800,11 @@ function handleAggregationSaved(aggregatedSelection: UserDataset) {
     }).length;
   // aggregatedSelection.name = `${aggregatedSelection.name} ${String.fromCharCode(97 + n)}`; // a, b, c, ...
   aggregatedSelection.name = (aggregatedSelection.name ?? '(Aggregation)').replace('Aggregation', `Aggregation ${String.fromCharCode(97 + n)}`); // a, b, c, ...
-  aggregatedSelection.plotlyDatasets[1].name = aggregatedSelection.name;
+  if (aggregatedSelection.plotlyDatasets) {
+    for (let i = 0; i < aggregatedSelection.plotlyDatasets.length; i++) {
+      aggregatedSelection.plotlyDatasets[i].name = aggregatedSelection.name;
+    }
+  }
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
   showAggregationDialog.value = false;
   aggregationDataset.value = null;
