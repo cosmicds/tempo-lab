@@ -87,6 +87,8 @@
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
+import { useShepherd } from "vue-shepherd";
+import type { StepOptionsButton, Tour } from "shepherd.js";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
@@ -107,6 +109,60 @@ const {
   datasetControlsOpen,
   layerControlsOpen,
 } = storeToRefs(store);
+
+
+
+interface TourStepOptions {
+  element: HTMLElement,
+  text: string;
+  position?: string,
+  back?: boolean;
+  next?: boolean;
+}
+
+function addTourStep(tour: Tour, options: TourStepOptions) {
+  const buttons: StepOptionsButton[] = [];
+  if (options.back ?? true) {
+    buttons.push({
+      action() {
+        return this.back();
+      },
+      classes: "shepherd-button-secondary",
+      text: "Back",
+    });
+  }
+  
+  if (options.next ?? true) {
+    buttons.push({
+      action() {
+        return this.next();
+      },
+      classes: "shepherd-button-secondary",
+      text: "Next",
+    });
+  }
+
+  tour.addStep({
+    attachTo: { element: options.element, on: options.position ?? "top" },
+    text: options.text,
+    buttons,
+  });
+}
+
+function createTour(): Tour {
+  const tour = useShepherd({
+    useModalOverlay: true,
+  });
+
+  const panel = document.querySelector("#layers-panel") as HTMLElement;
+  addTourStep(tour, {
+    element: panel,
+    position: "top",
+    text: "This is the layers panel!",
+  });
+
+  return tour;
+}
 
 const query = new URLSearchParams(window.location.search);
 debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.toLowerCase() == "true";
