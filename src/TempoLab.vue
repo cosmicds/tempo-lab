@@ -88,7 +88,7 @@
 import { computed, onBeforeMount, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useShepherd } from "vue-shepherd";
-import type { StepOptionsButton, Tour } from "shepherd.js";
+import type { PopperPlacement, StepOptionsButton, Tour } from "shepherd.js";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
@@ -110,55 +110,65 @@ const {
   layerControlsOpen,
 } = storeToRefs(store);
 
+const backButton: StepOptionsButton = {
+  action() { return this.back(); },
+  classes: "shepherd-button-secondary",
+  text: "Back",
+};
 
+const nextButton: StepOptionsButton = {
+  action() { return this.next(); },
+  classes: "shepherd-button-secondary",
+  text: "Next",
+};
 
-interface TourStepOptions {
-  element: HTMLElement,
-  text: string;
-  position?: string,
-  back?: boolean;
-  next?: boolean;
-}
+const defaultButtons: StepOptionsButton[] = [backButton, nextButton];
 
-function addTourStep(tour: Tour, options: TourStepOptions) {
-  const buttons: StepOptionsButton[] = [];
-  if (options.back ?? true) {
-    buttons.push({
-      action() {
-        return this.back();
-      },
-      classes: "shepherd-button-secondary",
-      text: "Back",
-    });
-  }
-  
-  if (options.next ?? true) {
-    buttons.push({
-      action() {
-        return this.next();
-      },
-      classes: "shepherd-button-secondary",
-      text: "Next",
-    });
-  }
-
-  tour.addStep({
-    attachTo: { element: options.element, on: options.position ?? "top" },
-    text: options.text,
-    buttons,
-  });
-}
-
-function createTour(): Tour {
+function createIntroTour(): Tour {
   const tour = useShepherd({
     useModalOverlay: true,
   });
 
-  const panel = document.querySelector("#layers-panel") as HTMLElement;
-  addTourStep(tour, {
-    element: panel,
-    position: "top",
+  const layersPanel = document.querySelector("#layers-panel") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: layersPanel, on: "right" }, 
     text: "This is the layers panel!",
+    buttons: defaultButtons
+  });
+
+  const openCloseLayers = layersPanel.querySelector(".open-close-container") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: openCloseLayers, on: "right" },
+    text: "The layers panel can be opened and closed",
+    buttons: defaultButtons
+  });
+
+  const datasetsPanel = document.querySelector("#datasets-panel") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: datasetsPanel, on: "left" }, 
+    text: "This is the datasets panel!",
+    buttons: defaultButtons
+  });
+
+  const openCloseDatasets = datasetsPanel.querySelector(".open-close-container") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: openCloseDatasets, on: "left" },
+    text: "The datasets panel can also be opened and closed",
+    buttons: defaultButtons
+  });
+
+  const map = document.querySelector("canvas.maplibregl-canvas") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: map, on: "top" },
+    text: "The map displays TEMPO data and other layers!",
+    buttons: defaultButtons,
+  });
+
+  const timeSlider = document.querySelector(".time-slider") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: timeSlider, on: "top" },
+    text: "Control the time for the currently displayed day using the slider",
+    buttons: defaultButtons,
   });
 
   return tour;
@@ -331,6 +341,10 @@ onMounted(() => {
   updateSizes(true, true);
   setHandleVisibility(leftHandle, layerControlsOpen.value);
   setHandleVisibility(rightHandle, datasetControlsOpen.value);
+
+  const tour = createIntroTour();
+  tour.start();
+
 });
 
 function setHandleVisibility(handle: Ref<HTMLElement | null>, visible: boolean) {
