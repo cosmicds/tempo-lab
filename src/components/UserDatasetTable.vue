@@ -224,12 +224,16 @@ const getfFoldedItems = () => {
   if (!foldedData) {
     return [];
   }
-  return Object.entries(foldedData.values).map(([key, value]) => ({
-    date: foldedData.foldType.toLowerCase().endsWith('none') ? toDateTime(new Date(value.bin)).replace(', 12:00 AM', '') : formatFoldedBinValue(folded.foldType, value.bin),
-    // date: formatFoldedBinValue(folded.foldType, value.bin),
-    value: value.value,
-    error: foldedData.errors ? foldedData.errors[key]?.upper : undefined,
-  }));
+  // ok, so when use a noneOfxxxx fold type, we need to account to the values with different phases
+  return Object.entries(foldedData.values)
+    .sort(([_keyA, valueA], [_keyB, valueB]) => valueA.bin - valueB.bin)
+    .map(([key, value]) => ({
+    
+      date: foldedData.foldType.toLowerCase().endsWith('none') ? toDateTime(new Date(value.bin)).replace(', 12:00 AM', '') : formatFoldedBinValue(folded.foldType, value.bin),
+      // date: formatFoldedBinValue(folded.foldType, value.bin),
+      value: value.value,
+      error: foldedData.errors ? foldedData.errors[key]?.upper : undefined,
+    }));
 };
 
 const jsonData = ref<SampleCSVJsonOutput | undefined>(undefined);
