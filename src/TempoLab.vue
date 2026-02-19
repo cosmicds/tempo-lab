@@ -88,7 +88,7 @@
 import { computed, onBeforeMount, onMounted, ref, type Ref, useTemplateRef, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useShepherd } from "vue-shepherd";
-import type { PopperPlacement, StepOptionsButton, Tour } from "shepherd.js";
+import type { StepOptionsButton, Tour } from "shepherd.js";
 
 import { useTempoStore, updateStoreFromJSON, serializeTempoStore } from "@/stores/app";
 
@@ -127,48 +127,68 @@ const defaultButtons: StepOptionsButton[] = [backButton, nextButton];
 function createIntroTour(): Tour {
   const tour = useShepherd({
     useModalOverlay: true,
+    defaultStepOptions: {
+      buttons: defaultButtons,
+      when: {
+        show() {
+          const currentStep = tour.getCurrentStep();
+          const currentStepElement = currentStep?.getElement();
+          const content = currentStepElement?.querySelector(".shepherd-content");
+          const footer = currentStepElement?.querySelector(".shepherd-footer");
+          const progressContainer = document.createElement("div");
+          progressContainer.classList.add("progress-container");
+          const progress = document.createElement("div");
+          progress.classList.add("progress-bar");
+          const percent = 100 * (tour.steps.indexOf(currentStep) + 1) / tour.steps.length;
+          progress.style.width = `${percent}%`;
+          progress.style.backgroundColor = accentColor.value;
+          progressContainer.appendChild(progress);
+          content?.insertBefore(progressContainer, footer);
+        },
+      },
+    },
   });
 
   const layersPanel = document.querySelector("#layers-panel") as HTMLElement;
   tour.addStep({
     attachTo: { element: layersPanel, on: "right" }, 
     text: "This is the layers panel!",
-    buttons: defaultButtons
   });
 
   const openCloseLayers = layersPanel.querySelector(".open-close-container") as HTMLElement;
   tour.addStep({
     attachTo: { element: openCloseLayers, on: "right" },
     text: "The layers panel can be opened and closed",
-    buttons: defaultButtons
   });
 
   const datasetsPanel = document.querySelector("#datasets-panel") as HTMLElement;
   tour.addStep({
     attachTo: { element: datasetsPanel, on: "left" }, 
     text: "This is the datasets panel!",
-    buttons: defaultButtons
   });
 
   const openCloseDatasets = datasetsPanel.querySelector(".open-close-container") as HTMLElement;
   tour.addStep({
     attachTo: { element: openCloseDatasets, on: "left" },
     text: "The datasets panel can also be opened and closed",
-    buttons: defaultButtons
   });
 
   const map = document.querySelector("canvas.maplibregl-canvas") as HTMLElement;
   tour.addStep({
     attachTo: { element: map, on: "top" },
     text: "The map displays TEMPO data and other layers!",
-    buttons: defaultButtons,
   });
 
-  const timeSlider = document.querySelector(".time-slider") as HTMLElement;
+  const timeSlider = document.querySelector(".slider-row") as HTMLElement;
   tour.addStep({
     attachTo: { element: timeSlider, on: "top" },
     text: "Control the time for the currently displayed day using the slider",
-    buttons: defaultButtons,
+  });
+
+  const mapControls = document.querySelector(".map-view") as HTMLElement;
+  tour.addStep({
+    attachTo: { element: mapControls, on: "top"},
+    text: "Adjust the date and timezone of the map display",
   });
 
   return tour;
@@ -498,5 +518,19 @@ body {
 
 .panel-size-dragging, .panel-size-dragging * {
   cursor: col-resize !important;
+}
+
+.progress-container {
+  width: 75%;
+  margin: auto;
+  margin-bottom: 10px;
+  height: 5px;
+  background-color: rgba(128, 128, 128, 0.6);
+  border-radius: 10px;
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 10px;
+  }
 }
 </style>
