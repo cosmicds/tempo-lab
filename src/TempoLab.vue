@@ -129,7 +129,13 @@ const cssVars = computed(() => {
   };
 });
 
-const localStorageKey = "tempods";
+const localStorageStateKey = "tempods";
+const localStoragePreferenceKey = "tempods-save";
+
+let _saveStateInterval: ReturnType<typeof setInterval>;
+
+const useLocalStorage = ref(window.localStorage?.getItem(localStoragePreferenceKey)?.toLowerCase() !== "false");
+
 let animationFrame = 0;
 
 function setBasis(panel: HTMLElement, sizePx: number) {
@@ -141,8 +147,18 @@ function getBasis(panel: HTMLElement): number {
   return isNaN(basis) ? 0 : basis;
 }
 
+function saveStateToLocalStorage(): boolean {
+  try {
+    const stringified = serializeTempoStore(store);
+    window.localStorage.setItem(localStorageStateKey, stringified);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 onBeforeMount(() => {
-  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
+  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageStateKey);
   if (storedState) {
     updateStoreFromJSON(store, storedState);
   }
@@ -266,12 +282,18 @@ onMounted(() => {
   });
 
   window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !ignoreCache) {
-      const stringified = serializeTempoStore(store); 
-      window.localStorage.setItem(localStorageKey, stringified);
+    if (document.visibilityState === "hidden" && useLocalStorage.value && !ignoreCache) {
+      saveStateToLocalStorage();
     }
   });
 
+  _saveStateInterval = setInterval(() => {
+    if (!useLocalStorage.value || ignoreCache) {
+      return;
+    }
+    saveStateToLocalStorage();
+  }, 60_000);
+  
   updateSizes(true, true);
   setHandleVisibility(leftHandle, layerControlsOpen.value);
   setHandleVisibility(rightHandle, datasetControlsOpen.value);
@@ -295,6 +317,11 @@ function onLayersPanelOpenChange(open: boolean) {
 
 watch(datasetControlsOpen, onDatasetPanelOpenChange);
 watch(layerControlsOpen, onLayersPanelOpenChange);
+
+watch(useLocalStorage, (use: boolean) => {
+  const value = use ? "true" : "false";
+  window.localStorage.setItem(localStoragePreferenceKey, value);
+});
 </script>
 
 <style lang="less">
