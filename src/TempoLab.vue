@@ -108,6 +108,7 @@ const {
   layerControlsOpen,
 } = storeToRefs(store);
 
+
 const query = new URLSearchParams(window.location.search);
 debugMode.value = (query.get("debug") ?? process.env.VUE_APP_TEMPO_LAB_DEBUG)?.toLowerCase() == "true";
 const ignoreCache = query.get("ignorecache")?.toLowerCase() == "true";
@@ -438,5 +439,19 @@ body {
 
 .panel-size-dragging, .panel-size-dragging * {
   cursor: col-resize !important;
+}
+
+.progress-container {
+  width: 75%;
+  margin: auto;
+  margin-bottom: 10px;
+  height: 5px;
+  background-color: rgba(128, 128, 128, 0.6);
+  border-radius: 10px;
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 10px;
+  }
 }
 </style>
