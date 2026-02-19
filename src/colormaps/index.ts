@@ -3,7 +3,7 @@ import { magma } from "./magma";
 import { inferno } from "./inferno";
 import { plasma } from "./plasma";
 import { viridis } from "./viridis";
-import { cividis } from "./cividis";
+import cividis from "./cividis";
 import { gray } from "./gray";
 import { svs_nitrogen_dioxide, svsColorRamp } from "./svs_nitrogen_dioxide";
 import { sargassum, sargassumColorRamp } from "./sargassum";
@@ -29,7 +29,7 @@ export const colormaps: ColorMaps = {
   "inferno": inferno,
   "plasma": plasma,
   "viridis": viridis,
-  "cividis": cividis,
+  "cividis": cividis.colormap,
   "svs": svs_nitrogen_dioxide,
   "sargassum": sargassum,
   "gray": gray,
@@ -64,6 +64,8 @@ export const nonEsriColormaps = {
   'cyanfromwhite': {rgb: cyanfromwhite.colormap, esriColorRamp: cyanfromwhite.esri},
   'yellowfromwhite': {rgb: yellowfromwhite.colormap, esriColorRamp: yellowfromwhite.esri},
   'magentafromwhite': {rgb: magentafromwhite.colormap, esriColorRamp: magentafromwhite.esri},
+  // overriding the colormap from esri
+  'cividis': {rgb: cividis.colormap, esriColorRamp: cividis.esri}
 } as const;
 
 export type AvailableColorMaps = 'magma' | 'inferno' | 'plasma' | 'viridis' | 'cividis' | 'svs' | 'gray' | 'sargassum' | 'haline' | 'redfromblack' | 'bluefromblack' | 'greenfromblack' | 'cyanfromblack' | 'yellowfromblack' | 'magentafromblack' | 'redfromwhite' | 'bluefromwhite' | 'greenfromwhite' | 'cyanfromwhite' | 'yellowfromwhite' | 'magentafromwhite';
