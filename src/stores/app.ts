@@ -497,7 +497,7 @@ export function deserializeTempoStore(value: string): StateTree {
   return parsed;
 }
 
-const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady"]);
+const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady", "timestamps", "timestampsLoaded"]);
 export function serializeTempoStore(store: TempoStore): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const state: Record<string, any> = {};
