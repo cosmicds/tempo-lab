@@ -67,6 +67,8 @@ const {
 <style scoped lang="less">
 .comparison-data-controls {
   font-size: 11pt !important;
+  min-width: 250px;
+  overflow-y: auto;
 }
 
 :deep(.v-checkbox .v-label) {

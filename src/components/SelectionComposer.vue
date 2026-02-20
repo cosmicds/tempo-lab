@@ -103,6 +103,7 @@ import { v4 } from "uuid";
 import type { MappingBackends, RectangleSelection, TimeRange, UserDataset } from "../types";
 import type { MillisecondRange } from "../types/datetime";
 import { type MoleculeType, MOLECULE_OPTIONS } from "../esri/utils";
+import type { ServiceStatusMap } from "@/esri/services/TempoDataService";
 
 const selectedTimeRange = ref<TimeRange | null>(null);
 
@@ -110,7 +111,7 @@ interface SelectionComposerProps {
   backend: MappingBackends;
   timeRanges: TimeRange[];
   regions: RectangleSelectionType[];
-  moleculeReady?: Map<string, boolean[] | undefined>;
+  moleculeReady?: Map<string, ServiceStatusMap | undefined>;
   disabled?: { region?: boolean; timeRange?: boolean; molecule?: boolean };
 }
 
@@ -135,9 +136,9 @@ const availableMolecules = computed(() => MOLECULE_OPTIONS.map(o => ({ key: o.va
 const moleculeHint = computed(() => {
   if (!props.moleculeReady) return '';
   let msg = '';
-  for (const kv of props.moleculeReady) {
-    if (kv[1] && !kv[1].every(v => !!v)) {
-      msg += MOLECULE_OPTIONS.find(m => m.value === kv[0])?.title || kv[0] + ' ';
+  for (const [molecule, readiness] of props.moleculeReady) {
+    if (readiness && readiness.size > 0 && ![...readiness.values()].every(v => !!v)) {
+      msg += MOLECULE_OPTIONS.find(m => m.value === molecule)?.title || molecule + ' ';
     }
   }
   if (msg === '') return '';

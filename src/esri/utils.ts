@@ -53,6 +53,18 @@ export const ESRI_URLS_V04: Record<MoleculeType, { url: string; variable: Variab
 
 export const ESRI_URL_LIST = [ESRI_URLS_V03, ESRI_URLS_V04]; // in chronological order
 
+export type TempoServiceVersion = "V03" | "V04";
+
+export function parseTempoVersion(value: string): TempoServiceVersion | null {
+  if (value.toUpperCase().includes("V03")) {
+    return "V03";
+  }
+  if (value.toUpperCase().includes("V04")) {
+    return "V04";
+  }
+  return null;
+}
+
 export const MOLECULE_OPTIONS: {title: string, value: MoleculeType }[] = [
   { title: 'NO₂', value: 'no2' },
   // { title: 'Monthly Mean NO₂', value: 'no2Monthly' },
@@ -99,6 +111,17 @@ export function moleculeDescriptor(molecule: MoleculeType): MoleculeDescriptor {
     return MOLECULE_NAMES[molecule.toLowerCase()];
   }
   throw new Error(`Unknown molecule type: ${molecule}`);
+}
+
+export function moleculeYAxisTitle(descriptor: MoleculeDescriptor): string {
+  const unitText = descriptor.unit.text.toLowerCase();
+  const isColumnDensity = unitText.toLowerCase().includes('molecules');
+
+  if (isColumnDensity) {
+    return `Molecules of ${descriptor.shortName.html} / cm<sup>2</sup>`;
+  }
+
+  return `${descriptor.shortName.html} (${descriptor.unit.html})`;
 }
 
 

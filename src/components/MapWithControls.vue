@@ -121,6 +121,7 @@ import { addRectangleLayer, addPointLayer, regionBounds, fitBounds, removeRectan
 import { usePointSelection } from "@/composables/maplibre/usePointSelection";
 import { COLORS } from "@/utils/color";
 import { EsriSampler } from "@/esri/services/sampling";
+import type { ServiceStatusMap } from "@/esri/services/TempoDataService";
 import { useMultiMarker } from '@/composables/maplibre/useMultiMarker';
 
 import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
@@ -261,8 +262,8 @@ const ozoneLayer = useTempoLayer({
 });
 const no2Layer = ref<UseEsriTempoLayer | null>(null);
 
-function syncLayerReady(layerName: string, serviceReady: boolean[] | undefined) {
-  if (!serviceReady || serviceReady.length === 0) {
+function syncLayerReady(layerName: string, serviceReady: ServiceStatusMap | undefined) {
+  if (!serviceReady) {
     store.clearLayerReady(layerName);
     return;
   }
@@ -271,36 +272,48 @@ function syncLayerReady(layerName: string, serviceReady: boolean[] | undefined) 
 
 function addAdvancedLayers(m: Map | null) {
   if (m === null) {
-    throw new Error('Tried to addAdvancedLayers but map was null');
+    console.warn('Tried to addAdvancedLayers but map was null');
+    return;
   }
+  
+  // let each of these fail without preventing the rest of the layers from loading
+  const tryCatch = (label: string, cb: () => void) => {
+    // tryCatch util
+    try {
+      cb();
+    } catch (error) {
+      console.error(`[${label}] Failed to add layer`, error);
+    }
+  };
   // pp.addheatmapLayer();
   // pp.togglePowerPlants(false);
-  aqiLayer.addToMap(m);
-  popLayer.addEsriSource(m);
-  sentinalLandUseLayer.addEsriSource(m);
-  hmsFire.addToMap(m);
-  hchoLayer.addEsriSource(m);
-  ozoneLayer.addEsriSource(m);
+  tryCatch('aqi-layer-aqi', () => aqiLayer.addToMap(m));
+  tryCatch('pop-dens', () => popLayer.addEsriSource(m));
+  tryCatch('land-use', () => sentinalLandUseLayer.addEsriSource(m));
+  tryCatch('hms-fire', () => hmsFire.addToMap(m));
+  tryCatch('tempo-hcho', () => hchoLayer.addEsriSource(m));
+  tryCatch('tempo-o3', () => ozoneLayer.addEsriSource(m));
   syncLayerReady('tempo-hcho', hchoLayer.serviceReady.value);
   syncLayerReady('tempo-o3', ozoneLayer.serviceReady.value);
   syncLayerReady('pop-dens', popLayer.serviceReady.value);
   syncLayerReady('land-use', sentinalLandUseLayer.serviceReady.value);
   // Only move if target layer exists (avoid errors if initial KML load failed)
   try {
-    if (m.getLayer('kml-layer-aqi')) {
-      m.moveLayer('states-custom','kml-layer-aqi');
+    if (m.getLayer('aqi-layer-aqi')) {
+      m.moveLayer('states-custom','aqi-layer-aqi');
     }
   } catch {
     // ignore
   }
   
-  pp.addLayer();
+  tryCatch('power-plants-layer', () => pp.addLayer());
   // pp.togglePowerPlants(false);
 }
 
 function removeAdvancedLayers(m: Map | null) {
   if (m === null) {
-    throw new Error('Tried to removeAdvancedLayers but map was null');
+    console.warn('Tried to removeAdvancedLayers but map was null');
+    return;
   }
   aqiLayer.removeFromMap(m);
   popLayer.removeEsriSource();
@@ -317,6 +330,7 @@ function removeAdvancedLayers(m: Map | null) {
 
 const onMapReady = (m: Map) => {
   map.value = m; // ESRI source already added by EsriMap
+  syncLayerReady('tempo-no2', no2Layer.value?.serviceReady); // needs to be done early
   if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
   m.resize();
@@ -344,7 +358,7 @@ watch(molecule, (newMolecule) => {
 const activeLayer = computed(() => `tempo-${molecule.value}`);
 
 watch(() => [
-  no2Layer.value?.serviceReady,
+  no2Layer.value?.serviceReady, // not a ref
   hchoLayer.serviceReady.value,
   ozoneLayer.serviceReady.value,
   popLayer.serviceReady.value,

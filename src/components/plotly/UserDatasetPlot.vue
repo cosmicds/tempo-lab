@@ -3,8 +3,8 @@
   <h3 class="dataset-plot__title">{{ dataset.name }}</h3>
   <div class="dataset-plot__fold-desc" v-if="datasetIsFolded">
     <ul>
-      <li v-if="dataset.folded?.foldingPeriod">Stacked by {{ dataset.folded?.foldingPeriod }}</li>
-      <li v-if="dataset.folded?.timeBin" >Binned by {{ dataset.folded?.timeBin }}</li>
+      <li v-if="dataset.folded?.foldingPeriod && dataset.folded.foldingPeriod.toLowerCase()!== 'none'">Stacked by {{ dataset.folded?.foldingPeriod }}</li>
+      <li v-if="dataset.folded?.timeBin && dataset.folded?.timeBin.toLowerCase() !== 'none'" >Binned by {{ dataset.folded?.timeBin }}</li>
     </ul>
   </div>
   <div class="dataset-plot">
@@ -24,7 +24,7 @@
           :timezones="[dataset.folded.timezone ?? 'UTC']"
           :config-options="dconfigOptions"
           :xaxis-title="`Time: ${dataset.folded.foldType}`"
-          :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+          :yaxis-title="moleculeYAxisTitle(descriptor)"
           @plot-click="(value) => emit('plot-click', value)"
         />
         </div>
@@ -41,7 +41,7 @@
           }"
           :config-options="dconfigOptions"
           xaxis-title="Time"
-          :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+          :yaxis-title="moleculeYAxisTitle(descriptor)"
           @click="(value) => emit('plot-click', value)"
         />
         </div>
@@ -60,7 +60,7 @@ import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config, Layout } from 'plotly.js-dist-min';
-import { moleculeDescriptor } from '@/esri/utils';
+import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
 import { deepMerge } from './plotly_styles';
 import { DEFAULT_PLOT_CONFIG , DEFAULT_PLOT_LAYOUT } from "@/components/plotly/defaults";
 

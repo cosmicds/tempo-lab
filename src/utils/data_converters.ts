@@ -234,7 +234,7 @@ export function createCODAPMeta(dataset: Prettify<UserDataset>): string[] {
   // Attributes common to all datasets
   const unit = dataset.molecule === 'o3' ? 'Dobson Units' : 'molecules per cm^2';
   meta.push(`# attribute -- name: column_density, description: column density of ${dataset.molecule}, type: numeric, unit: ${unit}, editable: false`);
-  const errorMes = ((dataset.folded === 'undefined') || (dataset.folded && dataset.folded.useSEM)) 
+  const errorMes = ((dataset.folded === undefined) || (dataset.folded && dataset.folded.useSEM)) 
     ? 'standard error of mean ' 
     : 'standard deviation';
   meta.push(`# attribute -- name: uncertainty, description: uncertainy (${errorMes}) in column density, unit: ${unit} , type: numeric, editable: false`);

@@ -1,12 +1,13 @@
-import { ref, watch, Ref, MaybeRef, toRef, nextTick, computed } from 'vue';
+import { ref, shallowRef, watch, Ref, MaybeRef, toRef, nextTick, computed } from 'vue';
 import { renderingRule, stretches, colorramps, rgbcolorramps, RenderingRuleOptions, ColorRamps } from '../ImageLayerConfig';
-import { type Map, type MapSourceDataEvent } from 'maplibre-gl';
+import type { Map, MapSourceDataEvent } from 'maplibre-gl';
 import { validate as uuidValidate } from "uuid";
 
 import { ImageService } from '@/esri/ImageServiceLayer/ImageService';
 import { useEsriTimesteps } from '../../composables/useEsriTimesteps';
 import { MoleculeType } from '../utils';
 import { useTempoStore } from '@/stores/app';
+import type { ServiceStatusMap } from '@/esri/services/TempoDataService';
 
 
 export interface UseEsriTempoLayer {
@@ -21,7 +22,7 @@ export interface UseEsriTempoLayer {
   removeEsriSource: () => void;
   setVisibility: (visible: boolean) => void;
   renderOptions: Ref<RenderingRuleOptions>;
-  serviceReady: Ref<boolean[]>
+  serviceReady: Ref<ServiceStatusMap>
 }
 
 export interface UseEsriTempoLayerOptions {
@@ -38,7 +39,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
 
   const esriLayerId = esriLayerOptions.layerName ?? 'esri-source';
   const esriImageSource = ref<maplibregl.RasterTileSource | null>(null);
-  const map = ref<Map | null>(null);
+  const map = shallowRef<Map | null>(null);
   const molecule = toRef(esriLayerOptions.initialMolecule);
   const store = useTempoStore();
 
@@ -58,14 +59,30 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     colormap: ramps[variable.value],
   });
   
-  const serviceReady = ref<boolean[]>([]);
-  tds.value.serviceStatusReady().then((ready) => {
-    const servicesReady: boolean[] = [];
-    for (const kv of ready) {
-      servicesReady.push(kv[1]);
-    }
-    serviceReady.value = servicesReady;
-  });
+  const serviceReady = ref<ServiceStatusMap>(new globalThis.Map());
+  function serviceStatusAllFailed(status: ServiceStatusMap): boolean {
+    return status.size > 0 && [...status.values()].every((ready) => ready === false);
+  }
+
+  function getServiceStatus() {
+    serviceReady.value = new globalThis.Map(tds.value.publicServiceStatus);
+    
+    tds.value.serviceStatusReady().then((ready) => {
+      // After timeout, treat unresolved (null) as failed (false)
+      const servicesReady = new globalThis.Map<string, boolean | null>();
+      for (const [url, status] of ready) {
+        servicesReady.set(url, status ?? false);
+      }
+      serviceReady.value = servicesReady;
+    })
+      .catch((error) => {
+        console.error(`[${esriLayerId}] Failed to read service status`, error);
+        serviceReady.value = new globalThis.Map(
+          tds.value.baseUrlArray.map(url => [url, false] as [string, boolean | null])
+        );
+      });
+  }
+  getServiceStatus();
   
   const options = computed(() => {
     return  {
@@ -120,7 +137,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   function onSourceLoad(e: MapSourceDataEvent) {
     // console.log(`sourcedate event for ${esriLayerId}: `);
     if (e.sourceId === esriLayerId && e.isSourceLoaded && map.value?.getSource(esriLayerId)) {
-      console.log(`[${esriLayerId}] ESRI source loaded with time`, timestamp.value ? new Date(timestamp.value ) : null);
+      // console.log(`[${esriLayerId}] ESRI source loaded with time`, timestamp.value ? new Date(timestamp.value ) : null);
       esriImageSource.value = map.value?.getSource(esriLayerId) as maplibregl.RasterTileSource;
       updateEsriOpacity();
       updateEsriTimeRange();
@@ -157,21 +174,36 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     if (!mMap) return;
     map.value = mMap;
 
-    const svc = tds.value;
-    const url = timestamp.value !== null
-      ? svc.selectBaseUrlForTimestamp(timestamp.value)
-      : svc.baseUrlArray[svc.baseUrlArray.length - 1];
+    if (mMap.getLayer(esriLayerId) || mMap.getSource(esriLayerId)) {
+      removeEsriSource();
+    }
 
-    dynamicMapService.value = createImageService(mMap, url, options.value);
+    try {
+      const svc = tds.value;
+      const url = timestamp.value !== null
+        ? svc.selectBaseUrlForTimestamp(timestamp.value)
+        : svc.baseUrlArray[svc.baseUrlArray.length - 1];
 
-    addLayer(mMap);
-    // this event will run until the source is loaded
-    console.log(`[${esriLayerId}] Adding ESRI source to map`);
-    mMap.on('sourcedata', onSourceLoad);
+      dynamicMapService.value = createImageService(mMap, url, options.value);
+
+      addLayer(mMap);
+      // this event will run until the source is loaded. make sure we're not duplicating it
+      console.log(`[${esriLayerId}] Adding ESRI source to map`);
+      mMap.off('sourcedata', onSourceLoad);
+      mMap.on('sourcedata', onSourceLoad);
+      if (serviceStatusAllFailed(serviceReady.value)) {
+        console.warn(`[${esriLayerId}] All backing services are unavailable. Layer added but hidden.`);
+        mMap.setLayoutProperty(esriLayerId, 'visibility', 'none');
+      }
+    } catch (e) {
+      console.error(`[${esriLayerId}] Failed to add ESRI source`, e);
+      removeEsriSource(); // remove it if it's there
+    }
   }
   
   function removeEsriSource() {
     if (map.value) {
+      map.value.off('sourcedata', onSourceLoad);
       if (map.value.getLayer(esriLayerId)) {
         map.value.removeLayer(esriLayerId);
       }
@@ -179,6 +211,8 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
         map.value.removeSource(esriLayerId);
       }
     }
+    dynamicMapService.value = null;
+    esriImageSource.value = null;
   }
   
   function hasEsriSource() {
@@ -223,7 +257,11 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
       return;
     }
 
-    setDynamicMapServiceDate(nearest);
+    try {
+      setDynamicMapServiceDate(nearest);
+    } catch (error) {
+      console.error(`[${esriLayerId}] Failed to update ESRI time range`, error);
+    }
   }
 
   watch(esriTimesteps, _timesteps => {
@@ -232,17 +270,15 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
 
 
   watch(timestamp, (_value) => {
-    console.log(`[${esriLayerId}] esri imageset timestamp set to `, _value ? new Date(_value) : null);
+    // console.log(`[${esriLayerId}] esri imageset timestamp set to `, _value ? new Date(_value) : null);
     if ( hasEsriSource() ) {
       updateEsriTimeRange();
-    } else {
-      console.error(`[${esriLayerId}] ESRI source not yet available`);
     }
   });
   
   
   function updateEsriOpacity(value: number | null | undefined = undefined) {
-    if (map.value) {
+    if (map.value && map.value.getLayer(esriLayerId)) {
       map.value.setPaintProperty(esriLayerId, 'raster-opacity', value ?? opacityRef.value ?? 0.8);
     }
   }
@@ -293,9 +329,17 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   watch(noEsriData, (value: boolean) => {
     if (value) {
       updateEsriOpacity(0);
-      removeLayer(map.value as Map | null);
+      removeLayer(map.value);
     } else {
-      addLayer(map.value as Map | null);
+      addLayer(map.value);
+    }
+  });
+
+  watch(serviceReady, (readiness) => {
+    if (serviceStatusAllFailed(readiness)) {
+      if (map.value?.getLayer(esriLayerId)) {
+        map.value.setLayoutProperty(esriLayerId, 'visibility', 'none');
+      }
     }
   });
 
