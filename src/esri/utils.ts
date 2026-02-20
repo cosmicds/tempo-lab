@@ -53,6 +53,18 @@ export const ESRI_URLS_V04: Record<MoleculeType, { url: string; variable: Variab
 
 export const ESRI_URL_LIST = [ESRI_URLS_V03, ESRI_URLS_V04]; // in chronological order
 
+export type TempoServiceVersion = "V03" | "V04";
+
+export function parseTempoVersion(value: string): TempoServiceVersion | null {
+  if (value.toUpperCase().includes("V03")) {
+    return "V03";
+  }
+  if (value.toUpperCase().includes("V04")) {
+    return "V04";
+  }
+  return null;
+}
+
 export const MOLECULE_OPTIONS: {title: string, value: MoleculeType }[] = [
   { title: 'NO₂', value: 'no2' },
   // { title: 'Monthly Mean NO₂', value: 'no2Monthly' },

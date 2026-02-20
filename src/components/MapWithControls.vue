@@ -330,6 +330,7 @@ function removeAdvancedLayers(m: Map | null) {
 
 const onMapReady = (m: Map) => {
   map.value = m; // ESRI source already added by EsriMap
+  syncLayerReady('tempo-no2', no2Layer.value?.serviceReady); // needs to be done early
   if (showAdvancedLayers.value) addAdvancedLayers(m);
   updateRegionLayers(regions.value);
   m.resize();
@@ -357,7 +358,7 @@ watch(molecule, (newMolecule) => {
 const activeLayer = computed(() => `tempo-${molecule.value}`);
 
 watch(() => [
-  no2Layer.value?.serviceReady.value,
+  no2Layer.value?.serviceReady, // not a ref
   hchoLayer.serviceReady.value,
   ozoneLayer.serviceReady.value,
   popLayer.serviceReady.value,

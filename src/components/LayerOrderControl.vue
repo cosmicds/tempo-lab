@@ -15,13 +15,29 @@
           :layer-id="element"
           :display-name="displayNameTransform(element)"
           :synced-items="getConnectedItems(element)"
+          :disabled="serviceDown(element)"
         >
           <template #warning
             v-if="warningMessage(element)"
           >
             <v-tooltip :text="warningMessage(element)!">
               <template #activator="{ props }">
-                <v-icon v-bind="props" color="error">mdi-alert</v-icon>
+                <v-icon 
+                  v-if="!serviceLoading(element)" 
+                  class="pointer-events-auto" 
+                  v-bind="props" 
+                  color="error">
+                    mdi-alert
+                </v-icon>
+                <v-progress-circular 
+                  v-else
+                  class="pointer-events-auto" 
+                  v-bind="props"
+                  size="20"
+                  width="5"
+                  color="on-surface"
+                  indeterminate
+                />
               </template>
             </v-tooltip>
           </template>
@@ -80,6 +96,7 @@ import M from 'maplibre-gl';
 
 import { useMaplibreLayerOrderControl } from "@/composables/useMaplibreLayerOrderControl";
 import { capitalizeWords } from "@/utils/names";
+import { parseTempoVersion } from "@/esri/utils";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
 import { colormapFunction } from "@/colormaps/utils";
 import { useTempoStore } from "@/stores/app";
@@ -133,7 +150,7 @@ const displayOrder = computed({
     return currentOrder.value.slice().reverse();
   },
   set(value: string[]) {
-    controller?.setManagedOrder(value.slice().reverse());
+    controller.value?.setManagedOrder(value.slice().reverse());
   }
 });
 
@@ -194,21 +211,75 @@ const layerInfo: Record<string, string | undefined> = {
 };
 
 const hasLegend = ['land-use', 'aqi-layer-aqi', 'power-plants-layer', 'pop-dens'];
-const serviceWarning = "The service supporting this layer is down, all or some data may be unavailable.";
 
 function displayNameTransform(layerId: string): string {
   return layerNames[layerId] ?? capitalizeWords(layerId.replace(/-/g, " "));
 }
 
-function warningMessage(layerId: string): string | null {
+function statusSummary(layerId: string): { loading: string[]; failed: string[]; values: (boolean | null)[] } {
   const readiness = layersReady.value.get(layerId);
-  if (!readiness || readiness.length === 0) {
+  if (!readiness) {
+    return { loading: [], failed: [], values: [] };
+  }
+
+  const loading = new Set<string>();
+  const failed = new Set<string>();
+
+  for (const [url, ready] of readiness) {
+    const label = parseTempoVersion(url) ?? 'service';
+    if (ready === null) {
+      loading.add(label);
+    } else if (ready === false) {
+      failed.add(label);
+    }
+  }
+
+  return {
+    loading: [...loading],
+    failed: [...failed],
+    values: [...readiness.values()],
+  };
+}
+
+function serviceLoading(layerId: string): boolean {
+  const summary = statusSummary(layerId);
+  return summary.loading.length > 0;
+}
+
+function warningMessage(layerId: string): string | null {
+  const summary = statusSummary(layerId);
+  if (summary.values.length === 0) {
     return null;
   }
-  if (readiness.every(ready => ready)) {
+  if (summary.values.every((ready) => ready === true)) {
     return null;
   }
-  return serviceWarning;
+  if (summary.loading.length > 0 && summary.failed.length === 0) {
+    return `Service status loading (${summary.loading.join(", ")})`;
+  }
+  if (summary.failed.length > 0 && summary.loading.length > 0) {
+    return `Unavailable: ${summary.failed.join(", ")}. Still checking: ${summary.loading.join(", ")}.`;
+  }
+  if (summary.failed.length > 0 && summary.values.every((ready) => ready === false)) {
+    return `The service supporting this layer is down (${summary.failed.join(", ")}). No data is available.`;
+  }
+  if (summary.failed.length > 0) {
+    return `Some data may be unavailable (${summary.failed.join(", ")}).`;
+  }
+  return 'Service status loading';
+}
+
+function serviceDown(layerId: string): boolean {
+  const readiness = statusSummary(layerId).values;
+  // if readiness is empty, we haven't checked it yet, so don't disable yet
+  if (readiness.length === 0) {
+    return false;
+  }
+  // if all are explicitly false, disable the layer toggle
+  if (readiness.every(ready => ready === false)) {
+    return true;
+  }
+  return false;
 }
 
 function cbarLabel(cbarScale: number, unit: string) {

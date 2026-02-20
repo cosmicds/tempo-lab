@@ -703,6 +703,7 @@ import { MOLECULE_OPTIONS, moleculeDescriptor } from "../esri/utils";
 import { areEquivalentTimeRanges, formatTimeRange } from "../utils/timeRange";
 import { atleast1d } from "../utils/atleast1d";
 import { titleBarPredicate } from "../utils/draggable";
+import type { ServiceStatusMap } from "@/esri/services/TempoDataService";
 
 import DateTimeRangeSelection from "../date_time_range_selection/DateTimeRangeSelection.vue";
 import AdvancedOperations from "./AdvancedOperations.vue";
@@ -740,7 +741,7 @@ const {
 } = storeToRefs(store);
 
 const moleculeReady = computed(() => {
-  const ready = new Map<string, boolean[] | undefined>();
+  const ready = new Map<string, ServiceStatusMap | undefined>();
   MOLECULE_OPTIONS.forEach( v => {
     const layername = `tempo-${v.value}`;
     ready.set(v.value,layersReady.value.get(layername));
