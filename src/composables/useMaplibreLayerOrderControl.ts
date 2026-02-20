@@ -103,15 +103,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     if (options.linkedLayers) {
       this._linked = options.linkedLayers.map(link => this._newLink(link));
     }
-    
-    const idleListener = () => {
-      this._orderLayers();
-      this._initialized = true;
-      this._watchForChanges();
-      this._map.off('idle', idleListener);
-    };
-    // wait for map to be ready
-    this._map.on('idle',idleListener);
+
+    // we can add lifecycle listeners immediately
+    // waiting for idle was causing it to miss early changes
+    this._watchForChanges();
+    this._orderLayers();
+    this._initialized = true;
     
   }
   
@@ -309,8 +306,11 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   private _watchForChanges() {
     const onStyleData = () => this._maintainOrder();
+    const onIdle = () => this._maintainOrder();
     this._map.on('styledata', onStyleData);
+    this._map.on('idle', onIdle);
     this._eventHandlers.push(['styledata', onStyleData]);
+    this._eventHandlers.push(['idle', onIdle]);
   }
   
   /**
@@ -637,6 +637,8 @@ export function useMaplibreLayerOrderControl(
   
   onBeforeUnmount(() => {
     controller?.destroy();
+    controller = null;
+    initialized = false;
   });
   
   
