@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useDisplay } from "vuetify";
 import { supportsTouchscreen } from "@cosmicds/vue-toolkit";
