@@ -321,6 +321,10 @@ watch(layerControlsOpen, onLayersPanelOpenChange);
 watch(useLocalStorage, (use: boolean) => {
   const value = use ? "true" : "false";
   window.localStorage.setItem(localStoragePreferenceKey, value);
+
+  if (!use) {
+    window.localStorage.removeItem(localStorageStateKey);
+  }
 });
 </script>
 
