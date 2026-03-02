@@ -105,12 +105,7 @@
                     {{ aggregationWarning }}
                   </div>
                 </div>
-                <!-- Save button visible when aggregation controls panel is collapsed -->
-                <div v-if="!showAggregationControls && canSave" class="d-flex justify-end mt-3">
-                  <v-btn color="primary" @click="saveFolding" :disabled="!canSave" size="small" prepend-icon="mdi-content-save-outline">
-                    Save Folded Data
-                  </v-btn>
-                </div>
+                <!-- no save folded data button when aggregation panel is closed -->
               </template>
             </local-scope>
             </v-card>
