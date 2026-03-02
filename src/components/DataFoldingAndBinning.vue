@@ -13,8 +13,8 @@
               v-model:open="showAggregationControls"
               open-direction="right"
               icon="mdi-calculator"
-              closed-tooltip-text="Show stacking and binning controls"
-              open-tooltip-text="Close stacking and binning controls"
+              closed-tooltip-text="Show stacking and averaging controls controls"
+              open-tooltip-text="Close stacking and averaging controls controls"
               open-arrow-color="surface-variant"
               closed-arrow-color="surface-variant"
               tooltips
