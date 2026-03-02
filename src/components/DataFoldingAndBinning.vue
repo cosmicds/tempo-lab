@@ -64,7 +64,7 @@
               <template #default="{ descriptor }">
                 <div  class="df__graph-container">
                   <folded-plotly-graph
-                    :datasets="graphData"
+                    :datasets="selectedFoldType === 'noneOfNone' ? [graphData[0]] : graphData"
                     :show-errors="showErrors"
                     :fold-type="selectedFoldType"
                     :colors="[theColor, '#333']"
