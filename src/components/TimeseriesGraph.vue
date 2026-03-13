@@ -15,6 +15,7 @@ import { v4 } from "uuid";
 import { PlotlyHTMLElement, newPlot, restyle, type Layout, type Config, type Data, type Datum, type PlotMouseEvent } from "plotly.js-dist-min";
 
 import { AggValue, UserDataset } from "../types";
+import { moleculeDescriptor, moleculeYAxisTitle } from "@/esri/utils";
 
 
 interface TimeseriesProps {
@@ -149,11 +150,15 @@ function renderPlot() {
 
   const paddingFactor = 1.1;
   const axisMax = Math.max(1, paddingFactor * max);
+  const defaultYAxisTitle = "Molecules / cm<sup>2</sup>";
+  const yAxisTitle = props.data[0]?.molecule
+    ? moleculeYAxisTitle(moleculeDescriptor(props.data[0].molecule))
+    : defaultYAxisTitle;
   const layout: Partial<Layout> = {
     width: 600,
     height: 400,
     yaxis: {
-      title: { text: "Molecules / cm<sup>2</sup>" },
+      title: { text: yAxisTitle },
       range: [0, axisMax],
     }
   };

@@ -71,6 +71,7 @@ for (let h = 0; h < 48; h += 0.1) {
 
 const _defaultyAxisStyle: Partial<Layout> = {
   'yaxis': {
+    'automargin': true,
   }
 };
 
@@ -345,4 +346,11 @@ export function mergeFoldTypeLayout(foldType: FoldType, customLayout?: Partial<L
   }
 
   return layout;
+}
+
+
+import { DEFAULT_PLOT_LAYOUT } from './defaults';
+
+export function withPlotlyDefaults(layout: Partial<Layout>) {
+  return deepMerge(DEFAULT_PLOT_LAYOUT, layout);
 }

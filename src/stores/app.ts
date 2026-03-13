@@ -12,6 +12,7 @@ import { useUniqueTimeSelection } from "@/composables/useUniqueTimeSelection";
 import { useTimezone, type Timezone } from "@/composables/useTimezone";
 import { atleast1d } from "@/utils/atleast1d";
 import { formatSingleRange, rangeForSingleDay } from "@/utils/timeRange";
+import type { ServiceStatusMap } from "@/esri/services/TempoDataService";
 
 const createTempoStore = (backend: MappingBackends) => defineStore("tempods", () => {
   const debugMode = ref(false);
@@ -61,7 +62,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const timezoneOptions = computed(() => tzOptions(singleDateSelected.value));
   
   const shownLayers = ref<string[]>([]);
-  const layersReady = ref<globalThis.Map<string, boolean[]>>(new globalThis.Map<string, boolean[]>());
+  const layersReady = ref<globalThis.Map<string, ServiceStatusMap>>(new globalThis.Map<string, ServiceStatusMap>());
 
   // This part is still assuming that multiple maps will be temporally linked
   // If/when we want to make that not the case, we'll need to rethink this
@@ -223,10 +224,10 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     }
   }
 
-  function setLayerReady(layerName: string, serviceReady: boolean[]) {
-    const next = new globalThis.Map(layersReady.value);
-    next.set(layerName, [...serviceReady]);
-    layersReady.value = next;
+  function setLayerReady(layerName: string, serviceReady: ServiceStatusMap) {
+    const newReady = new globalThis.Map(layersReady.value);
+    newReady.set(layerName, new globalThis.Map(serviceReady));
+    layersReady.value = newReady;
   }
 
   function clearLayerReady(layerName: string) {

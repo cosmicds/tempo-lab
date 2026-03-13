@@ -289,7 +289,9 @@ export function addHMSFire(date: Ref<Date>, options: UseKMLOptions = {layerName:
       await loadKML();
     }
     if (!geoJsonData.value) {
-      throw new Error('No GeoJSON data available');
+      console.error('[hms-fire] No GeoJSON data available');
+      cleanupMapLayers();
+      return;
     }
 
     // Remove existing layer and source if they exist
