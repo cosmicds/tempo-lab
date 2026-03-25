@@ -14,6 +14,16 @@ export function useEsriTimesteps(initialMolecule: MaybeRef<MoleculeType>, update
     loadingTimesteps.value = true;
     const tds = store.getTempoDataService(molecule.value);
     return tds.getMergedTimesteps()
+    /** we could set them with a partial load, but still uncertain
+    * if this would break soeme initialization down stream. it's only
+    * needed if the services are flaky, but then we probably don't 
+    * want to really have the user trying to use the app anyway, so ignore for now
+    * but just keep this here to show the implementation
+    */
+    // return tds.getMergedTimesteps((partialSteps) => {
+    //   // Deliver partial results as each URL resolves
+    //   esriTimesteps.value = partialSteps;
+    // })
       .then(timesteps => {
         esriTimesteps.value = timesteps;
       })

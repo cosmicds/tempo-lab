@@ -1,6 +1,6 @@
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { type Ref, type MaybeRef, ref, toRef, watch, computed, onBeforeUnmount } from 'vue';
+import { type Ref, type MaybeRef, ref, shallowRef, toRef, watch, computed, nextTick, onBeforeUnmount } from 'vue';
 import M from 'maplibre-gl';
 
 function checkArrayEquality<T>(arr1: T[], arr2: T[]) {
@@ -103,15 +103,12 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
     if (options.linkedLayers) {
       this._linked = options.linkedLayers.map(link => this._newLink(link));
     }
-    
-    const idleListener = () => {
-      this._orderLayers();
-      this._initialized = true;
-      this._watchForChanges();
-      this._map.off('idle', idleListener);
-    };
-    // wait for map to be ready
-    this._map.on('idle',idleListener);
+
+    // we can add lifecycle listeners immediately
+    // waiting for idle was causing it to miss early changes
+    this._watchForChanges();
+    this._orderLayers();
+    this._initialized = true;
     
   }
   
@@ -309,8 +306,11 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
   
   private _watchForChanges() {
     const onStyleData = () => this._maintainOrder();
+    const onIdle = () => this._maintainOrder();
     this._map.on('styledata', onStyleData);
+    this._map.on('idle', onIdle);
     this._eventHandlers.push(['styledata', onStyleData]);
+    this._eventHandlers.push(['idle', onIdle]);
   }
   
   /**
@@ -582,7 +582,7 @@ export class MaplibreLayerOrderControl extends PsuedoEvent {
 interface UseMaplibreLayerOrderControlReturn {
   desiredOrder: Ref<string[]>;
   currentOrder: Ref<string[]>;
-  controller: MaplibreLayerOrderControl | null;
+  controller: Ref<MaplibreLayerOrderControl | null>;
   
 }
 
@@ -596,32 +596,47 @@ export function useMaplibreLayerOrderControl(
 
   const desiredOrder = ref<string[]>(initialOrder);
   const currentOrder = ref<string[]>([]);
-  let controller: MaplibreLayerOrderControl | null = null;
-  let initialized = false;
+  const controller = shallowRef<MaplibreLayerOrderControl | null>(null);
   
-  // Initialize the controller when the map is ready
-  function init(mapValue: M.Map | null) {
-    if (mapValue && !controller && !initialized) {
-      controller = new MaplibreLayerOrderControl(mapValue, desiredOrder.value, {keepAtTop: moveToTop, linkedLayers: linkedLayers});
-      controller.on('layer-order-changed', () => {
-        if (controller && !checkArrayEquality(currentOrder.value, controller.currentlyManagedLayerOrder ?? [])) {
-          currentOrder.value = controller?.currentlyManagedLayerOrder ?? [];
-        }
-      });
-      currentOrder.value = controller.currentlyManagedLayerOrder;
-      initialized = true;
+  function syncCurrentOrder() {
+    if (controller.value) {
+      const latest = controller.value.currentlyManagedLayerOrder;
+      if (!checkArrayEquality(currentOrder.value, latest)) {
+        currentOrder.value = latest;
+      }
     }
   }
-  init(map.value);
-  watch(map, (newValue) => {
-    if (newValue && !controller && !initialized) {
-      console.log('Map changed, re-initializing controller', newValue);
+  
+  // Initialize the controller when the map is ready
+  function init(mapValue: M.Map) {
+    // Tear down any previous controller first
+    if (controller.value) {
+      controller.value.destroy();
+    }
+    
+    controller.value = new MaplibreLayerOrderControl(mapValue, desiredOrder.value, {keepAtTop: moveToTop, linkedLayers: linkedLayers});
+    controller.value.on('layer-order-changed', () => {
+      syncCurrentOrder();
+    });
+    syncCurrentOrder();
+    
+    // Catch layers added between init and the first rAF render cycle
+    // Per Claude: (maplibre fires styledata asynchronously via requestAnimationFrame)
+    nextTick(syncCurrentOrder);
+  }
+  
+  if (map.value) {
+    init(map.value);
+  }
+  
+  watch(map, (newValue, oldValue) => {
+    if (newValue && newValue !== oldValue) {
+      // Map changed (or became available) — (re)init the controller
       init(newValue);
-    } else if (!newValue && controller) {
+    } else if (!newValue && controller.value) {
       console.log('Map is now null, destroying controller');
-      controller.destroy();
-      controller = null;
-      initialized = false;
+      controller.value.destroy();
+      controller.value = null;
       currentOrder.value = [];
     }
   });
@@ -636,7 +651,8 @@ export function useMaplibreLayerOrderControl(
   
   
   onBeforeUnmount(() => {
-    controller?.destroy();
+    controller.value?.destroy();
+    controller.value = null;
   });
   
   

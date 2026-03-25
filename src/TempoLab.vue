@@ -340,14 +340,20 @@ body {
 
 #layers-panel, #datasets-panel {
   overflow-y: scroll;
+  /* these were already 0, just make 
+  what we're starting with clearer */
+  margin: 0;
+  padding: 0;
 }
 
 #layers-panel {
-  margin-right: 5px;
+  /* can set to 5px to give handle back space */
+  margin-inline: 5px;
 }
 
 #datasets-panel {
-  padding-left: 2px;
+  /* can set to 5px to give handle back space */
+  margin-inline: 5px;
 }
 
 .comparison-data-controls,
@@ -424,6 +430,10 @@ body {
   border-radius: 2px;
   background: rgba(255,255,255,0.35);
   box-shadow: -6px 0 0 rgba(255,255,255,0.18), 6px 0 0 rgba(255,255,255,0.18);
+}
+
+.handle:hover::after {
+  box-shadow: -6px 0 0 rgba(255,255,255,0.42), 6px 0 0 rgba(255,255,255,0.42);
 }
 
 .panel-size-dragging, .panel-size-dragging * {

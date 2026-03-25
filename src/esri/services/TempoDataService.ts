@@ -14,7 +14,7 @@ import type { AggValue, DataPointError, MillisecondRange } from "../../types";
 import {nanmean, diff} from '../../utils/array_operations/array_math';
 import { EsriSampler } from './sampling';
 import { parcelRanges } from '@/date_time_range_selection/date_time_range_generators';
-import { getEsriTimesteps } from '../utils';
+import { getEsriTimesteps, parseTempoVersion } from '../utils';
 
 import { TimeRangeOffsetter } from './TimeRangeOffsetter';
 import tz_lookup from '@photostructure/tz-lookup';
@@ -139,6 +139,12 @@ export interface TimeSeriesDataWithStats extends TimeSeriesData {
 function abbrevSerivceUrl(url: string): string {
   return (new URL(url)).pathname.split('/').slice(-2).join('/');
 }
+
+function serviceVersionLabel(url: string): string {
+  return parseTempoVersion(url) ?? abbrevSerivceUrl(url);
+}
+
+export type ServiceStatusMap = Map<string, boolean | null>;
 
 function safeParseNumber(value: string | null | undefined): number | null {
   if (value === null || value === '' || value === undefined) return null;
@@ -270,7 +276,7 @@ class ImageServiceServiceMetadata {
         return this.metadataCache;
       } else {
         /* This error will be seen if withMetadataCache is called right after updateMetadataCache */
-        throw new Error(`Called while attemping to load service metadata. Failed to load metadata for ${abbrevSerivceUrl(this.url)}`);
+        throw new Error(`Called while attemping to load service metadata. Failed to load metadata for ${serviceVersionLabel(this.url)} (${abbrevSerivceUrl(this.url)})`);
       }
     }
     return this.updateMetadataCache();
@@ -341,8 +347,9 @@ export class TempoDataService {
   
   private dryRun: boolean = false; //  run mode
   private timestepsCache = new Map<string, number[]>();
+  private _timeRangeCache = new Map<string, [number, number]>();
   private _boundaries: Array<{ url: string; start: number; end: number }> | null = null; // Cached version boundaries
-  private _serviceActive = new Map<string, boolean>(); // whether or not the serivce is avaialble. set when we check the cache
+  private _serviceActive = new Map<string, boolean | null>(); // whether or not the serivce is avaialble. set when we check the cache
   
   constructor(baseUrl: string | string[], variable: Variables | string = "NO2_Troposphere", rateLimitMs: number = 50, maxRetries503: number = 1) {
     this._baseUrls = baseUrl;
@@ -350,8 +357,10 @@ export class TempoDataService {
     this.maxRetries503 = maxRetries503;
     
     this.variable = variable;
+    for (const url of this.baseUrlArray) {
+      this._serviceActive.set(url, null);
+    }
     this.updateMetadataCache();
-    this.serviceStatusReady();
   }
 
   
@@ -362,12 +371,13 @@ export class TempoDataService {
   updateMetadataCache(): Promise<void> {
     // Load metadata for all URLs in parallel
     const metadataPromises = this.baseUrlArray.map(async (url) => {
+      this._serviceActive.set(url, null); // should be false at first
       return this.metaForUrl(url)
         .then(m => {
           this._serviceActive.set(url, !!(m && m.metadataCache));
         })
         .catch(err => {
-          console.warn(`Failed to load metadata for ${abbrevSerivceUrl(url)}:`, err);
+          console.warn(`Failed to load metadata for ${serviceVersionLabel(url)} (${abbrevSerivceUrl(url)}):`, err);
           this._serviceActive.set(url, false); // if it fails, let us know
         });
     }
@@ -376,25 +386,38 @@ export class TempoDataService {
     return Promise.all(metadataPromises) as unknown as Promise<void>;
   }
   
+  get publicServiceStatus() {
+    return new Map(this._serviceActive);
+  }
+  
   async serviceStatusReady() {
     let i = 0;
-    while (this._serviceActive.size < this.baseUrlArray.length && i < 1_000) {
-      await new Promise((resolve) => setTimeout(() => {
+    const timeout = 10; // seconds
+    const maxIterations = timeout * 10;
+    while (i < maxIterations) {
+      let resolved = 0;
+      for (const v of this._serviceActive.values()) {
+        if (v !== null) resolved++;
+      }
+      if (resolved >= this.baseUrlArray.length) break;
+      await new Promise<void>((resolve) => setTimeout(() => {
         i = i + 1;
-        resolve(null);
-        return;
+        resolve();
       }, 100));
     }
     for (const url of this.baseUrlArray) {
-      if (this._serviceActive.has(url) && this._serviceActive.get(url)) {
-        console.log(`%c service for ${abbrevSerivceUrl(url)} is active`, 'font-size: 10pt; color: white; background-color: green;');
-      } else if (this._serviceActive.has(url) && !this._serviceActive.get(url)) {
-        console.log(`%c service for ${abbrevSerivceUrl(url)} is not active`, 'font-size: 10pt; color: white; background-color: red;');
+      const serviceLabel = `${serviceVersionLabel(url)} (${abbrevSerivceUrl(url)})`;
+      if (this._serviceActive.has(url) && this._serviceActive.get(url) === true) {
+        console.log(`%c service for ${serviceLabel} is active`, 'font-size: 10pt; color: white; background-color: green;');
+      } else if (this._serviceActive.has(url) && this._serviceActive.get(url) === false) {
+        console.log(`%c service for ${serviceLabel} is not active`, 'font-size: 10pt; color: white; background-color: red;');
+      } else if (this._serviceActive.has(url) && this._serviceActive.get(url) === null) {
+        console.log(`%c service for ${serviceLabel} status was not found after ${timeout} seconds`, 'font-size: 10pt; color: white; background-color: orange;');
       } else {
-        console.log(`%c something else for ${abbrevSerivceUrl(url)}`, 'font-size: 10pt; color: white; background-color: orange;');
+        console.log(`%c something else for ${serviceLabel}`, 'font-size: 10pt; color: white; background-color: orange;');
       }
     }
-    return this._serviceActive;
+    return new Map(this._serviceActive);
   }
 
   /**
@@ -456,6 +479,9 @@ export class TempoDataService {
 
   private _metaForTimeRange(range: MillisecondRange): EsriImageServiceSpec | undefined {
     const url = this.selectBaseUrlForRange(range);
+    if (!url) {
+      return undefined;
+    }
     const meta = this.metas.get(url);
     
     if (meta?.metadataCache) {
@@ -473,28 +499,52 @@ export class TempoDataService {
   }
 
   selectBaseUrlForRange(range: MillisecondRange): string {
+    let err = '';
+    let fallbackUrl: string | null = null;
     for (const url of this.baseUrlArray) {
-      const meta = this.metas.get(url);
-      if (!meta?.metadataCache) {
-        console.error(`Metadata not loaded for ${abbrevSerivceUrl(url)}, cannot select URL for range`);
-        continue;
-      }
-      const timeRange = meta.timeRange;
+      const timeRange = this._cachedTimeRangeForUrl(url);
       if (!timeRange) {
-        console.error(`Missing timeInfo for ${abbrevSerivceUrl(url)}`);
+        err = `No cached time range available for ${serviceVersionLabel(url)} (${abbrevSerivceUrl(url)})`;
         continue;
       }
+      fallbackUrl = url;
       const [start, end] = timeRange;
       const overlaps = range.start <= end && range.end >= start;
       if (overlaps) {
         return url;
       }
     }
+    if (fallbackUrl) {
+      return fallbackUrl;
+    }
+    if (err) {
+      console.warn(err, 'using default');
+    }
     return this.baseUrlArray[this.baseUrlArray.length - 1];
   }
   
   selectBaseUrlForTimestamp(timestamp: number): string {
     return this.selectBaseUrlForRange({ start: timestamp, end: timestamp });
+  }
+
+  private _cachedTimeRangeForUrl(url: string): [number, number] | null {
+    const cached = this._timeRangeCache.get(url);
+    if (cached) { return cached; }
+
+    const meta = this.metas.get(url);
+    if (meta?.timeRange) {
+      this._timeRangeCache.set(url, meta.timeRange);
+      return meta.timeRange;
+    }
+
+    const timesteps = this.timestepsCache.get(url);
+    if (!timesteps || timesteps.length === 0) {
+      return null;
+    }
+    // Timesteps are assumed sorted
+    const range: [number, number] = [timesteps[0], timesteps[timesteps.length - 1]];
+    this._timeRangeCache.set(url, range);
+    return range;
   }
   
  
@@ -508,17 +558,32 @@ export class TempoDataService {
   }
       
 
-  async getMergedTimesteps(): Promise<number[]> {
+  async getMergedTimesteps(onPartial?: (mergedSoFar: number[]) => void): Promise<number[]> {
     const allTimesteps: number[][] = [];
-    for (const url of this.baseUrlArray) {
-      try {
-        await this.metaForUrl(url); // Ensure metadata is loaded
-        const steps = await this.fetchTimestepsForUrl(url);
-        allTimesteps.push(steps);
-      } catch (error) {
-        console.error(error);
-      }
-    }
+
+    // Fire all URL fetches in parallel; deliver partial results as each resolves
+    const promises = this.baseUrlArray.map(url =>
+      this.fetchTimestepsForUrl(url)
+        .then(steps => {
+          if (steps.length > 0) {
+            allTimesteps.push(steps);
+            // allow for partial loads
+            if (onPartial) {
+              const merged = Array.from(new Set(allTimesteps.flat())).sort((a, b) => a - b);
+              onPartial(merged);
+            }
+          }
+        })
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(() => {
+          // Keep metadata fetch behavior, but do not block timestep merging on it.
+          void this.metaForUrl(url);
+        })
+    );
+
+    await Promise.all(promises);
     return Array.from(new Set(allTimesteps.flat())).sort((a, b) => a - b);
   }
 
