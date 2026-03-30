@@ -67,7 +67,7 @@ jobs:
       - name: Create folder for deployment
         run: |
           mkdir deployment
-          # mkdir deployment/dev
+          mkdir deployment/dev
 
           # - name: Move current build to deployment
           #   id: prepare
