@@ -64,10 +64,10 @@ jobs:
         with:
           cmd: cat package.json | jq -r '.draft // false'
 
-      - name: Create folder for deployment
-        run: |
-          mkdir deployment
-          mkdir deployment/dev
+      # - name: Create folder for deployment
+      #   run: |
+      #     mkdir deployment
+      #     mkdir deployment/dev
 
           # - name: Move current build to deployment
           #   id: prepare
@@ -100,9 +100,10 @@ jobs:
           #     [[ "$BRANCH" == "dev" ]] && folder="dev" || folder="."
           #     mv dist/* ../deployment/${folder}
 
-      - name: Copy to deployment folder
+      - name: Set up deployment folder
         run: |
           mv dist deployment
+          mkdir deployment/dev
 
       - name: Set up dev redirect
         run: |
