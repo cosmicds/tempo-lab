@@ -100,6 +100,10 @@ jobs:
           #     [[ "$BRANCH" == "dev" ]] && folder="dev" || folder="."
           #     mv dist/* ../deployment/${folder}
 
+      - name: Set up dev redirect
+        run: |
+          cp redirect.html deployment/dev/index.html
+
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         if: ${{ steps.draft.outputs.value == 'false' }}
