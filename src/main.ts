@@ -54,6 +54,8 @@ import "./styles/molecule-svg.css";
 import "./styles/styles.css";
 import { UseClipboard } from "@vueuse/components";
 
+import "shepherd.js/dist/css/shepherd.css";
+
 import { createPinia } from "pinia";
 
 library.add(faBookOpen);

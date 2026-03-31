@@ -57,16 +57,34 @@
         <v-icon>mdi-creation</v-icon>
       </v-btn>
 
+    <v-btn
+      @click="() => {
+        if (!introTour) { introTour = createIntroTour(); }
+        introTour.start();
+      }"
+      class="intro-tour-button"
+      aria-label="Start intro tour"
+      variant="outlined"
+      rounded="lg"
+      density="default"
+      :color="accentColor2"
+      elevation="0"
+      size="lg"
+    >
+      <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Start intro tour"></v-tooltip>
+      <v-icon>mdi-map-legend</v-icon>
+    </v-btn>
+
      <v-btn
-        @click="showSaveDialog = !showSaveDialog"
-        class="save-button"
-        aria-label="Export current state"
-        variant="outlined"
-        rounded="lg"
-        density="default"
-        :color="accentColor2"
-        elevation="0"
-        size="lg"
+       @click="showSaveDialog = !showSaveDialog"
+       class="save-button"
+       aria-label="Export current state"
+       variant="outlined"
+       rounded="lg"
+       density="default"
+       :color="accentColor2"
+       elevation="0"
+       size="lg"
       >
         <v-tooltip location="bottom" activator="parent" :disabled="mobile" text="Export current state"></v-tooltip>
         <v-icon>mdi-file-arrow-up-down</v-icon>
@@ -173,6 +191,10 @@ import changes from "@/changes";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
 
+import { createIntroTour } from "../utils/tours";
+
+let introTour: Tour;
+
 library.add(faArrowsRotate);
 
 const emit = defineEmits<{
@@ -199,7 +221,6 @@ const touchscreen = supportsTouchscreen();
 const smallSize = computed(() => {
   return display.smAndDown.value;
 });
-
 
 const mobile = computed(() => {
   return smallSize.value && touchscreen;
@@ -244,7 +265,7 @@ a[href="https://tempo.si.edu"]>img {
     outline: 1px solid transparent;
   }
 
-  .layers-button, .save-button {
+  .layers-button, .save-button, .intro-tour-button {
     padding: 8px;
   }
 
