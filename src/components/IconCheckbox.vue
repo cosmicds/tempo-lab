@@ -11,6 +11,7 @@
     </template>
     <template #input="{ model }">
       <!-- Using <component :is="..."/> didn't work with v-icon for some reason -->
+      <span class="icon-checkbox-before" :style="{'--color': onColor}">
       <font-awesome-icon
           v-if="(model.value ? onIcon : offIcon)?.startsWith('fa-')"
           :icon="model.value ? onIcon : offIcon"
@@ -25,6 +26,7 @@
           @click="model.value = !model.value"
         >{{ model ? onIcon : offIcon }}
       </v-icon>
+    </span>
     </template>
   </v-checkbox>
 </template>
@@ -62,5 +64,19 @@ function update() {
 <style scoped>
 .icon-checkbox--checked {
   filter: drop-shadow(0 0 2px rgb(var(--v-theme-on-surface)));
+}
+
+.icon-checkbox-before::before {
+  content: '';
+  width: 0.75em;
+  height: 0.75em;
+  background-color: var(--color);
+  position: absolute;
+  left: -1rem;
+  top: 50%;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  margin-right: 5px;
+  outline: 1px solid rgb(var(--v-theme-on-surface));
 }
 </style>
