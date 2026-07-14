@@ -3,7 +3,7 @@ import { computed, ref, watch, toRaw } from "vue";
 import { v4 } from "uuid";
 import type { Map } from "maplibre-gl";
 import { isComputedRef } from "@/utils/vue";
-import { parse, stringify } from "zipson";
+import * as zipson from "zipson";
 
 import type { AggValue, InitMapOptions, LatLngPair, MappingBackends, SelectionType, TimeRange, UnifiedRegion, UserDataset } from "@/types";
 import { ESRI_URLS_V03, ESRI_URLS_V04, MoleculeType } from "@/esri/utils";
@@ -466,11 +466,12 @@ function isDateLikeString(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}/.test(value);
 }
 
-export function deserializeTempoStore(value: string): StateTree {
+export function deserializeTempoStore(value: string, compressed: boolean): StateTree {
   if (!value) {
     return {};
   }
-  const parsed = parse(value);
+  const parser = compressed ? zipson.parse : JSON.parse;
+  const parsed = parser(value);
   parsed.singleDateSelected = new Date(parsed.singleDateSelected);
   for (const dataset of parsed.datasets) {
     const samples = dataset.samples as Record<number, AggValue>;
@@ -498,7 +499,7 @@ export function deserializeTempoStore(value: string): StateTree {
 }
 
 const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady"]);
-export function serializeTempoStore(store: TempoStore): string {
+export function serializeTempoStore(store: TempoStore, compress: boolean): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const state: Record<string, any> = {};
   for (const [key, value] of Object.entries(store.$state)) {
@@ -512,7 +513,8 @@ export function serializeTempoStore(store: TempoStore): string {
     delete s.layer;
     return s;
   });
-  const stringified = stringify(state);
+  const serializer = compress ? zipson.stringify : JSON.stringify;
+  const stringified = serializer(state);
   return stringified;
 }
 
@@ -524,9 +526,9 @@ export function postDeserializeTempoStore(store: TempoStore) {
   }
 }
 
-export function updateStoreFromJSON(store: TempoStore, json: string): boolean {
+export function updateStoreFromJSON(store: TempoStore, json: string, compressed: boolean): boolean {
   try {
-    const state = deserializeTempoStore(json);
+    const state = deserializeTempoStore(json, compressed);
     store.$patch(state);
     postDeserializeTempoStore(store);
     return true;

@@ -149,7 +149,7 @@ function getBasis(panel: HTMLElement): number {
 
 function saveStateToLocalStorage(): boolean {
   try {
-    const stringified = serializeTempoStore(store);
+    const stringified = serializeTempoStore(store, true);
     window.localStorage.setItem(localStorageStateKey, stringified);
     return true;
   } catch (_error) {
@@ -160,7 +160,7 @@ function saveStateToLocalStorage(): boolean {
 onBeforeMount(() => {
   const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageStateKey);
   if (storedState) {
-    updateStoreFromJSON(store, storedState);
+    updateStoreFromJSON(store, storedState, true);
   }
 });
 
