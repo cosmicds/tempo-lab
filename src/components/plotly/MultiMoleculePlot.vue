@@ -44,6 +44,7 @@ const commonLayoutOptions: Partial<Layout> = deepMerge(
     autosize: false,
     height: 350,
     width: Math.floor(700 * 350 / 400),
+    margin: { t: 10, r: 30, b: 60, l: 80 },
     xaxis: {
       automargin: false,
       gridcolor: 'rgba(128, 128, 128, 0.3)',
@@ -58,16 +59,6 @@ const commonLayoutOptions: Partial<Layout> = deepMerge(
         standoff: 10,
       },
     },
-    legend: {
-      yanchor: 'top',
-      yref: 'paper',
-      y: 1.3,
-      orientation:'h' as |'h' | 'v',
-      bordercolor: '#ccc', 
-      borderwidth:1,
-      entrywidthmode: 'pixels',
-      entrywidth: 0, // fit the text
-    }
   });
 
 // Common config options for all plots
@@ -105,7 +96,7 @@ div.multi-plot-container {
 }
 
 div.multi-plot-container__plot {
-  width: 100%;
+  width: 600px;
   display: flex;
   flex-direction: column;
   min-width: 438px;

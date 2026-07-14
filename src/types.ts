@@ -194,6 +194,7 @@ export interface UserDataset {
     alignToBinCenter: boolean,
     useErrorBars: boolean,
     raw: unknown,
+    parent: UserDataset
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } | any,
   // Direct plotly datasets (preferred for folded or synthetic selections)

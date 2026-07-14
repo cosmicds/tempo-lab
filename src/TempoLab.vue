@@ -81,6 +81,44 @@
         </template>
      </side-placeholder>
     </div>
+
+    <!-- Data collection opt-out dialog -->
+    <v-dialog
+      scrim="false"
+      v-model="showAutosaveDialog"
+      max-width="400px"
+      id="autosave-popup-dialog"
+    >
+      <v-card>
+        <v-card-text>
+          To provide a convenient experience across repeated uses of this app, we automatically store data describing your app state in local browser storage. While this means that your app state information is <strong>not</strong> shared with the CosmicDS team, we still allow you to opt of this if you wish.
+        </v-card-text>
+        <v-card-actions class="pt-3">
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#ff6666"
+            @click="() => {
+              useLocalStorage = false;
+              writeLocalStoragePreference(false);
+              showAutosaveDialog = false;
+            }"
+          >
+          Opt out
+          </v-btn>
+          <v-btn 
+            color="green"
+            @click="() => {
+              useLocalStorage = true;
+              writeLocalStoragePreference(true);
+              showAutosaveDialog = false;
+            }"
+          >
+            Allow
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-app>
 </template>
 
@@ -97,6 +135,7 @@ const rightHandle = useTemplateRef<HTMLDivElement>("right-handle");
 // const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
 // const mapsPanel = useTemplateRef<HTMLElement>("maps-panel");
 
+const showAutosaveDialog = ref(false);
 
 const store = useTempoStore();
 const {
@@ -129,7 +168,16 @@ const cssVars = computed(() => {
   };
 });
 
-const localStorageKey = "tempods";
+const localStorageStateKey = "tempods";
+const localStoragePreferenceKey = "tempods-save";
+
+let _saveStateInterval: ReturnType<typeof setInterval>;
+
+const localStorageAutosave = window.localStorage?.getItem(localStoragePreferenceKey);
+const localStorageResponse = localStorageAutosave != null;
+console.log(localStorageAutosave, localStorageResponse);
+const useLocalStorage = ref(localStorageAutosave?.toLowerCase() !== "false");
+
 let animationFrame = 0;
 
 function setBasis(panel: HTMLElement, sizePx: number) {
@@ -141,10 +189,20 @@ function getBasis(panel: HTMLElement): number {
   return isNaN(basis) ? 0 : basis;
 }
 
+function saveStateToLocalStorage(): boolean {
+  try {
+    const stringified = serializeTempoStore(store, true);
+    window.localStorage.setItem(localStorageStateKey, stringified);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 onBeforeMount(() => {
-  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
+  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageStateKey);
   if (storedState) {
-    updateStoreFromJSON(store, storedState);
+    updateStoreFromJSON(store, storedState, true);
   }
 });
 
@@ -233,6 +291,10 @@ onMounted(() => {
       initialEventHandler: initialLeftHandler,
     });
 
+    if (!localStorageResponse) {
+      showAutosaveDialog.value = true;
+    }
+
   }
 
   const right = rightHandle.value;
@@ -266,12 +328,18 @@ onMounted(() => {
   });
 
   window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !ignoreCache) {
-      const stringified = serializeTempoStore(store); 
-      window.localStorage.setItem(localStorageKey, stringified);
+    if (document.visibilityState === "hidden" && useLocalStorage.value && !ignoreCache) {
+      saveStateToLocalStorage();
     }
   });
 
+  _saveStateInterval = setInterval(() => {
+    if (!useLocalStorage.value || ignoreCache) {
+      return;
+    }
+    saveStateToLocalStorage();
+  }, 60_000);
+  
   updateSizes(true, true);
   setHandleVisibility(leftHandle, layerControlsOpen.value);
   setHandleVisibility(rightHandle, datasetControlsOpen.value);
@@ -295,6 +363,17 @@ function onLayersPanelOpenChange(open: boolean) {
 
 watch(datasetControlsOpen, onDatasetPanelOpenChange);
 watch(layerControlsOpen, onLayersPanelOpenChange);
+
+function writeLocalStoragePreference(use: boolean) {
+  const value = use ? "true" : "false";
+  window.localStorage.setItem(localStoragePreferenceKey, value);
+
+  if (!use) {
+    window.localStorage.removeItem(localStorageStateKey);
+  }
+}
+
+watch(useLocalStorage, writeLocalStoragePreference);
 </script>
 
 <style lang="less">
@@ -340,14 +419,20 @@ body {
 
 #layers-panel, #datasets-panel {
   overflow-y: scroll;
+  /* these were already 0, just make 
+  what we're starting with clearer */
+  margin: 0;
+  padding: 0;
 }
 
 #layers-panel {
-  margin-right: 5px;
+  /* can set to 5px to give handle back space */
+  margin-inline: 5px;
 }
 
 #datasets-panel {
-  padding-left: 2px;
+  /* can set to 5px to give handle back space */
+  margin-inline: 5px;
 }
 
 .comparison-data-controls,
@@ -426,7 +511,34 @@ body {
   box-shadow: -6px 0 0 rgba(255,255,255,0.18), 6px 0 0 rgba(255,255,255,0.18);
 }
 
+.handle:hover::after {
+  box-shadow: -6px 0 0 rgba(255,255,255,0.42), 6px 0 0 rgba(255,255,255,0.42);
+}
+
 .panel-size-dragging, .panel-size-dragging * {
   cursor: col-resize !important;
+}
+
+#autosave-popup-dialog {
+
+  .v-card-text {
+    color: #BDBDBD;
+  }
+
+  .v-overlay__content {
+    font-size: var(--default-font-size);
+    background-color: purple;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+
+  .v-btn--size-default {
+      font-size: calc(0.9 * var(--default-font-size));
+    }  
+
+  .v-card-actions .v-btn {
+    padding: 0 4px;
+  }
 }
 </style>

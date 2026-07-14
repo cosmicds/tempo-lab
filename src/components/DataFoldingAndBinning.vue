@@ -79,7 +79,7 @@
                     ]"
                     :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                     @plot-click="handlePointClick"
-                    :layout-options="{
+                    :layout-options="withPlotlyDefaults({
                       margin: {t: 10, r: 20, b: 60, l: 90}, 
                       autosize: false, width: 700, height: 400,
                       xaxis: {
@@ -94,21 +94,10 @@
                         gridcolor: 'rgba(128, 128, 128, 0.3)',
                         title: {
                           standoff: 10,
-                          text: `${descriptor?.shortName.html ?? ''} Quantity<br>(${descriptor?.unit.html ?? 'Molecules / cm<sup>2</sup>'})`,
+                          text: descriptor ? moleculeYAxisTitle(descriptor) : 'Molecules / cm<sup>2</sup>',
                         },
-                      },
-                      legend: {
-                        yanchor: 'top',
-                        yref: 'container',
-                        y: .99,
-                        orientation:'h' as |'h' | 'v',
-                        bordercolor: '#ccc', 
-                        borderwidth:1,
-                        // @ts-ignore
-                        entrywidthmode: 'pixels',
-                        entrywidth: 0, // fit the text
                       }
-                      }"
+                      })"
                   />
                 </div>
                 <div v-if="showAggregationControls" id="below-graph-stuff" class="mt-2 explainer-text">
@@ -144,7 +133,8 @@ import tz_lookup from '@photostructure/tz-lookup';
 import { toZonedTime } from 'date-fns-tz';
 import { useTempoStore } from '@/stores/app';
 import AggregationControls from './AggregationControls.vue';
-import { moleculeDescriptor } from '@/esri/utils';
+import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
+import { withPlotlyDefaults } from './plotly/plotly_styles';
 
 const store = useTempoStore();
 const {
@@ -478,12 +468,13 @@ function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omi
   // Check if this is a None-period fold type
   const isNonePeriod = ['noneOfNone','hourOfNone', 'dayOfNone', 'weekOfNone', 'monthOfNone'].includes(foldedTimeSeries.foldType);
 
-  // tsa, tsb are the timestamps as strings
-  const sortedEntries = Object.entries(foldedTimeSeries.bins).sort(([binIndexa, _a], [binIndexb, _b]) => parseInt(binIndexa) - parseInt(binIndexb));
+  const sortedEntries = Object.entries(foldedTimeSeries.bins).sort(([_keyA, binA], [_keyB, binB]) => binA.bin - binB.bin);
 
-  sortedEntries.forEach(([binIndex, _binContent]) => {
-    const idx = parseInt(binIndex);
-    const aggValue = foldedTimeSeries.values[idx];
+  sortedEntries.forEach(([binKey, _binContent]) => {
+    const key = +binKey;
+    // not indexing, values is Record<bin, value>
+    const aggValue = foldedTimeSeries.values[key];
+    if (!aggValue) return;
     
     // Use date if available (for None-period types), otherwise use bin index
     if (isNonePeriod && aggValue.date) {
@@ -511,14 +502,14 @@ function foldedTimesSeriesToDataSet(foldedTimeSeries: FoldedTimeSeriesData): Omi
       }
     } else {
       if (foldedTimeSeries.foldType !== 'hourOfDay') {
-        x.push(idx + (alignToBinCenter.value ? 0.5 : 0));
+        x.push(aggValue.bin + (alignToBinCenter.value ? 0.5 : 0));
       } else {
-        x.push(idx);
+        x.push(aggValue.bin);
       }
     }
     
     y.push(aggValue.value);
-    const error = foldedTimeSeries.errors[idx];
+    const error = foldedTimeSeries.errors[key];
     lower.push(error?.lower ?? null);
     upper.push(error?.upper ?? null);
   });
@@ -534,10 +525,9 @@ function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): O
   const customdata: Date[] = [];
 
   // Check if this is a None-period fold type
-  const isNonePeriod = ['hourOfNone', 'dayOfNone', 'weekOfNone', 'monthOfNone'].includes(foldedTimeSeries.foldType);
+  const isNonePeriod = ['noneOfNone', 'hourOfNone', 'dayOfNone', 'weekOfNone', 'monthOfNone'].includes(foldedTimeSeries.foldType);
 
-  // tsa, tsb are the timestamps as strings
-  const sortedEntries = Object.entries(foldedTimeSeries.bins).sort(([binIndexa, _a], [binIndexb, _b]) => parseInt(binIndexa) - parseInt(binIndexb));
+  const sortedEntries = Object.entries(foldedTimeSeries.bins).sort(([_keyA, binA], [_keyB, binB]) => binA.bin - binB.bin);
 
   sortedEntries.forEach(([_binIndex, binContent]) => {
     const sortedBinContent = sortfoldBinContent(binContent);
@@ -582,7 +572,7 @@ function updateGraphData() {
     (t as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
     (t as PlotlyGraphDataSet).errorType = 'bar';
     data.push(t as PlotlyGraphDataSet); // Raw folded data
-    if (!isFoldWithNoBin.value) {
+    if (!isFoldWithNoBin.value) { // we did I decide to do this.........
       const f = foldedTimesSeriesToDataSet(foldedData.value); // Summary folded data
       (f as PlotlyGraphDataSet).name = foldedDatasetName.value;
       data.push(f as PlotlyGraphDataSet); // Summary folded data
@@ -645,13 +635,8 @@ function updateAggregatedData() {
     // Convert the selection data to TimeSeriesData format
     const timeSeriesData = selectionToTimeseries(props.selection);
     
-    let foldType = selectedFoldType.value;
-    if (isFoldWithNoBin.value) {
-      foldType = foldType.replace('noneOf', 'hourOf') as FoldType;
-    }
-    
     const grouper = new TimeSeriesFolder(
-      foldType,  // Use the computed fold type
+      selectedFoldType.value,
       selectedTimezone.value, 
       selectedMethod.value, 
       useSEM.value ? 'sem' : 'std', true);
@@ -691,7 +676,7 @@ function saveFolding() {
   // (rawDataset as PlotlyGraphDataSet).name = props.selection.name || 'Original Data';
   // const summaryDataset = foldedTimesSeriesToDataSet(foldedData.value);
   // (summaryDataset as PlotlyGraphDataSet).name = foldedDatasetName.value;
-
+  const secondPlotlyDataset = isFoldWithNoBin.value ? graphData.value[0] : graphData.value[1];
   const foldedSelection: UserDataset = {
     id: v4(),
     region: { ...props.selection.region, name: props.selection.region.name } as typeof props.selection.region,
@@ -702,6 +687,7 @@ function saveFolding() {
     // samples/errors intentionally omitted for folded since bins are synthetic; rely on plotlyDatasets
     locations: foldedData.value.locations,
     name: foldedDatasetName.value,
+    
     folded: {
       timeBin: selectedTimeBin.value,
       foldingPeriod: selectedFoldingPeriod.value,
@@ -712,7 +698,8 @@ function saveFolding() {
       includeBinPhase: includeBinPhase.value,
       alignToBinCenter: alignToBinCenter.value,
       useErrorBars: useErrorBars.value,
-      raw: foldedData.value
+      raw: foldedData.value,
+      parent: props.selection
     },
     plotlyDatasets: [
       {
@@ -724,12 +711,13 @@ function saveFolding() {
         }
       } as PlotlyGraphDataSet,
       {
-        ...graphData.value[1],
+        ...secondPlotlyDataset,
         datasetOptions: {
+          ...secondPlotlyDataset.datasetOptions,
           mode: 'markers'
         }
       } as PlotlyGraphDataSet
-    ].slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
+    ]//.slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
   };
   emit('save', foldedSelection);
 

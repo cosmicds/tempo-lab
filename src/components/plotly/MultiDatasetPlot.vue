@@ -22,7 +22,7 @@
               :fold-type="datasets[0].folded?.foldType"
               :timezones="datasets.map(d => d.folded.timezone ?? 'UTC')"
               :config-options="dconfigOptions"
-              :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+              :yaxis-title="moleculeYAxisTitle(descriptor)"
               @plot-click="(value) => emit('plot-click', value)"
             />
           </details>
@@ -52,7 +52,7 @@
                 xaxis: {...(dlayoutOptions?.xaxis ?? {}), title: {text: 'Local Time for Region'}},
               }"
               :config-options="dconfigOptions"
-              :yaxis-title="`${descriptor.shortName.html} Quantity<br>(${descriptor.unit.html})`"
+              :yaxis-title="moleculeYAxisTitle(descriptor)"
               @click="(value) => emit('plot-click', value)"
             />
           </details>
@@ -70,7 +70,7 @@ import PlotlyGraph from './PlotlyGraph.vue';
 import { userDatasetToPlotly } from '@/utils/data_converters';
 import type { UserDataset } from '@/types';
 import type { Config, Layout } from 'plotly.js-dist-min';
-import { moleculeDescriptor } from '@/esri/utils';
+import { moleculeDescriptor, moleculeYAxisTitle } from '@/esri/utils';
 import { deepMerge } from './plotly_styles';
 import { DEFAULT_PLOT_LAYOUT, DEFAULT_PLOT_CONFIG } from "@/components/plotly/defaults";
 import type { FoldType } from '@/esri/services/aggregation';

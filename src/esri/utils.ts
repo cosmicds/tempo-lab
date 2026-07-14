@@ -101,6 +101,17 @@ export function moleculeDescriptor(molecule: MoleculeType): MoleculeDescriptor {
   throw new Error(`Unknown molecule type: ${molecule}`);
 }
 
+export function moleculeYAxisTitle(descriptor: MoleculeDescriptor): string {
+  const unitText = descriptor.unit.text.toLowerCase();
+  const isColumnDensity = unitText.toLowerCase().includes('molecules');
+
+  if (isColumnDensity) {
+    return `Molecules of ${descriptor.shortName.html} / cm<sup>2</sup>`;
+  }
+
+  return `${descriptor.shortName.html} (${descriptor.unit.html})`;
+}
+
 
 export function moleculeName(molecule: MoleculeType): string {
   return MOLECULE_OPTIONS.find(m => m.value == molecule)?.title ?? "";

@@ -346,6 +346,10 @@ export class TimeSeriesFolder {
   // instead of a groupId we just need the bin index
   private _binIndex(date: Date): number {
     const z = this._getZonedDate(date);
+    const hourWithFraction = z.getHours()
+      + z.getMinutes() / 60
+      + z.getSeconds() / 3600
+      + z.getMilliseconds() / 3600000;
     
     switch (this.foldType) {
       // Hour-based bins
@@ -423,6 +427,21 @@ export class TimeSeriesFolder {
           return (month - seasonStartMonth + 12) % 12;          // 0–2
         }
       }
+
+      // Fold-only (no binning): return continuous folded phase
+      case 'noneOfDay':
+        return hourWithFraction;                                  // 0–24
+      case 'noneOfWeek':
+        return z.getDay() * 24 + hourWithFraction;               // 0–168
+      case 'noneOfMonth':
+        return (z.getDate() - 1) * 24 + hourWithFraction;        // 0–744
+      case 'noneOfYear': {
+        const yearStart = new Date(z.getFullYear(), 0, 1);
+        const dayOfYear = Math.floor((z.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24));
+        return dayOfYear * 24 + hourWithFraction;                // 0–8784
+      }
+      case 'noneOfNone':
+        return date.getTime();                                   // passthrough timestamp
       
       // None-period bins (return timestamp of bin start, like resampler)
       case 'hourOfNone': {
@@ -516,6 +535,13 @@ export class TimeSeriesFolder {
         // Return fraction of hour (0-1) to match other hour-based bins
         return minutes / 60 + seconds / 3600 + milliseconds / 3600000;
       }
+
+      case 'noneOfDay':
+      case 'noneOfWeek':
+      case 'noneOfMonth':
+      case 'noneOfYear':
+      case 'noneOfNone':
+        return 0;  // no additional phase for unbinned folds
       
       default:
         console.error('Unknown fold type:', this.foldType);
@@ -524,10 +550,6 @@ export class TimeSeriesFolder {
   }
   
   foldData(timeseries: Prettify<TimeSeriesData>): FoldedTimeSeriesData | null {
-    
-    if (this.foldType.startsWith('none')) {
-      return null;
-    }
     const binCount = this._binCount();
     const binsRecord: Record<number, Prettify<InternalBin>> = {};
     
