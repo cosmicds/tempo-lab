@@ -513,7 +513,8 @@ export function serializeTempoStore(store: TempoStore, compress: boolean): strin
     delete s.layer;
     return s;
   });
-  const serializer = compress ? zipson.stringify : JSON.stringify;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serializer = compress ? zipson.stringify : (obj: any) => JSON.stringify(obj, null, 2);
   const stringified = serializer(state);
   return stringified;
 }
