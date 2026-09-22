@@ -17,6 +17,7 @@ import MarqeeAlert from "./components/MarqeeAlert.vue";
 import TimeseriesGraph from "./components/TimeseriesGraph.vue";
 import SelectionComposer from "./components/SelectionComposer.vue";
 import HeaderBar from "./components/HeaderBar.vue";
+import HeaderWarning from "./components/HeaderWarning.vue";
 import DatasetControls from "./components/DatasetControls.vue";
 import ComparisonDataControls from "./components/ComparisonDataControls.vue";
 import MapControls from "./components/MapControls.vue";
@@ -47,6 +48,7 @@ import {
   faEarthAmericas,
   faAtom,
   faSignsPost,
+  faRocket,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { VueDatePicker } from "@vuepic/vue-datepicker";
@@ -54,6 +56,7 @@ import '@vuepic/vue-datepicker/dist/main.css';
 import "./styles/vue3-date-picker-styles.css";
 import "./styles/molecule-svg.css";
 import "./styles/styles.css";
+import "./styles/scrollbars.css";
 import { UseClipboard } from "@vueuse/components";
 
 import "shepherd.js/dist/css/shepherd.css";
@@ -74,6 +77,7 @@ library.add(faDroplet);
 library.add(faEarthAmericas);
 library.add(faAtom);
 library.add(faSignsPost);
+library.add(faRocket);
 
 // TODO: This doesn't work. Why??
 // import "golden-layout/dist/css/goldenlayout-base.css";
@@ -129,6 +133,7 @@ createApp(TempoLab, {})
   .component('map-controls', MapControls)
   .component('map-with-controls', MapWithControls)
   .component('header-bar', HeaderBar)
+  .component('header-warning', HeaderWarning)
   .component('popup-info-button', PopupInfoButton)
   .component('layer-control-item', MaplibreLayerControlItem)
   .component('layer-order-control', LayerOrderControl)

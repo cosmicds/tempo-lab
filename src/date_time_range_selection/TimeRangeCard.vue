@@ -9,11 +9,13 @@
       
         
       <!-- Single Date -->
-      <div class="time-range-single" v-if="timeRange.config && timeRange.config.type==='single'">
-        <div class="time-range-config-name">
-          {{ (new Date(timeRange.config.singleDate)).toLocaleDateString(undefined, { timeZone: 'UTC'})}}
+      <v-expand-transition>
+        <div class="time-range-single" v-if="timeRange.config && timeRange.config.type==='single' && showDetails">
+          <div class="time-range-config-item">
+            {{ (new Date(timeRange.config.singleDate)).toLocaleDateString(undefined, { timeZone: 'UTC'})}}
+          </div>
         </div>
-      </div>
+      </v-expand-transition>
       
       
       <!-- Multiple Date -->
@@ -64,9 +66,7 @@
 </template>
 
 <script setup lang="ts">
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { computed, ref } from 'vue';
-import type { TimeRangeConfig } from './date_time_range_generators';
+import {  ref, watch } from 'vue';
 import type { TimeRange } from '@/types';
 
 const formatDate = (date: Date): string => {
@@ -81,7 +81,8 @@ const formatDate = (date: Date): string => {
 const props = defineProps<{
   name?: string;
   timeRange: TimeRange;
-  isHovering: boolean;
+  isHovering?: boolean;
+  show: boolean;
 }>();
 // console.log('TimeRangeCard props:', props.timeRange.config);
 
@@ -90,6 +91,9 @@ function onShowClick() {
   showDetails.value = !showDetails.value;
 }
 
+watch(() => props.show, (newVal) => {
+  showDetails.value = newVal;
+});
 </script>
     
 

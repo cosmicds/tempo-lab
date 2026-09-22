@@ -17,12 +17,31 @@
             emit('tour');
             emit('close');
           }"
-        >Give me a quick tour</v-btn>
+        >
+        Give me a quick tour
+        <template #prepend>
+          <font-awesome-icon
+              icon="fa-signs-post"
+              size="lg"
+            />
+        </template>
+      </v-btn>
         <v-btn
           :color="accentColor2"
           class="intro-tour-btn"
+          :style="{border: `1px solid ${accentColor2}aa`}"
+          variant="tonal"
+          elevation="4"
           @click="() => emit('close')"
-        >I want to dive right in!</v-btn>
+        >
+        I want to dive right in!
+        <template #prepend>
+          <font-awesome-icon
+              icon="fa-rocket"
+              size="lg"
+            />
+        </template>
+      </v-btn>
       </div>
       <v-checkbox
         class="intro-dont-show"
@@ -38,6 +57,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 import { useTempoStore } from "@/stores/app";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 const emit = defineEmits<{
   (event: "close"): void;
@@ -98,6 +118,7 @@ const { accentColor2 } = storeToRefs(store);
   align-items: center;
   justify-content: center;
   align-self: center;
+  align-items: stretch;
   gap: 20px;
 }
 
@@ -106,7 +127,6 @@ const { accentColor2 } = storeToRefs(store);
 }
 
 .intro-tour-btn {
-  color: #1a1a2e !important;
   font-family: "Lexend", sans-serif;
   font-weight: 600;
   font-size: 13px;

@@ -201,15 +201,16 @@ function layerMessage(layerId: string): string | null {
 }
 
 watch(layersReady, () => {
-  const notReadyTempoLayers = Array.from(layersReady.value).map(([layerId, entry]) => {
-    if (layerId.startsWith('tempo') && entry.status === 'error') {
-      return true;
-    }
-    return false;
-  });
-  if (notReadyTempoLayers.some(e => e)) {
-    globalWarning.value = `The NASA Earthdata GIS service that this app relies on (at <a style="color:currentColor;" href="https://gis.earthdata.nasa.gov/" target="_blank">https://gis.earthdata.nasa.gov/</a>) is currently down. Certain TEMPO and Population Density data may not be available.<br/><br/>
-    An alternate version of TEMPO's NO<sub>2</sub> data layer is displayed here instead.`;
+  const brokenTempoLayers = Array.from(layersReady.value.entries())
+    .filter(([layerId, entry]) => layerId.startsWith('tempo') && entry.status === 'error')
+    .map(([layerId]) => layerId);
+
+  if (brokenTempoLayers.length > 0) {
+    const names = brokenTempoLayers.map(id => layerNames[id] ?? id).join(', ');
+    const fallbackNote = brokenTempoLayers.includes('tempo-no2')
+      ? ` An alternate version of TEMPO's NO<sub>2</sub> data layer is displayed here instead.`
+      : '';
+    globalWarning.value = `The NASA Earthdata GIS service that this app relies on (at <a style="color:currentColor;" href="https://gis.earthdata.nasa.gov/" target="_blank">https://gis.earthdata.nasa.gov/</a>) is currently down, so the following layer(s) may not be available: ${names}.${fallbackNote}`;
   } else {
     globalWarning.value = '';
   }
