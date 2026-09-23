@@ -210,7 +210,7 @@ watch(layersReady, () => {
     const fallbackNote = brokenTempoLayers.includes('tempo-no2')
       ? ` An alternate version of TEMPO's NO<sub>2</sub> data layer is displayed here instead.`
       : '';
-    globalWarning.value = `The NASA Earthdata GIS service that this app relies on (at <a style="color:currentColor;" href="https://gis.earthdata.nasa.gov/" target="_blank">https://gis.earthdata.nasa.gov/</a>) is currently down, so the following layer(s) may not be available: ${names}.${fallbackNote}`;
+    globalWarning.value = `<p>One or more services at NASA Earthdata GIS that this app relies on (at <a style="color:currentColor;" href="https://gis.earthdata.nasa.gov/" target="_blank">https://gis.earthdata.nasa.gov/</a>) is currently down.</p><p class="mt-2">The following layer(s) may not be available: ${names}.${fallbackNote}</p>`;
   } else {
     globalWarning.value = '';
   }

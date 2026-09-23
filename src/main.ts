@@ -14,7 +14,6 @@ import SnackbarAlert from "./components/SnackbarAlert.vue";
 import ShareButton from "./components/ShareButton.vue";
 import CDSDialog from "./components/CDSDialog.vue";
 import MarqeeAlert from "./components/MarqeeAlert.vue";
-import TimeseriesGraph from "./components/TimeseriesGraph.vue";
 import SelectionComposer from "./components/SelectionComposer.vue";
 import HeaderBar from "./components/HeaderBar.vue";
 import HeaderWarning from "./components/HeaderWarning.vue";
@@ -126,7 +125,6 @@ createApp(TempoLab, {})
   .component('share-button', ShareButton)
   .component('cds-dialog', CDSDialog)
   .component('marquee-alert', MarqeeAlert)
-  .component('timeseries-graph', TimeseriesGraph)
   .component('selection-composer', SelectionComposer)
   .component('dataset-controls', DatasetControls)
   .component('comparison-data-controls', ComparisonDataControls)

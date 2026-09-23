@@ -46,13 +46,13 @@
           name="playback-rate"
         >
           <option v-for="rate in playRateOptions" :key="rate" :value="rate">
-            {{ rate }}
+            {{ rate.toFixed(2) }}x
           </option>
         </select>
         <!-- visually hidden prefix so the accessible name reads
              "Playback rate, sec/frame" while the visible text stays compact -->
         <label class="playback-rate-label" for="playback-rate-select">
-          <span class="visually-hidden">Playback rate, </span>x
+          <span class="visually-hidden">Playback rate, </span>
         </label>
       </div>
     </div>
@@ -111,7 +111,7 @@ type Timeout = ReturnType<typeof setTimeout>;
 
 const playing = ref(false);
 const playInterval = ref<Timeout | null>(null);
-const playRateOptions = [2, 1, .75, .5, .25] as const;
+const playRateOptions = [.25, .5, .75, 1, 1.5] as const;
 const playingRate = ref(1);
   
   
@@ -184,6 +184,7 @@ watch(playingRate, () => {
   border-radius: 4px;
   text-align: center;
   margin-right: 4px;
+  padding-inline: 5px;
 }
 
 .playback-rate-control {

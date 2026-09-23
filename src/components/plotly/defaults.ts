@@ -69,4 +69,5 @@ export const DEFAULT_MODEBAR_BUTTONS_TO_REMOVE: ModeBarDefaultButtons[] = ['send
 export const DEFAULT_PLOT_CONFIG: Partial<Config> = {
   modeBarButtonsToRemove: DEFAULT_MODEBAR_BUTTONS_TO_REMOVE,
   displaylogo: false,
+  showTips: false,
 };
