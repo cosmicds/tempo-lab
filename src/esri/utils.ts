@@ -66,7 +66,7 @@ export const MOLECULE_OPTIONS: {title: string, value: MoleculeType }[] = [
   // { title: 'Monthly Mean NO₂', value: 'no2Monthly' },
   // { title: 'Daily Max NO₂', value: 'no2DailyMax' },
   { title: 'O₃ (Total Column)', value: 'o3' },
-  // { title: 'O₃ (0–2 km) BETA', value: 'o3trop' },
+  { title: 'O₃ (0–2 km) BETA', value: 'o3trop' },
   { title: 'HCHO', value: 'hcho' },
   // { title: 'Monthly Mean HCHO', value: 'hchoMonthly' },
   // { title: 'Daily Max HCHO', value: 'hchoDailyMax' },

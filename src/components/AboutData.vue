@@ -21,7 +21,7 @@ const layerNames: Record<string, string | undefined> = {
   "tempo-no2": "TEMPO NO2",
   'tempo-hcho': "TEMPO HCHO",
   'tempo-o3': "TEMPO Ozone, Total Column",
-  // 'tempo-o3trop': "TEMPO Ozone, 0–2 km (BETA)",
+  'tempo-o3trop': "TEMPO Ozone, 0–2 km (BETA)",
   "aqi-layer-aqi": "Air Quality Index",
   "power-plants-layer": "Power Plants",
   "pop-dens": "Population Density",
