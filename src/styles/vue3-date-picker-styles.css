@@ -47,3 +47,7 @@ button.dp__action-latest[disabled] {
   border: 1px solid rgb(var(--v-theme-surface-variant), 0.9);
 }
 
+.dp__menu .dp__arrow_top,
+.dp__menu .dp__arrow_bottom {
+  border-color: rgb(var(--v-theme-surface-variant));
+}
