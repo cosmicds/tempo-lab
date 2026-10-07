@@ -14,14 +14,13 @@
     >
       <layer-order-control
         :mapRef="map"
-        :order="['power-plants-layer', 'places-asthma-counties', 'places-asthma-tracts', 'aqi-layer-aqi', 'pop-dens', 'land-use','hms-fire', 'tempo-o3', 'tempo-o3trop', 'tempo-hcho', 'tempo-no2', 'tempo-lite', 'stamen-toner-lines', 'stamen-toner-labels']"
+        :order="[ /* 'places-asthma-counties', 'places-asthma-tracts', */ 'hms-fire', 'power-plants-layer', 'land-use', 'pop-dens', 'aqi-layer-aqi', 'tempo-o3trop', 'tempo-o3', 'tempo-hcho', 'tempo-lite', 'tempo-no2', 'stamen-toner-lines', 'stamen-toner-labels']"        
       >
       </layer-order-control>
       <!-- center with d-block mx-auto -->
       <v-btn
         class="my-2 d-block mx-auto"
         @click="showAdvancedLayers = !showAdvancedLayers"
-        @keyup.enter="showAdvancedLayers = !showAdvancedLayers"
         :text="showAdvancedLayers ? 'Show me less' : 'Show me more!'"
         density="compact"
         hide-details
@@ -69,7 +68,6 @@ const {
 .comparison-data-controls {
   font-size: 11pt !important;
   min-width: 250px;
-  overflow-y: auto;
 }
 
 :deep(.v-checkbox .v-label) {

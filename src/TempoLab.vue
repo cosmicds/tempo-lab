@@ -46,7 +46,7 @@
       <side-placeholder
         id="layers-panel"
         ref="layers-panel"
-        class="panel"
+        class="panel scroll-y"
         open-direction="right"
         icon="mdi-layers"
         :color="accentColor2"
@@ -96,6 +96,7 @@
             ref="left-handle"
             aria-label="Resize left/middle"
             role="separator"
+            tabindex="0"
           ></div>
         </template>
       </v-tooltip>
@@ -114,6 +115,7 @@
             ref="right-handle"
             aria-label="Resize middle/right"
             role="separator"
+            tabindex="0"
           ></div>
         </template>
       </v-tooltip>
@@ -121,7 +123,7 @@
       <side-placeholder
         id="datasets-panel"
         ref="datasets-panel"
-        class="panel"
+        class="panel scroll-y"
         open-direction="left"
         icon="mdi-chart-line"
         :color="accentColor2"
@@ -139,6 +141,44 @@
         </template>
      </side-placeholder>
     </div>
+
+    <!-- Data collection opt-out dialog -->
+    <v-dialog
+      scrim="false"
+      v-model="showAutosaveDialog"
+      max-width="400px"
+      id="autosave-popup-dialog"
+    >
+      <v-card>
+        <v-card-text>
+          To provide a convenient experience across repeated uses of this app, we automatically store data describing your app state in local browser storage. While this means that your app state information is <strong>not</strong> shared with the CosmicDS team, we still allow you to opt of this if you wish.
+        </v-card-text>
+        <v-card-actions class="pt-3">
+          <v-spacer></v-spacer>
+          <v-btn
+            color="#ff6666"
+            @click="() => {
+              useLocalStorage = false;
+              writeLocalStoragePreference(false);
+              showAutosaveDialog = false;
+            }"
+          >
+          Opt out
+          </v-btn>
+          <v-btn 
+            color="green"
+            @click="() => {
+              useLocalStorage = true;
+              writeLocalStoragePreference(true);
+              showAutosaveDialog = false;
+            }"
+          >
+            Allow
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </v-app>
 </template>
 
@@ -157,6 +197,7 @@ const tourStartedFromPopup = ref(false);
 // const datasetsPanel = useTemplateRef<HTMLElement>("datasets-panel");
 // const mapsPanel = useTemplateRef<HTMLElement>("maps-panel");
 
+const showAutosaveDialog = ref(false);
 
 const store = useTempoStore();
 const {
@@ -196,6 +237,9 @@ const HANDLE_SIZE_PX = 4;
 const DEFAULT_PANEL_WIDTH_PX = 300;
 const MIN_PANEL_WIDTH_PX = 250;
 const PLACEHOLDER_WIDTH_PX = 40;
+// How far one arrow press moves a resize handle. Big enough to make progress
+// without holding the key down, small enough to land on a size you wanted.
+const KEYBOARD_RESIZE_STEP_PX = 24;
 const cssVars = computed(() => {
   return {
     "--accent-color": accentColor.value,
@@ -208,7 +252,14 @@ const cssVars = computed(() => {
   };
 });
 
-const localStorageKey = "tempods";
+const localStorageStateKey = "tempods";
+const localStoragePreferenceKey = "tempods-save";
+
+let _saveStateInterval: ReturnType<typeof setInterval>;
+
+const localStorageAutosave = window.localStorage?.getItem(localStoragePreferenceKey);
+const useLocalStorage = ref(localStorageAutosave?.toLowerCase() !== "false");
+
 const localStorageSkipPopup = "tempods-skip-intro-popup";
 const showPopup = ref(true);
 const dontShowPopupAgain = ref(false);
@@ -223,10 +274,20 @@ function getBasis(panel: HTMLElement): number {
   return isNaN(basis) ? 0 : basis;
 }
 
+function saveStateToLocalStorage(): boolean {
+  try {
+    const stringified = serializeTempoStore(store, true);
+    window.localStorage.setItem(localStorageStateKey, stringified);
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 onBeforeMount(() => {
-  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageKey);
+  const storedState = ignoreCache ? undefined : window.localStorage.getItem(localStorageStateKey);
   if (storedState) {
-    updateStoreFromJSON(store, storedState);
+    updateStoreFromJSON(store, storedState, true);
   }
 
   const popupPreference = window.localStorage.getItem(localStorageSkipPopup);
@@ -319,6 +380,27 @@ onMounted(() => {
       initialEventHandler: initialLeftHandler,
     });
 
+    // The handles are role="separator" with tabindex="0", i.e. splitters, so
+    // the arrow keys have to resize: dragging is the only way to work them
+    // otherwise. Left/Right match the drag direction, and Home snaps back to
+    // the default width. preventDefault stops the page scrolling instead.
+    left.addEventListener("keydown", (event: KeyboardEvent) => {
+      const minLeft = layerControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      let size: number | null = null;
+      if (event.key === "ArrowRight") {
+        size = getBasis(leftPanel) + KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "ArrowLeft") {
+        size = getBasis(leftPanel) - KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "Home") {
+        size = DEFAULT_PANEL_WIDTH_PX;
+      }
+      if (size === null) {
+        return;
+      }
+      event.preventDefault();
+      setBasis(leftPanel, Math.max(minLeft, size));
+    });
+
   }
 
   const right = rightHandle.value;
@@ -344,6 +426,25 @@ onMounted(() => {
       onMove: onRightMove,
       initialEventHandler: initialRightHandler,
     });
+
+    // Mirrored: this panel grows leftwards, so ArrowLeft widens it, matching
+    // what dragging the same handle does.
+    right.addEventListener("keydown", (event: KeyboardEvent) => {
+      const minRight = datasetControlsOpen.value ? DEFAULT_PANEL_WIDTH_PX : PLACEHOLDER_WIDTH_PX;
+      let size: number | null = null;
+      if (event.key === "ArrowLeft") {
+        size = getBasis(rightPanel) + KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "ArrowRight") {
+        size = getBasis(rightPanel) - KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "Home") {
+        size = DEFAULT_PANEL_WIDTH_PX;
+      }
+      if (size === null) {
+        return;
+      }
+      event.preventDefault();
+      setBasis(rightPanel, Math.max(minRight, size));
+    });
   }
 
   window.addEventListener("resize", () => {
@@ -352,12 +453,32 @@ onMounted(() => {
   });
 
   window.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && !ignoreCache) {
-      const stringified = serializeTempoStore(store); 
-      window.localStorage.setItem(localStorageKey, stringified);
+    if (document.visibilityState === "hidden" && useLocalStorage.value && !ignoreCache) {
+      saveStateToLocalStorage();
     }
   });
 
+  // Browsers match :focus-visible on text fields even for a plain click, so the
+  // focus ring needs this class to stay keyboard-only there (see the
+  // body.keyboard-focus-only rules in the style block below). Only Tab counts as
+  // moving focus by keyboard - typing in an already-focused field shouldn't
+  // retroactively give it a ring.
+  document.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Tab") {
+      document.body.classList.add("keyboard-focus-only");
+    }
+  });
+  const clearKeyboardFocusOnly = () => document.body.classList.remove("keyboard-focus-only");
+  document.addEventListener("mousedown", clearKeyboardFocusOnly);
+  document.addEventListener("touchstart", clearKeyboardFocusOnly);
+
+  _saveStateInterval = setInterval(() => {
+    if (!useLocalStorage.value || ignoreCache) {
+      return;
+    }
+    saveStateToLocalStorage();
+  }, 60_000);
+  
   updateSizes(true, true);
   setHandleVisibility(leftHandle, layerControlsOpen.value);
   setHandleVisibility(rightHandle, datasetControlsOpen.value);
@@ -385,6 +506,17 @@ function onDontShowPopupAgainChange(dontShow: boolean) {
 
 watch(datasetControlsOpen, onDatasetPanelOpenChange);
 watch(layerControlsOpen, onLayersPanelOpenChange);
+
+function writeLocalStoragePreference(use: boolean) {
+  const value = use ? "true" : "false";
+  window.localStorage.setItem(localStoragePreferenceKey, value);
+
+  if (!use) {
+    window.localStorage.removeItem(localStorageStateKey);
+  }
+}
+
+watch(useLocalStorage, writeLocalStoragePreference);
 watch(dontShowPopupAgain, onDontShowPopupAgainChange);
 </script>
 
@@ -412,6 +544,66 @@ body {
   font-family: Verdana, Arial, Helvetica, sans-serif;
 }
 
+// "Oreo" focus indicator: a white double outline sandwiched against a black
+// shadow so it stays visible over any background.
+// From Sara Soueidan (https://www.sarasoueidan.com/blog/focus-indicators/)
+// & Erik Kroes (https://www.erikkroes.nl/blog/the-universal-focus-state/).
+// Vuetify hides a checkbox's real <input>, so the ring has to go on the
+// wrapper that is actually visible. A radio does the same (measured: the
+// focused <input type="radio"> is 36x36 at opacity 0, absolutely positioned
+// over a visible wrapper of the same size), and so does a v-select: tabbing to
+// the timezone dropdown focuses an input sitting at opacity 0, so a ring drawn
+// on it is invisible however it is styled. .v-field is the box you can see.
+// Two containers are excluded because their framework focuses them itself on
+// open, and a programmatic focus matches :focus-visible -- so the ring lands on
+// a box you can't actually operate:
+//   .v-overlay__content  VDialog does tabindex="-1" + contentEl.focus(); for
+//                        `<v-dialog width="50%">` that box is half the viewport.
+//   .shepherd-element    Shepherd focuses the step <dialog>, which carries the
+//                        step's aria-labelledby/aria-describedby. Keeping that
+//                        focus is what makes a screen reader read the step text
+//                        out on arrival, so only the ring is suppressed.
+// .v-overlay__content matches tempo-lite and planet-parade.
+// .v-btn is listed on its own because Vuetify's elevation-N utilities set
+// box-shadow with !important too, and at equal specificity they'd win the halo.
+:focus-visible:not(.v-overlay__content, .shepherd-element),
+.v-btn:focus-visible,
+.v-checkbox .v-selection-control__input:has(:focus-visible),
+.v-radio .v-selection-control__input:has(:focus-visible),
+.v-select .v-field:has(input:focus-visible) {
+  outline: 9px double white !important;
+  box-shadow: 0 0 0 8px #0b5cb3 !important;
+  border-radius: .125rem;
+}
+
+// Vuetify animates box-shadow on .v-btn:
+//   transition-property: box-shadow, transform, opacity, background;  .28s
+// The focus ring above IS a box-shadow, so on blur it doesn't disappear -- it
+// interpolates to the button's elevation shadow over 280ms, shrinking and
+// darkening on the way out (measured: 8px #0b5cb3 -> 7px -> 1.5px -> settled).
+// That's the halo left behind on the button you just tabbed away from. Plain
+// <button>s and links have transition-duration 0s, which is why it only shows
+// on v-btns. Taking box-shadow out of the list makes the ring vanish on blur.
+// Cost: elevation changes on hover/press are now instant instead of eased.
+.v-btn {
+  transition-property: transform, opacity, background;
+}
+
+// :focus-visible's browser heuristic carves out text inputs: unlike buttons,
+// they match even when focused by a plain click or tap (you need to see where
+// you're typing). Chrome extends that to <select> and to focusable divs like
+// Vuetify's slider thumb. .keyboard-focus-only (toggled in onMounted above,
+// tracking Tab presses vs mouse/touch) undoes those carve-outs so these ring on
+// keyboard focus only, like everything else.
+body:not(.keyboard-focus-only) input:focus-visible,
+body:not(.keyboard-focus-only) textarea:focus-visible,
+body:not(.keyboard-focus-only) select:focus-visible,
+body:not(.keyboard-focus-only) .v-select .v-field:has(input:focus-visible),
+body:not(.keyboard-focus-only) .v-slider-thumb:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 #app {
   h1, h2, h3, h4, h5, h6, p, div {
     user-select: none;
@@ -421,16 +613,14 @@ body {
   height: 100%;
 }
 
-.map-panel {
+// this was a class and should have been an id selector,
+// so only left important things
+#map-panel {
   min-width: 250px;
-  display: flex;
-  flex-direction: row;
   padding-left: 10px;
-  gap: 5px;
 }
 
 #layers-panel, #datasets-panel {
-  overflow-y: scroll;
   /* these were already 0, just make 
   what we're starting with clearer */
   margin: 0;
@@ -493,7 +683,6 @@ body {
   width: 100%;
   background: var(--panel);
   box-sizing: border-box;
-  overflow: auto;
   border: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -531,6 +720,28 @@ body {
   cursor: col-resize !important;
 }
 
+#autosave-popup-dialog {
+
+  .v-card-text {
+    color: #BDBDBD;
+  }
+
+  .v-overlay__content {
+    font-size: var(--default-font-size);
+    background-color: purple;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }
+
+  .v-btn--size-default {
+      font-size: calc(0.9 * var(--default-font-size));
+    }  
+
+  .v-card-actions .v-btn {
+    padding: 0 4px;
+  }
+}
 .progress-dots {
   display: flex;
   justify-content: center;
@@ -548,11 +759,6 @@ body {
 
   .progress-dot:hover {
     background-color: rgba(255, 255, 255, 0.5);
-  }
-
-  .progress-dot:focus-visible {
-    outline: 1px solid var(--smithsonian-yellow);
-    outline-offset: 2px;
   }
 
   .progress-dot.active {
@@ -699,5 +905,33 @@ body .shepherd-button {
   filter: brightness(1.1);
   background: var(--smithsonian-yellow);
   color: #1a1a2e;
+}
+// The "saved an aggregation" notice borrows the tour step's look - same panel
+// colour, same 1px border, same font - so the app has one visual voice for
+// "here is something worth noticing". It lives here rather than in
+// DatasetControls because v-snackbar teleports out of that component, and
+// because sitting next to the rules above is what keeps the two in step.
+// The accent colour comes in as a custom property from the component, so it
+// stays adjustable from the one line there.
+.v-snackbar.aggregation-saved-snackbar {
+  .v-snackbar__wrapper {
+    background: #1a1a2e;
+    border: 1px solid var(--aggregation-saved-accent, var(--smithsonian-yellow));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color: #eaeaea;
+    font-family: "Lexend", sans-serif;
+  }
+
+  .v-snackbar__content {
+    font-size: 0.9rem;
+  }
+
+  // Lexend and 500 to match .shepherd-button, the tour's own controls.
+  .v-btn {
+    color: var(--aggregation-saved-accent, var(--smithsonian-yellow));
+    font-family: "Lexend", sans-serif;
+    font-weight: 500;
+  }
 }
 </style>

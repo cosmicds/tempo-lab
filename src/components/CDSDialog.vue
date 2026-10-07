@@ -15,7 +15,6 @@
           :title="displayedShortTitle"
           class="cds-dialog-button"
           @click="modelValue = true"
-          @keyup.enter="modelValue = true"
           tabindex="0"
           >
           Open {{ displayedShortTitle }}
@@ -46,7 +45,7 @@
         </v-btn>
       </v-toolbar>
       
-      <v-card-text class="cds-dialog-v-card-text" >
+      <v-card-text class="cds-dialog-v-card-text scroll-y" >
         <slot>
           Add content to the default slot
         </slot>
@@ -164,10 +163,7 @@ watch(modelValue, value => {
 .cds-dialog .v-card-text {
   contain: layout;
 }
-.cds-dialog-v-card-text {
-  overflow-y: scroll;
 
-}
 .v-toolbar-title.cds-dialog-v-toolbar-title > .v-spacer {
   display: none;
 }

@@ -1,6 +1,6 @@
 export const layerNames: Record<string, string | undefined> = {
-  "tempo-no2": "TEMPO NO2",
-  "tempo-lite": "TEMPO NO2 (alt)",
+  "tempo-no2": "TEMPO NO₂",
+  "tempo-lite": "TEMPO NO₂ (alt)",
   "aqi-layer-aqi": "Air Quality Index",
   "power-plants-heatmap": "Power Plants",
   "power-plants-layer": "Power Plants",
@@ -15,6 +15,9 @@ export const layerNames: Record<string, string | undefined> = {
   "places-asthma-counties": "Asthma Prevalence (Counties)",
   "places-asthma-tracts": "Asthma Prevalence (Tracts)",
 };
+
+/** layers to hide entirely (layer list, warnings, dataset picker) if their service errors */
+export const HIDDEN_BAD_LAYERS: string[] = ["tempo-o3trop"];
 
 // TODO: We should probably break the description up into the layer description, and the data description and the mission description.
 // TODO: Double check all for accuracy

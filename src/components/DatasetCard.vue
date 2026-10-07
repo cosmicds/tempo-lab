@@ -1,21 +1,39 @@
 <template>
-  <v-list density="compact">
-    <v-hover
+  <!--
+    role="group" rather than the role="list" v-list would give this, because
+    the cards are buttons rather than list items and a list whose children are
+    not listitems announces as empty.
+  -->
+  <v-list density="compact" role="group" aria-label="My datasets">
+    <!-- <v-hover
       v-slot="{ isHovering, props }"
-      v-for="dataset in datesetsWithNotFoldedFisrt"
+      v-for="dataset in datasetsNewestFirst"
       :key="dataset.id"
-    > 
+    >  -->
       <!-- create a checkbox input that will -->
-    
+
+      <!--
+        Inside a v-list, Vuetify gives a clickable v-list-item tabindex="-2" and
+        expects the list to shuttle focus with the arrow keys, which left only
+        the first card reachable by Tab. tabindex="0" makes each card its own
+        tab stop; Enter and Space already work, because VListItem turns them
+        into a click itself. Clicking a card shows or hides its details, so it
+        is a disclosure button, and aria-expanded says which way it is set.
+      -->
       <v-list-item
-        v-bind="props"
+      v-for="dataset in datasetsNewestFirst"
+        :key="dataset.id"
+        :data-card-id="dataset.id"
         :ref="(el) => datasetRowRefs[dataset.id] = el"
+        tabindex="0"
+        role="button"
+        :aria-expanded="!!showDetails[dataset.id]"
         class="selection-item my-2 rounded-lg px-2"
         :style="{ 'background-color': isFolded(dataset) ? '#333' : '#999', 'color': isFolded(dataset) ? '#fff' : '#000' }"
         :ripple="touchscreen"
         density="compact"
         slim
-        @click="showDetails = !showDetails"
+        @click="showDetails[dataset.id] = !showDetails[dataset.id]"
       >
         <template v-slot:prepend v-if="turnOnSelection">
           <v-checkbox
@@ -39,8 +57,19 @@
               >
               {{ dataset.name ?? dataset.region.name }}
             </v-chip>
+            <!-- add show/hide details button -->
+            <v-btn
+              class="float-right"
+              :icon="showDetails[dataset.id] ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              variant="text"
+              density="compact"
+              v-tooltip:top="showDetails[dataset.id] ? 'Hide Details' : 'Show details'"
+              @click.stop="showDetails[dataset.id] = !showDetails[dataset.id]"
+            >
+            </v-btn>
             <v-expand-transition>
-              <div v-if="showDetails || isHovering" class="d-flex flex-wrap align-center ga-1 mb-1">
+              <!-- add || isHovering to put back hover behavior -->
+              <div v-if="showDetails[dataset.id]" class="d-flex flex-wrap align-center ga-1 mb-1">
                 <v-chip 
                   label
                   size="small" 
@@ -76,11 +105,11 @@
             </v-expand-transition>
           </div>
           <!-- this is where the actions will go -->
-          <slot name="action-row" :isHovering="isHovering ?? true" :dataset="dataset">
+          <slot name="action-row" :isHovering="true" :dataset="dataset">
           </slot>
         </template>
       </v-list-item>
-    </v-hover>
+    <!-- </v-hover> -->
   </v-list>
 
 
@@ -126,8 +155,11 @@ function isFolded(dataset: UserDataset): boolean {
 }
 
 
-const datesetsWithNotFoldedFisrt = computed(() => {
-  return [...datasets].sort((a, b) => {
+// Newest first, to match the region and time range lists, while keeping the
+// rule that folded datasets sort after unfolded ones. Array.sort is stable, so
+// reversing the copy first is what puts the newest at the top of each group.
+const datasetsNewestFirst = computed(() => {
+  return [...datasets].reverse().sort((a, b) => {
     const aFolded = isFolded(a) ? 1 : 0;
     const bFolded = isFolded(b) ? 1 : 0;
     return aFolded - bFolded;
@@ -142,7 +174,11 @@ function _removeDataset(dataset: UserDataset) {
   delete datasetRowRefs[dataset.id];
 }
 
-const showDetails = ref(false);
+// Keyed by dataset id rather than by position in the rendered list. It was an
+// array indexed by the v-for index, which was already the index into a sorted
+// copy rather than into datasets; with the newest at the top, inserting a
+// dataset would have shifted every card's open/closed state down by one.
+const showDetails = ref<Record<string, boolean>>({});
 </script>
 
 <style scoped lang="less">

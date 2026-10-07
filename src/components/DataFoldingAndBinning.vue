@@ -13,8 +13,8 @@
               v-model:open="showAggregationControls"
               open-direction="right"
               icon="mdi-calculator"
-              closed-tooltip-text="Show stacking and averaging controls controls"
-              open-tooltip-text="Close stacking and averaging controls controls"
+              closed-tooltip-text="Show stacking and averaging controls"
+              open-tooltip-text="Close stacking and averaging controls"
               open-arrow-color="surface-variant"
               closed-arrow-color="surface-variant"
               tooltips
@@ -80,13 +80,13 @@
                     :config-options="{responsive: false, modeBarButtonsToRemove: ['autoScale2d', 'sendDataToCloud','lasso2d', 'select2d'], displaylogo: false}"
                     @plot-click="handlePointClick"
                     :layout-options="withPlotlyDefaults({
-                      margin: {t: 10, r: 20, b: 60, l: 90}, 
+                      margin: {t: 10, r: 20, b: 60, l: 90},
                       autosize: false, width: 700, height: 400,
                       xaxis: {
                         automargin: false,
                         gridcolor: 'rgba(128, 128, 128, 0.3)',
                         title: {
-                          standoff: 10,
+                          standoff: 22,
                         },
                       },
                       yaxis: {
@@ -547,7 +547,7 @@ function foldedTimeSeriesRawToDataSet(foldedTimeSeries: FoldedTimeSeriesData): O
     });
   });
   // the ascii +- symbol is this characher: ±
-  const hovertemplate = '%{customdata|%Y-%m-%d %H:%M}<br>%{y:0.2e}±%{error_y.array:0.2e}<extra></extra>';
+  const hovertemplate = '%{customdata|%b %-d, %Y %-I:%M %p}<br>%{y:0.2e}±%{error_y.array:0.2e}<extra></extra>';
   
   return { x, y, lower, upper, errorType: 'bar', datasetOptions: { customdata, hovertemplate } };
 }
@@ -715,8 +715,9 @@ function saveFolding() {
     ]//.slice(0, isFoldWithNoBin.value ? 1 : 2) // only include summary if not fold-with-no-bin
   };
   emit('save', foldedSelection);
-
-  closeDialog();
+  // Deliberately no closeDialog() here: saving keeps the dialog open so the
+  // aggregation just made stays on screen and another can be made without
+  // reopening it. Cancel and the dialog's own X still close it.
 }
 
 // Close dialog

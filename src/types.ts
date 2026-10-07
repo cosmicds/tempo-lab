@@ -121,6 +121,7 @@ export interface RectangleSelection {
   geometryInfo: RectangleSelectionInfo; // renamed from rectangle for future shape generalization
   geometryType: 'rectangle';
   color: string;
+  defaultColor: string;
   source?: GeoJSONSource;
 }
 
@@ -131,6 +132,7 @@ export interface PointSelection {
   geometryInfo: PointSelectionInfo;
   geometryType: 'point';
   color: string;
+  defaultColor: string;
   source?: GeoJSONSource;
 }
 
@@ -192,6 +194,9 @@ export interface UserDataset {
   samples?: Record<number, AggValue>;
   errors?: Record<number, DataPointError>;
   locations?: {x: number, y: number}[];
+  // RequestSummary except for the urlList
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  summary?: any;
   // Optional folded data payload (stored raw so we avoid circular import with aggregation.ts)
   // Shape expected: { foldType: string; values: Record<number, {value: number|null; bin: number}>; errors: Record<number, DataPointError>; bins?: unknown }
   // Used when timeRange.type === 'folded'
@@ -221,6 +226,10 @@ export interface SelectionHandler<EventType, SelectionInfo> {
   onMouseup?: (event: EventType) => void;
   onMousedown?: (event: EventType) => void;
   onMousemove?: (event: EventType) => void;
+  // Keyboard equivalent of the mouse gesture, for selections that have one.
+  // It is a plain DOM KeyboardEvent rather than a map event because
+  // baseUseSelection binds it to the canvas directly.
+  onKeydown?: (event: KeyboardEvent) => void;
 }
 
 export interface UseSelectionOptions<MapType, EventType, SelectionInfo> {

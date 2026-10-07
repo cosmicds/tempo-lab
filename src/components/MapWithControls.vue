@@ -1,6 +1,6 @@
 <template>
   <div class="map-container">
-    <v-card class="map-contents" style="width:100%; height: 100%;">
+    <v-card class="map-contents flex-shrink-0">
       <v-toolbar
         density="compact"
         color="var(--info-background)"
@@ -55,48 +55,38 @@
         ></location-search>
       </div>
     </v-card>
-    <div class="slider-row mx-16 mt-12">
-      <v-slider
-        class="time-slider"
-        v-model="timeIndex"
-        :min="minIndex"
-        :max="maxIndex"
-        :step="1"
-        color="#068ede95"
-        thumb-label="always"
-        :track-size="10"
-        show-ticks="always"
-        hide-details
-        @end="() => {
-          timeSliderUsedCount += 1;
-          // if (map) {
-          //   setLayerVisibility(map as Map, activeLayer, true);
-          // }
-        }"
+    
+    <v-tooltip
+        text="Change map height"
+        location="start center"
+        :disabled="dragging"
       >
-        <template v-slot:thumb-label>
-          <div class="thumb-label">
-            {{ thumbLabel }}
-          </div>
+        <template #activator="{ props }">
+          <div
+            v-bind="props"
+            class="handle vertical-handle"
+            ref="middle-handle"
+            aria-label="Resize map"
+            role="separator"
+            tabindex="0"
+          ></div>
         </template>
-      </v-slider>
-      <icon-button
-        class="play-pause"
-        :fa-icon="playing ? 'pause' : 'play'"
-        fa-size="sm"
-        @activate="playing = !playing"
-      ></icon-button>
-    </div>
-    <div class="d-flex flex-row">
-      <map-controls
-        class="flex-grow-1"
-        @molecule="(mol: MoleculeType) => {
-          molecule = mol;
-          // if (map) {
-          //   setLayerVisibility(map as Map, activeLayer, true);
-          // }
-        }"
-      />
+      </v-tooltip>
+    <!-- the flex-shrink:1 is what lets it scroll. this turns off the flex-shrink: 0 being applied by .map-container > div -->
+    <div class="scroll-y d-flex flex-column flex-shrink-1">
+      <TimeSlider />
+      
+      <div class="d-flex flex-row">
+        <map-controls
+          class="flex-grow-1"
+          @molecule="(mol: MoleculeType) => {
+            molecule = mol;
+            // if (map) {
+            //   setLayerVisibility(map as Map, activeLayer, true);
+            // }
+          }"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -112,7 +102,7 @@ import { getTimezoneOffset } from "date-fns-tz";
 import { v4 } from "uuid";
 
 import type { LatLngPair, LayerStatus, PointSelectionInfo, RectangleSelectionInfo, SelectionType } from "@/types";
-import { featureStatus } from "@/datasets/layerStatus";
+// import { featureStatus } from "@/datasets/layerStatus";
 import { type MoleculeType, MOLECULE_OPTIONS, moleculeVariable } from "@/esri/utils";
 import { colorbarOptions } from "@/esri/ImageLayerConfig";
 import { useTempoStore } from "@/stores/app";
@@ -123,6 +113,8 @@ import { usePointSelection } from "@/composables/maplibre/usePointSelection";
 import { COLORS } from "@/utils/color";
 import { EsriSampler } from "@/esri/services/sampling";
 import { useMultiMarker } from '@/composables/maplibre/useMultiMarker';
+
+import TimeSlider from "@/components/TimeSlider.vue";
 
 import { setLayerOpacity, setLayerVisibility } from "@/maplibre_controls";
 
@@ -158,6 +150,7 @@ const {
   regionsCreatedCount,
   maxSampleCount,
   focusRegion,
+  focusCardId,
   initState,
   homeState,
   showFieldOfRegard,
@@ -233,6 +226,7 @@ const popLayer = addPopulationDensityLayer();
 import { addLandUseLayer } from "@/datasets/addLandUse";
 const sentinalLandUseLayer = addLandUseLayer();
 
+/*
 import { addAsthmaLayer } from "@/datasets/addAsthma";
 const asthmaCounties = addAsthmaLayer('places-asthma-counties', 2);
 // asthma tracts disabled
@@ -245,6 +239,7 @@ function syncAsthmaStatus(layer: ReturnType<typeof addAsthmaLayer>) {
 }
 syncAsthmaStatus(asthmaCounties);
 // syncAsthmaStatus(asthmaTracts);
+*/
 
 const hmsFire = addHMSFire(singleDateSelected, {
   layerName: 'hms-fire',
@@ -336,7 +331,7 @@ function addAdvancedLayers(m: Map | null) {
   
   tryCatch('power-plants-layer', () => pp.addLayer());
   // pp.togglePowerPlants(false);
-  tryCatch(asthmaCounties.layerId, () => asthmaCounties.addToMap(m));
+  // tryCatch(asthmaCounties.layerId, () => asthmaCounties.addToMap(m));
   // asthma tracts disabled
   // tryCatch(asthmaTracts.layerId, () => asthmaTracts.addToMap(m));
 }
@@ -355,7 +350,7 @@ function removeAdvancedLayers(m: Map | null) {
   ozoneLayer.removeEsriSource();
   o3tropLayer.removeEsriSource();
   pp.removeLayer();
-  asthmaCounties.removeFromMap(m);
+  // asthmaCounties.removeFromMap(m);
   // asthma tracts disabled
   // asthmaTracts.removeFromMap(m);
   store.clearLayerReady('tempo-hcho');
@@ -363,7 +358,7 @@ function removeAdvancedLayers(m: Map | null) {
   store.clearLayerReady('tempo-o3trop');
   store.clearLayerReady('pop-dens');
   store.clearLayerReady('land-use');
-  store.clearLayerReady('places-asthma-counties');
+  // store.clearLayerReady('places-asthma-counties');
   // store.clearLayerReady('places-asthma-tracts');
 }
 
@@ -391,7 +386,7 @@ watch(molecule, (newMolecule) => {
   if (map.value) {
     hchoLayer.setVisibility(newMolecule === 'hcho');
     ozoneLayer.setVisibility(newMolecule === 'o3');
-    o3tropLayer.setVisibility(newMolecule === 'o3trop');
+    o3tropLayer.setVisibility(newMolecule === 'o3trop' && !serviceFailed(o3tropLayer.serviceReady.value));
     no2Layer.value?.setVisibility(newMolecule === 'no2');
     // map.value.moveLayer(`tempo-${newMolecule}`, 'tempo-no2');
   }
@@ -435,7 +430,13 @@ watch(() => [
   if (showAdvancedLayers.value) {
     syncLayerReady('tempo-hcho', hchoReady, hchoLayer.status.value);
     syncLayerReady('tempo-o3', ozoneReady, ozoneLayer.status.value);
+    // LayerOrderControl hides this beta layer (HIDDEN_BAD_LAYERS) when it errors
     syncLayerReady('tempo-o3trop', o3tropReady, o3tropLayer.status.value);
+    if (serviceFailed(o3tropReady)) {
+      o3tropLayer.setVisibility(false);
+    } else {
+      o3tropLayer.setVisibility(molecule.value === 'o3trop');
+    }
     syncLayerReady('pop-dens', popReady, popLayer.status.value);
     syncLayerReady('land-use', landUseReady, sentinalLandUseLayer.status.value);
     syncLayerReady('hms-fire', [hmsFire.loading.value], hmsFire.status.value);
@@ -640,15 +641,16 @@ function rectangleIsDegenerate(info: RectangleSelectionInfo): boolean {
 }
 
 function addLayer(
+  id: string,
   info: RectangleSelectionInfo | PointSelectionInfo,
   geometryType: "rectangle" | "point",
   color: string,
 ): { layer: GeoJSONSource } {
   const isRect = geometryType === 'rectangle';
   const layerInfo = isRect ?
-    addRectangleLayer((map.value)!, info as RectangleSelectionInfo, color, regionOpacity.value, regionVisibility.value) :
-    addPointLayer((map.value)!, info as PointSelectionInfo, color, regionVisibility.value);
-  map.value?.moveLayer(layerInfo.layer.id);
+    addRectangleLayer((map.value)!, id, info as RectangleSelectionInfo, color, regionOpacity.value, regionVisibility.value) :
+    addPointLayer((map.value)!, id,  info as PointSelectionInfo, color, regionVisibility.value);
+  layerInfo.layerIds.forEach(id => map.value?.moveLayer(id));
   return layerInfo;
 }
 
@@ -668,8 +670,8 @@ function createRegion(info: RectangleSelectionInfo | PointSelectionInfo, geometr
   const color = COLORS[regionsCreatedCount.value % COLORS.length];
   regionsCreatedCount.value += 1;
 
-  const id = v4();
-  const { layer } = addLayer(info, geometryType, color);
+  const id = v4(); // this will serve as the id of the region and the main filled layer
+  const { layer } = addLayer(id, info, geometryType, color);
   regionLayers[id] = layer;
   return {
     id,
@@ -677,6 +679,7 @@ function createRegion(info: RectangleSelectionInfo | PointSelectionInfo, geometr
     geometryInfo: toRaw(info),
     geometryType: geometryType,
     color,
+    defaultColor: color,
   } as UnifiedRegionType;
 }
 
@@ -693,7 +696,7 @@ function updateRegionLayers(newRegions: UnifiedRegionType[]) {
   const removed = getRegionsDifference(existingRegions, newRegions);
   added.forEach(region => {
     if (map.value && !regionLayers[region.id]) {
-      const { layer } = addLayer(region.geometryInfo, region.geometryType, region.color);
+      const { layer } = addLayer(region.id, region.geometryInfo, region.geometryType, region.color);
       regionLayers[region.id] = layer;
     }
   });
@@ -746,6 +749,10 @@ watch(rectangleInfo, (info: RectangleSelectionInfo | null) => {
   const newRegion = createRegion(info, "rectangle");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   store.addRegion(newRegion as any);
+  // Hand the new region's card the focus. Drawing a region left focus on the
+  // map, a long way in the tab order from the regions panel, with nothing to
+  // say a region had been made; DatasetControls picks this up.
+  focusCardId.value = newRegion.id;
   rectangleSelectionActive.value = false;
   
   // do not permit editing a region on a selection
@@ -760,9 +767,10 @@ watch(pointInfo, (info: PointSelectionInfo | null) => {
     pointSelectionActive.value = false;
     return;
   }
-  const newRegion = createRegion(info, "point"); 
+  const newRegion = createRegion(info, "point");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   store.addRegion(newRegion as any);
+  focusCardId.value = newRegion.id;
   pointSelectionActive.value = false;
 });
 
@@ -787,7 +795,8 @@ currentTempoDataService.value.withMetadataCache().then(meta => {
   console.log("could not create sampler because there is no metada");
 });
 
-watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal) => {
+// watch the map and sampler too
+watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length, map, sampler], (newVal) => {
   const tempoDataService = currentTempoDataService.value;
   const show = newVal[0];
   const regs = newVal[1];
@@ -806,7 +815,7 @@ watch([showSamplingPreviewMarkers, regions, ()=> regions.value.length], (newVal)
     });
     samplingPreviewMarkers.addMarkers(locations);
   }
-});
+}, { immediate: true });
 
 // TODO: This may need to be revisited when there are two maps
 watch(focusRegion, region => {
@@ -821,6 +830,152 @@ watch(focusRegion, region => {
   }
 });
 
+const dragging = ref(false);
+
+type EventHandler = (event: PointerEvent) => void;
+
+interface HandleSetupParams {
+  handle: HTMLElement;
+  onMove: EventHandler;
+  initialEventHandler?: (event: PointerEvent) => void;
+}
+
+function setupHandleEvents(params: HandleSetupParams) {
+  
+  const { handle, onMove } = params;
+
+  handle.addEventListener("pointerdown", (event: PointerEvent) => {
+
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+
+    document.body.classList.add("panel-size-dragging");
+
+    dragging.value = true;
+
+    if (params.initialEventHandler) {
+      params.initialEventHandler(event); 
+    }
+
+    const onUp = (ev: PointerEvent) => {
+      try {
+        handle.releasePointerCapture(ev.pointerId); 
+      } catch (error) {
+        console.error(error);
+      }
+      document.body.classList.remove("panel-size-dragging");
+      dragging.value = false;
+
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+
+  });
+}
+
+import { onMounted } from "vue";
+let animationFrame = 0;
+
+
+
+function setBasis(panel: HTMLElement, sizePx: number) {
+  panel.style.flexBasis = `${sizePx}px`;
+  // panel.style.setProperty("--panel-height", `${sizePx}px`); // Ensure the basis is set in pixels
+
+}
+
+function getBasis(panel: HTMLElement): number {
+  const basis = parseFloat(getComputedStyle(panel).flexBasis);
+  return isNaN(basis) ? 0 : basis;
+}
+
+function updateSizes(panelDefault: boolean = false, datasetsDefault: boolean = false) {
+  // const rootElement = root.value;
+  const layers = document.querySelector(".map-contents") as HTMLElement;
+
+
+  const layersWidth = layers.clientHeight;
+  setBasis(layers, layersWidth);
+}
+
+// Shared by the drag and keyboard paths so they cannot drift apart.
+const MIN_MAP_HEIGHT_PX = 250;
+// How far one arrow press moves the handle: enough to make progress without
+// holding the key, small enough to land on a height you wanted.
+const KEYBOARD_RESIZE_STEP_PX = 24;
+
+const handle = useTemplateRef<HTMLElement>("middle-handle");
+
+onMounted(() => {
+  
+  const handleValue = handle.value;
+  const panel = document.querySelector(".map-contents") as HTMLElement;
+  if (handleValue && panel) {
+    let startMousePos = 0;
+    let startPanelSize = 0;
+
+    const onLeftMove = (event: PointerEvent) => {
+      const dx = event.clientY - startMousePos;
+      const newSize = Math.max(MIN_MAP_HEIGHT_PX, startPanelSize + dx);
+      setBasis(panel, newSize);
+    };
+
+    const initialLeftHandler = (event: PointerEvent) => {
+      startMousePos = event.clientY;
+      startPanelSize = getBasis(panel);
+    };
+
+    setupHandleEvents({
+      handle: handleValue,
+      onMove: onLeftMove,
+      initialEventHandler: initialLeftHandler,
+    });
+
+    // This handle is role="separator" with tabindex="0", i.e. a splitter, so it
+    // needs the arrow keys: dragging is otherwise the only way to use it. Down
+    // grows the map, matching the drag, and Home restores the starting height.
+    // preventDefault stops the page scrolling instead.
+    handleValue.addEventListener("keydown", (event: KeyboardEvent) => {
+      let size: number | null = null;
+      if (event.key === "ArrowDown") {
+        size = getBasis(panel) + KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "ArrowUp") {
+        size = getBasis(panel) - KEYBOARD_RESIZE_STEP_PX;
+      } else if (event.key === "Home") {
+        // Clearing the inline basis hands the height back to the stylesheet's
+        // flex-basis: 50%, rather than guessing a pixel equivalent for it.
+        event.preventDefault();
+        panel.style.flexBasis = "";
+        return;
+      }
+      if (size === null) {
+        return;
+      }
+      event.preventDefault();
+      setBasis(panel, Math.max(MIN_MAP_HEIGHT_PX, size));
+    });
+
+  }
+
+  
+  
+
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = requestAnimationFrame(() => updateSizes());
+  });
+
+ 
+  updateSizes(true, true);
+
+});
+
+
 </script>
 
 <style lang="less">
@@ -830,6 +985,48 @@ watch(focusRegion, region => {
   display: flex;
   flex-direction: column;
   padding-inline: 8px;
+
+  .map-contents {
+    flex-basis: 50%;
+
+    // The map was sized to the full height of the card while also sitting below
+    // the 48px toolbar, so the card's contents ran exactly one toolbar past its
+    // own box -- measured: client 458, scroll 506. A v-card's overflow: hidden
+    // hid that, at the cost of leaving the card scrollable: tabbing to the map
+    // canvas made the browser scroll the card to bring it into view, which was
+    // what pushed the toolbar out of sight. Laying the card out as a column and
+    // giving the map whatever is left removes the overflow, so nothing needs to
+    // scroll and nothing gets cut off. `clip` then keeps it that way, since it
+    // clips like `hidden` but creates no scroll container.
+    display: flex;
+    flex-direction: column;
+    overflow: clip;
+
+    .tempo-map {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto;
+    }
+  }
+
+  // MapLibre keeps tabindex="0" on its canvas so the arrow keys can pan the
+  // map. Its own focus ring is no use though: the canvas fills the card, so the
+  // ring lands on edges that are clipped and it reads as nothing happening.
+  // This draws the indicator just inside the map, where nothing can clip it, and
+  // reads as "the map itself is focused". :has() rather than :focus-within
+  // because the zoom and home buttons live inside .maplibregl-map too and
+  // should keep their own rings.
+  .maplibregl-map:has(canvas:focus-visible)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    box-shadow:
+      inset 0 0 0 4px white,
+      inset 0 0 0 12px #0b5cb3,
+      inset 0 0 0 16px white;
+  }
 
   .location-and-sharing {
     position: absolute;
@@ -884,87 +1081,14 @@ watch(focusRegion, region => {
     border: 1px solid #068ede;
   }
 
-  .slider-row {
-    display: flex;
-    flex-direction: row;
-    padding-left: 0;
-  }
 
-  >.play-pause {
-    height: fit-content;
-    align-self: center;
-    padding-inline: 0.5rem;
-    margin-left: 0.75rem;
-    width: 2.5rem;
-    color: var(--accent-color);
-    border: 2px solid var(--accent-color);
-  }
-
-  .play-pause[disabled] {
-    filter: grayscale(100%);
-    cursor: progress;
-    cursor: not-allowed;
-  }
 
   .icon-wrapper {
     padding-inline: 0.5rem !important;
   }
 }
 
-.time-slider {
 
-  .v-slider-thumb {
-
-    .v-slider-thumb__surface::after {
-      background-image: url("@/assets/smithsonian.png");
-      background-size: 30px 30px;
-      height: 30px;
-      width: 30px;
-    }
-
-    .v-slider-thumb__label {
-      background-color: var(--accent-color-2);
-      border: 0.25rem solid var(--accent-color);
-      width: max-content;
-      height: 2.5rem;
-      font-size: 1rem;
-
-      &::before {
-        color: var(--accent-color);
-      }
-    }
-  }
-
-  .v-slider-track__tick {
-    background-color: var(--accent-color);
-    /* Change color */
-    height: 15px;
-    /* Change size */
-    width: 4px;
-    margin-top: 0 !important;
-    // top: -10%;
-  }
-
-  .v-slider {
-
-    .v-slider.v-input--horizontal {
-      grid-template-rows: auto 0px;
-    }
-
-    .v-slider.v-input--horizontal .v-slider-thumb__label {
-      // top: calc(var(--v-slider-thumb-size) * 1.5);
-      z-index: 2000;
-    }
-
-    .v-slider.v-input--horizontal .v-slider-thumb__label::before {
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-bottom: 6px solid transparent;
-      border-top: 6px solid currentColor;
-      bottom: -15px;
-    }
-  }
-}
 
 #opacity-slider-container {
   display: flex;
@@ -992,6 +1116,45 @@ watch(focusRegion, region => {
   max-width: 200px;
   color: black;
 }
+
+
+.handle.vertical-handle {
+  flex: 0 0 var(--handle-size);
+  width: 100%;
+  margin-top: calc(var(--handle-size) + 6px); // 6px from box shadow
+  cursor: row-resize;
+  background: var(--handle-color);
+  position: relative;
+  touch-action: none;
+}
+
+.handle.vertical-handle:hover {
+  background: var(--handle-hover-color);
+}
+
+
+.handle.vertical-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.35);
+  box-shadow: 0 -6px 0 rgba(255,255,255,0.18), 0 6px 0 rgba(255,255,255,0.18);
+}
+
+.handle.vertical-handle:hover::after {
+  box-shadow: 0 -6px 0 rgba(255,2555,255,0.42), 0 6px 0 rgba(255,255,255,0.42);
+}
+
+
+.panel-size-dragging, .panel-size-dragging .handle.vertical-handle {
+  cursor: row-resize !important;
+}
+
 
 @import "@/styles/maplibre-layer-control.css";
 </style>
