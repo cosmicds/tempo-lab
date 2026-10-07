@@ -467,6 +467,32 @@
       @save="handleAggregationSaved"
       @plot-click="handlePlotClick"
     />
+
+    <!--
+      Saving an aggregation leaves the dialog open on purpose, so without this
+      the button gave no sign it had done anything - the new card appears in
+      My Datasets, which is usually behind the dialog. role="status" rather
+      than "alert": it is a confirmation of something the user just did, so it
+      should be announced politely rather than interrupting.
+
+      It is styled to match a tour step. Those rules sit beside the tour's own
+      in TempoLab's unscoped block, because v-snackbar teleports this markup
+      out of this component, where a scoped rule could not reach it.
+    -->
+    <v-snackbar
+      v-model="showAggregationSaved"
+      :timeout="6000"
+      location="bottom center"
+      role="status"
+      aria-live="polite"
+      class="aggregation-saved-snackbar"
+      :style="{ '--aggregation-saved-accent': aggregationSavedColor }"
+    >
+      {{ aggregationSavedMessage }}
+      <template #actions>
+        <v-btn variant="text" @click="showAggregationSaved = false">Dismiss</v-btn>
+      </template>
+    </v-snackbar>
     
     <v-dialog
       v-model="showUserDatasetTable"
@@ -627,6 +653,14 @@ const popupCardWidth = 300;
 
 const aggregationDataset = ref<UserDataset | null>(null);
 const showAggregationDialog = ref(false);
+const showAggregationSaved = ref(false);
+const aggregationSavedMessage = ref("");
+// The notice's accent: its border, and the Dismiss button's text. Change this
+// one line to recolour it. Any CSS colour works - "var(--smithsonian-yellow)"
+// is the tour's yellow, "var(--smithsonian-blue)" the other house colour.
+// It is no longer v-snackbar's `color` prop, which paints the whole panel and
+// so would fight the dark panel the tour-step look wants.
+const aggregationSavedColor = "var(--smithsonian-yellow)";
 function openAggregationDialog(selection: UserDataset) {
   aggregationDataset.value = selection;
   showAggregationDialog.value = true;
@@ -651,6 +685,9 @@ function handleAggregationSaved(aggregatedSelection: UserDataset) {
     }
   }
   store.addDataset(aggregatedSelection, false); // no need to fetch anything
+  aggregationSavedMessage.value =
+    `Success! "${aggregatedSelection.name}" was added to My Datasets.`;
+  showAggregationSaved.value = true;
   // Saving deliberately leaves the dialog open, so the aggregation that was
   // just made stays on screen and another can be made without reopening it.
   // It is closed by its own title bar X or by Cancel. The other half of this is

@@ -906,4 +906,32 @@ body .shepherd-button {
   background: var(--smithsonian-yellow);
   color: #1a1a2e;
 }
+// The "saved an aggregation" notice borrows the tour step's look - same panel
+// colour, same 1px border, same font - so the app has one visual voice for
+// "here is something worth noticing". It lives here rather than in
+// DatasetControls because v-snackbar teleports out of that component, and
+// because sitting next to the rules above is what keeps the two in step.
+// The accent colour comes in as a custom property from the component, so it
+// stays adjustable from the one line there.
+.v-snackbar.aggregation-saved-snackbar {
+  .v-snackbar__wrapper {
+    background: #1a1a2e;
+    border: 1px solid var(--aggregation-saved-accent, var(--smithsonian-yellow));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color: #eaeaea;
+    font-family: "Lexend", sans-serif;
+  }
+
+  .v-snackbar__content {
+    font-size: 0.9rem;
+  }
+
+  // Lexend and 500 to match .shepherd-button, the tour's own controls.
+  .v-btn {
+    color: var(--aggregation-saved-accent, var(--smithsonian-yellow));
+    font-family: "Lexend", sans-serif;
+    font-weight: 500;
+  }
+}
 </style>

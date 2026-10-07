@@ -1,6 +1,6 @@
 export const layerNames: Record<string, string | undefined> = {
-  "tempo-no2": "TEMPO NO2",
-  "tempo-lite": "TEMPO NO2 (alt)",
+  "tempo-no2": "TEMPO NO₂",
+  "tempo-lite": "TEMPO NO₂ (alt)",
   "aqi-layer-aqi": "Air Quality Index",
   "power-plants-heatmap": "Power Plants",
   "power-plants-layer": "Power Plants",
