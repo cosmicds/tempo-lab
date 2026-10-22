@@ -1,5 +1,5 @@
 import { defineStore, type StateTree } from "pinia";
-import { computed, ref, watch, toRaw } from "vue";
+import { computed, ref, watch, toRaw, shallowRef, markRaw, type Raw } from "vue";
 import { v4 } from "uuid";
 import type { Map } from "maplibre-gl";
 import { isComputedRef } from "@/utils/vue";
@@ -34,7 +34,7 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   const timeSliderUsedCount = ref(0);
   const opacitySliderUsedCount = ref(0);
 
-  const maps = ref<Map[]>([]);
+  const maps = shallowRef<Raw<Map>[]>([]);
 
   const datasetControlsOpen = ref(false);
   const layerControlsOpen = ref(true);
@@ -70,6 +70,25 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   
   const shownLayers = ref<string[]>([]);
   const layersReady = ref<globalThis.Map<string, LayerReadiness>>(new globalThis.Map<string, LayerReadiness>());
+
+  // check if layer is loading. layersReady is about the state of the backing service
+  const layersLoading = ref<Record<string, boolean>>({});
+
+  const onlyShowFirstLoad = false; // only show loading indicator the first time
+  const firstLoadDone = ref(false);
+  const showLoadingIndicator = ref(false);
+  const anyLayersLoading = computed(() => Object.values(layersLoading.value).some(v => v));
+  // for now only check the no2-layer
+  watch(anyLayersLoading, (loading) => {
+    if (onlyShowFirstLoad && firstLoadDone.value) {
+      return;
+    }
+
+    showLoadingIndicator.value = loading ?? false;
+    if (!loading) {
+      firstLoadDone.value = true;
+    }
+  });
 
   // probably should be a map of some sort, but for now it is only used with hms-fire layer which is prone to breaking
   const layerAction = ref<{ layerId: string; action: string } | null>(null);
@@ -243,6 +262,10 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     layersReady.value = next;
   }
 
+  function setLayerLoading(layerName: string, loading: boolean) {
+    layersLoading.value[layerName] = loading;
+  }
+
   function doLayerAction(layerId: string, action: string) {
     layerAction.value = { layerId, action };
   }
@@ -406,14 +429,11 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
   }
 
   function registerMap(map: Map) {
-    maps.value.push(map);
+    maps.value = [...maps.value, markRaw(map)];
   }
 
   function deregisterMap(map: Map) {
-    const index = maps.value.findIndex(m => m === map);
-    if (index > -1) {
-      maps.value.splice(index);
-    }
+    maps.value = maps.value.filter(m => m !== map);
   }
 
   function reset() {
@@ -515,6 +535,10 @@ const createTempoStore = (backend: MappingBackends) => defineStore("tempods", ()
     layersReady,
     setLayerReady,
     clearLayerReady,
+    layersLoading,
+    setLayerLoading,
+    showLoadingIndicator,
+    firstLoadDone,
     layerAction,
     doLayerAction,
 
@@ -562,8 +586,8 @@ export function deserializeTempoStore(value: string, compressed: boolean): State
   return parsed;
 }
 
-const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady", "globalWarning", "layerAction", "showTourHint"]);
-export function serializeTempoStore(store: TempoStore, compress: boolean): string {
+const OMIT = new Set(["debugMode", "selectionActive", "maps", "layersReady", "layersLoading", "showLoadingIndicator", "firstLoadDone", "globalWarning", "layerAction", "showTourHint"]);
+export function serializeTempoStore(store: TempoStore, compress?: boolean): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const state: Record<string, any> = {};
   for (const [key, value] of Object.entries(store.$state)) {

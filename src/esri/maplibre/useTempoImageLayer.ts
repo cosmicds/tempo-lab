@@ -25,6 +25,7 @@ export interface UseEsriTempoLayer {
   renderOptions: Ref<RenderingRuleOptions>;
   serviceReady: Ref<boolean[]>
   status: ComputedRef<LayerStatus>;
+  tilesLoading: Ref<boolean>;
 }
 
 export interface UseEsriTempoLayerOptions {
@@ -120,7 +121,18 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     }
   }
   
-  const dynamicMapService = ref<ImageService | null>(null);
+  const dynamicMapService = shallowRef<ImageService | null>(null);
+
+  const tilesLoading = ref(false);
+  // the first tiles are requested before a date is set, so only report loading once we have one.
+  // watching dateSet too catches the date being set partway through a load
+  const dateSet = ref(false);
+  let loadingListener: ReturnType<ImageService["onLoadingChange"]> | null = null;
+  watch([tilesLoading, dateSet], ([loading, hasDate]) => {
+    if (hasDate) {
+      store.setLayerLoading(esriLayerId, loading);
+    }
+  });
   
   function onSourceLoad(e: MapSourceDataEvent) {
     // console.log(`sourcedate event for ${esriLayerId}: `);
@@ -168,6 +180,12 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
       : svc.baseUrlArray[svc.baseUrlArray.length - 1];
 
     dynamicMapService.value = createImageService(mMap, url, options.value);
+    dateSet.value = false;
+    if (loadingListener !== null) {
+      loadingListener.off();
+    }
+    loadingListener = dynamicMapService.value.onLoadingChange(loading => tilesLoading.value = loading);
+    loadingListener.on();
 
     addLayer(mMap);
     // this event will run until the source is loaded
@@ -176,6 +194,11 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
   }
   
   function removeEsriSource() {
+    if (loadingListener !== null) {
+      loadingListener.off();
+    }
+    loadingListener = null;
+    tilesLoading.value = false;
     if (map.value) {
       if (map.value.getLayer(esriLayerId)) {
         map.value.removeLayer(esriLayerId);
@@ -207,6 +230,7 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     }
 
     dynamicMapService.value.setDate(new Date(nearest), new Date(nearest * 2));
+    dateSet.value = true;
   }
   
   function updateEsriTimeRange() {
@@ -318,5 +342,6 @@ export function useTempoLayer(esriLayerOptions: UseEsriTempoLayerOptions): UseEs
     setVisibility,
     serviceReady,
     status,
+    tilesLoading,
   } as UseEsriTempoLayer;
 }

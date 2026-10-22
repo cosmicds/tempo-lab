@@ -64,7 +64,6 @@ export class ImageService {
     if (this.options.interpolation) params.append('interpolation', this.options.interpolation);
     if (this.options.mosaicRule) params.append('mosaicRule', JSON.stringify(this.options.mosaicRule));
     if (this.options.renderingRule) params.append('renderingRule', JSON.stringify(this.options.renderingRule));
-
     return {
       type: 'raster',
       tiles: [
@@ -80,6 +79,7 @@ export class ImageService {
   }
 
   // This requires hooking into some undocumented methods
+  // this gets called once per change, and maplibre replaces the bbox with the actual bbox.
   _updateSource () {
     const src = this._map.getSource(this._sourceId);
     src.tiles[0] = this._source.tiles[0];
@@ -98,6 +98,7 @@ export class ImageService {
   }
 
   setDate (from, to) {
+    if (+this.esriServiceOptions.from === +from && +this.esriServiceOptions.to === +to) return;
     this.esriServiceOptions.from = from;
     this.esriServiceOptions.to = to;
     this._updateSource();
@@ -111,6 +112,65 @@ export class ImageService {
   setMosiacRule (rule) {
     this.esriServiceOptions.mosaicRule = rule;
     this._updateSource();
+  }
+  
+  // this breaks the backwards compatibility for when maplibre used sourceCaches
+  get _tiles() {
+    return this._map.style.tileManagers[this._sourceId]._inViewTiles.getAllTiles();
+  }
+  
+  _countTileStates(tiles) {
+    // available states: maplibre-gl-js/src/tiles/tiles.ts TileState = 'loading' | 'loaded' | 'reloading' | 'unloaded' | 'errored' | 'expired';
+    return tiles.reduce((acc, tile) => {
+      const state = tile.state;
+      if (!acc[state]) acc[state] = 0;
+      acc[state]++;
+      return acc;
+    }, {});
+  }
+
+  // Calls callback(true) when tiles for this source start loading and callback(false)
+  // once they are all done (loaded or errored). Returns { on, off } to start/stop listening.
+  onLoadingChange (callback) {
+    let loading = false;
+    // https://maplibre.org/maplibre-gl-js/docs/API/classes/MapSourceDataEvent/ example
+    const check = (e) => {
+      // only check for this source
+      if (e.sourceId !== this._sourceId) return;
+      if (e.sourceDataType === 'metadata') return;
+      const isLoading = !e.isSourceLoaded;
+      // did it change?
+      if (isLoading !== loading) {
+        loading = isLoading;
+        // then do a thing
+        callback(loading);
+      }
+    };
+    // watch source data events
+    const events = ['sourcedataloading', 'sourcedata', 'sourcedataabort', 'error'];
+    return {
+      on: () => events.forEach(type => this._map.on(type, check)),
+      off: () => events.forEach(type => this._map.off(type, check)),
+    };
+  }
+  
+  onLoadingProgress (callback) {
+    // watch source data events
+    const events = ['sourcedataloading', 'sourcedata', 'sourcedataabort', 'error'];
+    const check = (e) => {
+      // only check for this source
+      if (e.sourceId !== this._sourceId) return;
+      if (e.sourceDataType === 'metadata') return;
+      if (e.type === 'sourcedataloading' && e.tile === undefined) return;
+
+      const tiles = this._tiles;
+      const states = this._countTileStates(tiles);
+      callback(states['loaded'], states['errored'], tiles.length);
+    };
+    return {
+      on: () => events.forEach(type => this._map.on(type, check)),
+      off: () => events.forEach(type => this._map.off(type, check)),
+    };
   }
 
   setAttributionFromService () {

@@ -39,7 +39,8 @@
         maplibre-layer-name="tempo-no2"
       />
 
-      <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div>
+      <!-- don't show the legend, but keep it here as a reference for how to later -->
+      <!-- <div v-if="showFieldOfRegard" class="map-legend"><hr class="line-legend">TEMPO Field of Regard</div> -->
       <!-- show hide cloud data, disable if none is available -->
 
       <div class="location-and-sharing">
@@ -54,7 +55,17 @@
           @error="(error: string) => searchErrorMessage = error"
         ></location-search>
       </div>
+      <v-progress-linear
+        v-if="showLoadingBar"
+        indeterminate
+        :color="accentColor"
+        height="20"
+        class="text-body-2 loading-data-progress-bar position-absolute left-0 right-0"
+        aria-label="Loading map data"
+      >Loading map data...</v-progress-linear>
     </v-card>
+
+    
     
     <v-tooltip
         text="Change map height"
@@ -96,6 +107,7 @@
 import { computed, ref, shallowRef, toRaw, useTemplateRef, watch, type Ref, type WritableComputedRef } from "vue";
 import { useDisplay } from 'vuetify';
 import { storeToRefs } from "pinia";
+import { useTimeoutFn } from "@vueuse/core";
 import { MapBoxFeature, MapBoxFeatureCollection, MapBoxFeatureType, MapBoxForwardGeocodingOptions, geocodingInfoForSearch } from "@cosmicds/vue-toolkit";
 import { Map, GeoJSONSource, type StyleLayer } from "maplibre-gl";
 import { getTimezoneOffset } from "date-fns-tz";
@@ -159,7 +171,28 @@ const {
   singleDateSelected,
   showAdvancedLayers,
   showRGBMode,
+  showLoadingIndicator,
+  firstLoadDone,
+  accentColor,
 } = storeToRefs(store);
+
+// only show loading bar if takes more than a second, or 5 seconds if it's not the first load
+// the timer starts when loading starts and is cancelled when it stops, so each load gets the full delay
+const loadingForAWhile = shallowRef(false);
+const debounceTimeout = computed(() => firstLoadDone.value ? 5000 : 1000);
+// the delay is read each time start() is called
+const loadingTimeout = useTimeoutFn(() => {
+  loadingForAWhile.value = true;
+}, debounceTimeout, { immediate: false });
+watch(showLoadingIndicator, (loading) => {
+  if (loading) {
+    loadingTimeout.start();
+  } else {
+    loadingTimeout.stop();
+    loadingForAWhile.value = false;
+  }
+});
+const showLoadingBar = computed(() => showLoadingIndicator.value && loadingForAWhile.value);
 
 const molecule = ref<MoleculeType>("no2");
 const currentTempoDataService = computed(() => store.getTempoDataService(molecule.value));
@@ -1153,6 +1186,14 @@ onMounted(() => {
 
 .panel-size-dragging, .panel-size-dragging .handle.vertical-handle {
   cursor: row-resize !important;
+}
+
+.loading-data-progress-bar {
+  top: 48px !important; // header height
+}
+
+.loading-data-progress-bar  .v-progress-linear__content {
+  color: black !important;
 }
 
 
