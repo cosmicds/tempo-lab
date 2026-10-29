@@ -4,36 +4,6 @@
       <p>
         Select a Region, Time Range, and Molecule to create a dataset of your choice!
       </p>
-    <v-dialog
-      v-model="showConfirmReset"
-      max-width="35%"
-    >
-      <v-card class="popup-card--outline">
-        <v-card-text>
-          Are you sure you want to delete all of your selections? 
-          This will remove all of your regions, time ranges, 
-          and datasets, and cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-btn
-            color="error"
-            @click.stop="showConfirmReset = false"
-          >
-            No
-          </v-btn>
-          <v-btn
-            color="success"
-            @click.stop="() => {
-              store.reset();
-              serializeTempoStore(store);
-              showConfirmReset = false;
-            }"
-          >
-            Yes
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
       <v-expansion-panels
         v-model="openPanels"
         variant="accordion"
@@ -420,7 +390,7 @@
                 <v-btn
                 v-if="datasets.length > 1"
                 :disabled="datasets.length === 0 || !datasets.every(d => d.samples || d.plotlyDatasets)"
-                :color="allDatasetSelection ? '#333': '#ffcc33'" size="small" :block="false" @click.stop="allDatasetSelection = !allDatasetSelection">
+                :color="allDatasetSelection ? '#333' : accentColor2" size="small" :block="false" @click.stop="allDatasetSelection = !allDatasetSelection">
                 {{ allDatasetSelection ? 'Cancel Selection' : 'Select Datasets to Graph' }}
               </v-btn>
           </div>
@@ -429,22 +399,6 @@
     </v-expansion-panels>
   </div>
   
-  <div class="d-flex flex-column justify-center ga-1">
-    
-    
-    
-    <!--  -->
-    <hr class="ma-2" style="width: 100%;"/>
-    <v-btn
-    v-if="regions.length > 0 || timeRanges.length > 1"
-      color="#a63a3f"
-      class="mx-2"
-      @click.stop="showConfirmReset = true"
-      size="small"
-      >
-      Delete ALL selections
-    </v-btn>
-  </div>
   
   <v-dialog
   v-model="showEditRegionNameDialog"
@@ -621,7 +575,7 @@ import { v4 } from "uuid";
 
 import type { MillisecondRange, TimeRange, UserDataset, UnifiedRegion, MoleculeType } from "../types";
 import type { TimeRangeConfig } from "@/date_time_range_selection/date_time_range_generators";
-import { serializeTempoStore, useTempoStore } from "../stores/app";
+import { useTempoStore } from "../stores/app";
 import { MOLECULE_OPTIONS } from "../esri/utils";
 import { HIDDEN_BAD_LAYERS } from "@/datasets/layerData";
 import { atleast1d } from "../utils/atleast1d";
@@ -696,7 +650,6 @@ const openPanels = ref<number[]>([0, 1, 2]);
 const openSelection = ref<string | null>(null);
 const tableSelection = ref<UserDataset | null>(null);
 const currentlyEditingDataset = ref<UserDataset | null>(null);
-const showConfirmReset = ref(false);
 const showMultiPlot = ref(false);
 
 const createTimeRangeActive = ref(false);

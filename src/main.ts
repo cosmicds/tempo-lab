@@ -49,6 +49,9 @@ import {
   faSignsPost,
   faRocket,
   faGripVertical,
+  faFloppyDisk,
+  faDownload,
+  faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { VueDatePicker } from "@vuepic/vue-datepicker";
@@ -79,6 +82,9 @@ library.add(faAtom);
 library.add(faSignsPost);
 library.add(faRocket);
 library.add(faGripVertical);
+library.add(faFloppyDisk);
+library.add(faDownload);
+library.add(faUpload);
 
 /** v-hide directive taken from https://www.ryansouthgate.com/2020/01/30/vue-js-v-hide-element-whilst-keeping-occupied-space/ */
 // Extract the function out, up here, so I'm not writing it twice

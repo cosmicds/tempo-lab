@@ -644,3 +644,36 @@ export function updateStoreFromJSON(store: TempoStore, json: string, compressed:
     return false;
   }
 }
+
+// Adds the file's regions, time ranges, and datasets to what is already in the
+// store, and leaves every other setting alone. Anything whose id is already
+// present is skipped: ids key the map layers and the dataset -> region links,
+// so a second copy (e.g. from loading the same file twice) would break both.
+export function mergeStoreFromJSON(store: TempoStore, json: string, compressed: boolean): boolean {
+  try {
+    const state = deserializeTempoStore(json, compressed);
+    const notIn = (existing: { id: string }[]) => {
+      const ids = new Set(existing.map(item => item.id));
+      return (item: { id: string }) => !ids.has(item.id);
+    };
+    const regions = (state.regions ?? []).filter(notIn(store.regions));
+    const timeRanges = (state.timeRanges ?? []).filter(notIn(store.timeRanges));
+    const datasets = (state.datasets ?? []).filter(notIn(store.datasets));
+    store.regions.push(...regions);
+    store.timeRanges.push(...timeRanges);
+    store.datasets.push(...datasets);
+    // Region names and colors come from this count. Adding both counts keeps
+    // the next drawn region's number above any auto-generated name in either set.
+    if (regions.length > 0) {
+      store.regionsCreatedCount += state.regionsCreatedCount ?? 0;
+    }
+    for (const dataset of datasets) {
+      if (dataset.loading) {
+        store.fetchDataForDataset(dataset);
+      }
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
